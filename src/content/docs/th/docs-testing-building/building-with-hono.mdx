@@ -1,0 +1,114 @@
+---
+title: สร้างด้วย Hono
+description: 'การสร้างจริงด้วย TypeScript ที่ผสานเป็นหนึ่งเดียวและร้อยเรียงทั้งคอร์สเข้าด้วยกัน'
+sidebar:
+  order: 4
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+ถึงเวลาประกอบชิ้นส่วนเข้าด้วยกัน การสร้างจริงที่สะอาดจะแยก routing, validation และ business logic ออกจากกัน และเดินสาย cross-cutting concern (auth, error, CORS) เป็น middleware
+
+## โครงสร้างที่สมเหตุสมผล
+
+```ts
+src/
+  index.ts        // create the app, mount middleware + routes, start the server
+  middleware/     // auth, error handler, CORS, rate limiting
+  routes/         // one module per resource (articles, users, ...)
+  services/       // business logic, independent of HTTP
+  schemas/        // request/response validation (e.g. zod)
+```
+
+handler ยังคงบาง คือ validate input เรียก service แล้วจัดรูป response ส่วน service ไม่รู้อะไรเกี่ยวกับ HTTP เลย จึง unit-test ได้ง่าย
+
+## resource ขนาดเล็ก ครบตั้งแต่ต้นจนจบ
+
+แอป Hono นี้รวม validation, รูปแบบ error ที่สม่ำเสมอ และ status code ที่ถูกต้องสำหรับ resource ชื่อ `articles` เข้าด้วยกัน เปิดมันใน StackBlitz เพื่อรันดู
+
+export const honoCode = `const articles = [{ id: 1, title: 'First', body: 'Hello' }];
+
+class ApiError extends Error {
+  constructor(status, title) { super(title); this.status = status; this.title = title; }
+}
+
+function validate(input) {
+  const errors = [];
+  if (typeof input?.title !== 'string' || input.title.length === 0) {
+    errors.push({ field: 'title', message: 'title is required' });
+  }
+  return errors;
+}
+
+app.get('/articles', (c) => {
+  const limit = Number(c.req.query('limit') ?? '20');
+  return c.json({ data: articles.slice(0, limit), meta: { total: articles.length } });
+});
+
+app.get('/articles/:id', (c) => {
+  const found = articles.find((a) => a.id === Number(c.req.param('id')));
+  if (!found) throw new ApiError(404, 'Article not found');
+  return c.json(found);
+});
+
+app.post('/articles', async (c) => {
+  const input = await c.req.json().catch(() => null);
+  if (input === null) throw new ApiError(400, 'Invalid JSON');
+  const errors = validate(input);
+  if (errors.length) {
+    return c.json({ title: 'Validation failed', status: 422, errors }, 422,
+      { 'Content-Type': 'application/problem+json' });
+  }
+  const created = { id: articles.length + 1, title: input.title, body: input.body ?? '' };
+  articles.push(created);
+  return c.json(created, 201, { Location: '/articles/' + created.id });
+});
+
+app.onError((err, c) => {
+  const status = err.status ?? 500;
+  return c.json({ title: err.title ?? 'Internal Server Error', status }, status,
+    { 'Content-Type': 'application/problem+json' });
+});`;
+
+<NodeRunner stackblitz client:visible code={honoCode} />
+
+สังเกตว่าทุกแนวคิดจากคอร์สนี้ปรากฏขึ้นอย่างไร ทั้ง envelope ของ collection ที่ทำ pagination, `201 Created` พร้อม `Location`, การ validate แบบ `422` พร้อม error ราย field, `404` ผ่าน error ที่มี type ที่ถูก throw ออกมา และ `onError` ตัวกลางเพียงหนึ่งเดียวที่ผลิต `problem+json`
+
+<Callout title="handler ที่บาง ชั้นที่แท้จริง">
+เก็บเรื่องของ HTTP (การ parse, status, header) ไว้ใน handler และ middleware เก็บกฎทางธุรกิจไว้ใน service ที่ไม่เคย import เฟรมเวิร์กฝั่งเว็บเลย การแยกเช่นนี้คือสิ่งที่ทำให้ API ทดสอบได้ ให้คุณสลับเฟรมเวิร์กได้ และทำให้แต่ละไฟล์เล็กพอที่จะทำความเข้าใจได้
+</Callout>
+
+export const quiz = [
+  {
+    q: 'ทำไมจึงควรให้ service ปลอดจากเรื่องของ HTTP?',
+    options: [
+      'เพื่อให้มันช้าลง',
+      'เพื่อให้ business logic ทำ unit-test ได้ง่ายและไม่ผูกติดกับเฟรมเวิร์กฝั่งเว็บ',
+      'เพราะ Hono บังคับให้ทำ',
+      'เพื่อเลี่ยงการเขียน route',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'อะไรควรอยู่ใน handler ที่บาง?',
+    options: [
+      'กฎทางธุรกิจทั้งหมดและ query ฐานข้อมูลแบบ inline',
+      'validate input, เรียก service, จัดรูป response',
+      'เฉพาะการ logging',
+      'spec ของ OpenAPI',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'รูปแบบ error ที่สม่ำเสมอเพียงหนึ่งเดียวถูกผลิตขึ้นที่ใดในแอปนี้?',
+    options: ['ในทุก handler แยกกัน', 'ใน hook onError ตัวกลาง', 'ใน client', 'ในฐานข้อมูล'],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="docs-testing-building/building-with-hono" questions={quiz} />
+
+<ProgressTracker client:visible id="docs-testing-building/building-with-hono" />

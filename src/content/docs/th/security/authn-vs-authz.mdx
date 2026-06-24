@@ -1,0 +1,85 @@
+---
+title: Authentication vs Authorization
+description: 'คุณคือใคร เทียบกับ คุณทำอะไรได้บ้าง — และทำไม 401 จึงต่างจาก 403'
+sidebar:
+  order: 2
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+สองคำที่ฟังคล้ายกันแต่ทำงานคนละหน้าที่ การแยกแยะมันให้ชัดเจนช่วยให้ทั้งโค้ดและ status code ของคุณกระจ่างขึ้น
+
+## ความแตกต่าง
+
+- **Authentication (authn)** — *คุณคือใคร?* client พิสูจน์ตัวตนด้วย credential ได้แก่ API key, session cookie หรือ bearer token
+- **Authorization (authz)** — *คุณได้รับอนุญาตให้ทำอะไรได้บ้าง?* เมื่อรู้ตัวตนแล้ว server จะตัดสินว่าผู้เรียกใช้คนนี้ทำ action นี้กับ resource นี้ได้หรือไม่
+
+Authentication มาก่อน ส่วน authorization สร้างต่อยอดจากผลของมัน request หนึ่งอาจผ่าน authenticated (เรารู้ว่าคุณคือใคร) แต่ยัง unauthorized ได้ (คุณยังทำสิ่งนั้นไม่ได้อยู่ดี)
+
+## status code ของแต่ละตัว
+
+- `401 Unauthorized` — authentication ล้มเหลวหรือขาดหายไป client ควรส่งหรือ refresh credentials โดยทั่วไปจะมาพร้อมกับ header `WWW-Authenticate`
+- `403 Forbidden` — authentication สำเร็จ แต่ผู้เรียกใช้ไม่มีสิทธิ์ การส่ง credentials ตัวอื่นมาก็ไม่ช่วยอะไร
+
+## การพก credential ไปด้วย
+
+ตัวตนเดินทางอยู่ใน header `Authorization`:
+
+```http
+GET /me HTTP/1.1
+Authorization: Bearer eyJhbGciOiJI...
+```
+
+## ด่าน auth แบบขั้นต่ำ
+
+export const honoCode = `const KEYS = new Set(['key-abc', 'key-def']);
+const ADMIN = new Set(['key-abc']);
+
+// authn: is the key valid?
+app.use('*', async (c, next) => {
+  const key = c.req.header('Authorization')?.replace('Bearer ', '');
+  if (!key || !KEYS.has(key)) {
+    return c.json({ title: 'Unauthorized', status: 401 }, 401, { 'WWW-Authenticate': 'Bearer' });
+  }
+  c.set('key', key);
+  await next();
+});
+
+// authz: is this key allowed here?
+app.delete('/articles/:id', (c) => {
+  if (!ADMIN.has(c.get('key'))) {
+    return c.json({ title: 'Forbidden', status: 403 }, 403);
+  }
+  return c.body(null, 204);
+});`;
+
+<NodeRunner stackblitz client:visible code={honoCode} />
+
+<Callout title="401 หมายถึง 'ล็อกอินสิ'; 403 หมายถึง 'เลิกถามได้แล้ว'">
+ถ้าผู้เรียกใช้ยังไม่ผ่าน authenticated ให้ส่งกลับ `401` เพื่อให้ client รู้ว่าต้องไปขอหรือ refresh credential แต่ถ้าผู้เรียกใช้ผ่าน authenticated แล้วแต่ไม่ได้รับอนุญาต ให้ส่งกลับ `403` — การ re-authenticate จะไม่เปลี่ยนคำตอบ การปนสองอย่างนี้เข้าด้วยกันจะทำให้ client วนลูป retry ที่ไร้ประโยชน์
+</Callout>
+
+export const quiz = [
+  {
+    q: 'authorization ตอบคำถามข้อใด?',
+    options: ['คุณคือใคร?', 'คุณได้รับอนุญาตให้ทำอะไรได้บ้าง?', 'คุณอยู่ที่ไหน?', 'คุณล็อกอินเมื่อไหร่?'],
+    answer: 1,
+  },
+  {
+    q: 'มีการส่ง token ที่ถูกต้องมา แต่ user ไม่มีสิทธิ์ลบ resource นี้ ควรใช้ status ใด?',
+    options: ['401 Unauthorized', '403 Forbidden', '404 Not Found', '400 Bad Request'],
+    answer: 1,
+  },
+  {
+    q: 'มี request เข้ามาโดยไม่มี credentials ใด ๆ เลย ควรใช้ status ใด?',
+    options: ['200 OK', '401 Unauthorized', '403 Forbidden', '409 Conflict'],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="security/authn-vs-authz" questions={quiz} />
+
+<ProgressTracker client:visible id="security/authn-vs-authz" />

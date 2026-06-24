@@ -1,0 +1,64 @@
+---
+title: เอกสาร การทดสอบ และการสร้าง
+description: 'เปลี่ยนการออกแบบ API ให้กลายเป็นเซอร์วิส TypeScript ที่มีเอกสาร ผ่านการทดสอบ และทำงานได้จริง'
+sidebar:
+  order: 1
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+การออกแบบที่ดีจะมีความหมายก็ต่อเมื่อมันถูกส่งมอบออกไปจริง โมดูลสุดท้ายนี้จะเชื่อมทุกอย่างเข้าด้วยกัน อธิบาย API ด้วย spec พิสูจน์ว่ามันทำงานได้ด้วยการทดสอบ และนำไปสร้างจริงอย่างสะอาดด้วย TypeScript
+
+## จากการออกแบบสู่เซอร์วิสที่ทำงานได้จริง
+
+export const flowDiagram = `flowchart LR
+  D[Design: resources, methods, errors] --> S[Spec: OpenAPI]
+  S --> I[Implement: TypeScript + Hono]
+  I --> T[Test: unit / integration / contract]
+  T --> Doc[Docs from the spec]
+  Doc --> D`;
+
+<Mermaid code={flowDiagram} title="spec การสร้างจริง และการทดสอบต่างเสริมกันและกัน" />
+
+spec คือบานพับสำคัญ มันบันทึก contract ไว้ให้ผู้ใช้งาน สร้างโค้ดฝั่ง client และเอกสารได้ และให้สิ่งที่การทดสอบของคุณใช้ตรวจสอบการสร้างจริงเทียบเคียงได้
+
+## โมดูลนี้ครอบคลุมอะไรบ้าง
+
+- **OpenAPI** — อธิบาย API เป็น contract ที่เครื่องอ่านได้
+- **Testing APIs** — การทดสอบแบบ unit, integration และ contract
+- **Building with Hono** — การสร้างจริงด้วย TypeScript ที่ผสานเป็นหนึ่งเดียว
+- **Best-practices recap** — เช็กลิสต์รวบทุกอย่างที่คุณได้เรียนรู้มา
+
+<Callout title="spec คือ contract">
+ไม่ว่าคุณจะเขียนเอกสาร OpenAPI ก่อน (spec-first) หรือสร้างมันจากโค้ด (code-first) จงปฏิบัติต่อมันในฐานะแหล่งข้อมูลความจริงเพียงหนึ่งเดียวว่า API สัญญาอะไรไว้บ้าง ผู้ใช้งาน เอกสาร mock server และ contract test ล้วนไหลออกมาจากมัน spec ที่คลาดเคลื่อนหรือไม่มีเลยคือสาเหตุที่ทำให้การเชื่อมต่อพังเงียบ ๆ
+</Callout>
+
+export const quiz = [
+  {
+    q: 'spec ของ OpenAPI มีบทบาทอย่างไรต่อเอกสาร การทดสอบ และ client?',
+    options: [
+      'มันแทนที่การสร้างจริง',
+      'มันคือแหล่งข้อมูลความจริงเพียงหนึ่งเดียวของ contract ที่สิ่งอื่นได้มาจากมัน',
+      'มันมีไว้สำหรับสร้างเอกสารเท่านั้น',
+      'มันเป็นเพียงของประดับที่จะมีหรือไม่มีก็ได้',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'ทำไมการออกแบบจึงมีความหมายก็ต่อเมื่อมันถูกส่งมอบออกไปจริง?',
+    options: [
+      'การออกแบบไม่สำคัญ',
+      'คุณค่าจะเกิดขึ้นจริงเมื่อการสร้างจริงที่มีเอกสารและผ่านการทดสอบทำงานได้',
+      'การส่งมอบทำให้ไม่จำเป็นต้องออกแบบ',
+      'การทดสอบแทนที่การออกแบบ',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="docs-testing-building/index" questions={quiz} />
+
+<ProgressTracker client:visible id="docs-testing-building/index" />

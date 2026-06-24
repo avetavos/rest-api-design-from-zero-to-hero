@@ -1,0 +1,87 @@
+---
+title: Idempotency & Safety
+description: 'สองคุณสมบัติที่ทำให้คำขอ HTTP retry ได้อย่างปลอดภัย — และทำไมมันถึงสำคัญ'
+sidebar:
+  order: 4
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+มีสองคุณสมบัติที่ตัดสินว่าคำขอหนึ่งสามารถทำซ้ำได้อย่างปลอดภัยหรือไม่ ทั้งสองสับสนกันได้ง่าย เรามาตรึงมันให้ชัดเจนกันเถอะ
+
+## Safe กับ idempotent
+
+- **Safe** — คำขอไม่มีผลที่สังเกตได้ต่อ state ของ server มันทำได้แค่อ่าน `GET`, `HEAD` และ `OPTIONS` เป็น safe
+- **Idempotent** — การส่งคำขอ *N* ครั้งทำให้ server อยู่ใน state เดียวกับการส่งครั้งเดียว `GET`, `HEAD`, `OPTIONS`, `PUT` และ `DELETE` เป็น idempotent ส่วน `POST` และ (โดยทั่วไป) `PATCH` ไม่เป็น
+
+ทุก method ที่ safe ล้วน idempotent แต่ไม่ใช่ทุก method ที่ idempotent จะ safe — `DELETE` เปลี่ยนแปลง state แต่ก็ยัง idempotent
+
+export const matrixDiagram = `flowchart TD
+  M{Method} --> GET[GET / HEAD: safe + idempotent]
+  M --> PUTDEL[PUT / DELETE: idempotent, not safe]
+  M --> POST[POST: neither]
+  M --> PATCH[PATCH: usually neither]`;
+
+<Mermaid code={matrixDiagram} title="ตำแหน่งของแต่ละ method บนตาราง safe/idempotent" />
+
+## ทำไมมันถึงสำคัญ: การ retry
+
+เครือข่ายทำ response หายได้ เมื่อ client (หรือ proxy หรือ load balancer) ไม่ได้รับการตอบกลับ มันอาจ retry ถ้า method เป็น idempotent การ retry ก็ไม่มีอันตราย แต่ถ้าไม่ใช่ — อย่าง `POST` ที่ตัดเงินจากบัตร — การ retry แบบมืดบอดอาจตัดเงินซ้ำสองครั้ง
+
+export const retryCode = `// A PUT is idempotent: applying it twice == applying it once.
+const store = { 42: { id: 42, status: 'draft' } };
+
+function putStatus(id, status) {
+  store[id] = { ...store[id], status };
+  return store[id];
+}
+
+console.log(putStatus(42, 'published')); // first attempt
+console.log(putStatus(42, 'published')); // retry after a dropped response
+console.log('final state:', store[42]);   // same as one call`;
+
+<NodeRunner client:visible code={retryCode} />
+
+## ทำให้ POST retry ได้อย่างปลอดภัย
+
+เมื่อคุณจำเป็นจริง ๆ ที่จะให้การสร้างที่ไม่ idempotent ทนต่อการ retry ได้ ให้ใช้ **idempotency key**: client ส่ง header `Idempotency-Key` ที่ไม่ซ้ำกันมา และ server จดจำผลลัพธ์ของ key นั้นไว้ เพื่อให้การส่งซ้ำคืนผลลัพธ์เดิมกลับไปแทนที่จะทำงานสองครั้ง เราจะลงรายละเอียดกลไกของมันใน [Versioning & Caching](/rest-api-design-from-zero-to-hero/th/versioning-caching/conditional-and-idempotency-keys/)
+
+<Callout title="ออกแบบเผื่อการ retry ที่คุณมองไม่เห็น">
+จงสมมติว่าทุกคำขอที่ไม่ safe อาจมาถึงมากกว่าหนึ่งครั้ง ทำให้การเขียน (write) เป็น idempotent ในจุดที่คุณทำได้ (เลือก `PUT` ด้วย ID ที่ client เป็นผู้กำหนด) และปกป้องจุดที่คุณทำไม่ได้ด้วย idempotency key ความถูกต้องภายใต้การ retry คือการเลือกออกแบบ ไม่ใช่โชค
+</Callout>
+
+export const quiz = [
+  {
+    q: 'ข้อความใดเป็นจริง?',
+    options: [
+      'ทุก method ที่ idempotent ก็ safe ด้วย',
+      'ทุก method ที่ safe ก็ idempotent ด้วย',
+      'POST เป็น idempotent',
+      'DELETE เป็น safe',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'ทำไมการ retry POST ที่ไม่ idempotent จึงมีความเสี่ยง?',
+    options: [
+      'มันช้ากว่า',
+      'มันอาจทำการกระทำสองครั้ง (เช่น ตัดเงินซ้ำ)',
+      'มันแคชไม่ได้',
+      'มันคืน status code ที่ผิด',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'อะไรที่ทำให้การสร้างที่ไม่ idempotent ทนต่อการ retry ได้อย่างปลอดภัย?',
+    options: ['timeout ที่นานขึ้น', 'Idempotency-Key ที่ server จดจำไว้', 'ใช้ GET แทน', 'response แบบ 500'],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="methods-crud-idempotency/idempotency-and-safety" questions={quiz} />
+
+<ProgressTracker client:visible id="methods-crud-idempotency/idempotency-and-safety" />

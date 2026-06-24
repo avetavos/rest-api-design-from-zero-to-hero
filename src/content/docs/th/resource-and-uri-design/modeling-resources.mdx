@@ -1,0 +1,77 @@
+---
+title: Modeling Resources
+description: 'การค้นหา resource ที่ถูกต้องและระดับความละเอียดที่เหมาะสมกับโดเมนของคุณ'
+sidebar:
+  order: 2
+---
+
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+ก่อนจะตั้งชื่อ URI สักตัว ให้ตัดสินใจก่อนว่า *อะไร* คือ resource ของคุณ การสร้างแบบจำลอง resource ที่ดีจะทำให้ส่วนที่เหลือของ API ลงตัวไปเอง ส่วนการสร้างแบบจำลองที่ไม่ดีจะโผล่ขึ้นมาในภายหลังในรูปของ endpoint ที่ดูเก้กังและกรณียกเว้นต่าง ๆ
+
+## ค้นหาคำนาม
+
+เริ่มจากภาษาของโดเมน สิ่งที่คงอยู่ถาวรซึ่ง user ของคุณพูดถึง เช่น orders, invoices, playlists, devices คือ resource หลักของคุณ โดยทั่วไปพวกมันจะ map ไปยัง collection ที่คุณสร้าง อ่าน อัปเดต และลบ
+
+```ts
+// The resources of a small blog API, as TypeScript shapes.
+type User = { id: string; name: string; email: string };
+type Article = { id: string; title: string; body: string; authorId: string };
+type Comment = { id: string; body: string; articleId: string; authorId: string };
+```
+
+ไม่ใช่ทุกตารางในฐานข้อมูลจะเป็น resource และไม่ใช่ทุก resource จะเป็นตาราง resource คือสิ่งใดก็ตามที่มีค่าพอจะอ้างถึงด้วย URI รวมถึงสิ่งที่คำนวณได้หรือเป็นสิ่งเสมือน (virtual) เช่น `/me` (user ปัจจุบัน) หรือ `/search`
+
+## Resource ไม่ใช่ action
+
+เมื่อ use case ฟังดูเหมือนคำกริยา เช่น "publish an article", "cancel an order" ให้ต้านทานความอยากที่จะคิดค้น `/publishArticle` ขึ้นมา มีทางเลือกที่สะอาดกว่าอยู่สองทาง:
+
+- จำลองการเปลี่ยนแปลงให้เป็นการอัปเดต field: `PATCH /articles/42` ด้วย `{ "status": "published" }`
+- จำลอง action ให้เป็น sub-resource ที่มันสร้างขึ้น: `POST /orders/42/cancellation`
+
+## Granularity
+
+ตั้งเป้าให้ resource ไม่หยาบเกินไป (ก้อน `/data` ยักษ์ก้อนเดียว) และไม่ละเอียดเกินไป (แยก resource หนึ่งตัวต่อหนึ่ง field) วิธีทดสอบที่ดี: resource ควรเป็นสิ่งที่ client ต้องการดึง สร้าง หรือเปลี่ยนแปลงในฐานะหน่วยเดียว
+
+<Callout title="จำลองเพื่อผู้บริโภค ไม่ใช่เพื่อ schema">
+resource คือคำศัพท์สาธารณะของ API ดังนั้นจงปั้นมันให้สอดคล้องกับวิธีที่ client คิด ไม่ใช่วิธีที่ตารางของคุณถูกวางไว้ การที่ resource หนึ่งตัวจะ join หลายตาราง หรือตารางหนึ่งตารางจะปรากฏออกมาเป็นสอง resource ก็ไม่เป็นไร จงแยก contract ออกจาก storage
+</Callout>
+
+export const quiz = [
+  {
+    q: 'โดยปกติแล้วควรจำลอง "publish an article" อย่างไร?',
+    options: [
+      'endpoint แบบ POST /publishArticle',
+      'PATCH ที่ตั้งค่า status หรือ sub-resource ที่ action สร้างขึ้น',
+      'GET พร้อม flag ?publish=true',
+      'collection /publish ตัวใหม่ในระดับ top-level',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'ข้อความใดเกี่ยวกับ resource และตารางในฐานข้อมูลที่ถูกต้อง?',
+    options: [
+      'ทุกตารางต้องเป็น resource หนึ่งตัวเป๊ะ ๆ',
+      'resource ควรสะท้อนตารางแบบหนึ่งต่อหนึ่ง',
+      'resource คือสิ่งใดก็ตามที่มีค่าพอจะอ้างถึง ไม่จำเป็นต้อง map 1:1 กับตาราง',
+      'resource ไม่สามารถ join หลายตารางได้',
+    ],
+    answer: 2,
+  },
+  {
+    q: 'อะไรคือวิธีทดสอบ granularity ของ resource ที่ดี?',
+    options: [
+      'มัน match กับคอลัมน์เดียว',
+      'มันเป็นสิ่งที่ client ดึงหรือเปลี่ยนแปลงในฐานะหน่วยเดียว',
+      'มันใหญ่ที่สุดเท่าที่จะทำได้',
+      'มันไม่มีความสัมพันธ์ใด ๆ',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="resource-and-uri-design/modeling-resources" questions={quiz} />
+
+<ProgressTracker client:visible id="resource-and-uri-design/modeling-resources" />

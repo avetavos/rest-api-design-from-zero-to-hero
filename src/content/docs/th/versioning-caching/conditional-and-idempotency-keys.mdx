@@ -1,0 +1,92 @@
+---
+title: Conditional Requests และ Idempotency Keys
+description: 'การเขียนแบบ concurrent ที่ปลอดภัยด้วย If-Match, และการ retry POST ที่ปลอดภัยด้วย idempotency keys.'
+sidebar:
+  order: 5
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+validator ตัวเดียวกับที่เร่งความเร็วในการอ่านก็ทำให้การเขียนปลอดภัยขึ้นด้วย มีสอง pattern ที่จัดการกรณียาก ๆ ได้: การแก้ไขแบบ concurrent และการ retry การสร้าง
+
+## Optimistic concurrency ด้วย If-Match
+
+เมื่อ client สองตัวแก้ไข resource เดียวกัน, ตัวที่สองสามารถเขียนทับตัวแรกได้โดยไม่รู้ตัว — นี่คือปัญหา "lost update" Conditional writes ป้องกันมันได้: client ส่ง `ETag` ที่มันเห็นล่าสุดมาใน `If-Match`, และ server จะใช้การเปลี่ยนแปลงนั้นก็ต่อเมื่อ resource ยังคงตรงกันอยู่ หากมันเปลี่ยนไปแล้ว server จะคืน `412 Precondition Failed`:
+
+export const flowDiagram = `sequenceDiagram
+  participant A as Client A
+  participant S as Server
+  A->>S: PUT /articles/42 (If-Match: "v7")
+  alt still "v7"
+    S-->>A: 200 OK (now "v8")
+  else changed to "v8"
+    S-->>A: 412 Precondition Failed
+  end`;
+
+<Mermaid code={flowDiagram} title="If-Match ปฏิเสธการเขียนที่สร้างบนเวอร์ชันที่ stale" />
+
+จากนั้น client จะ re-fetch, นำการเปลี่ยนแปลงของมันมาใช้ใหม่บนเวอร์ชันปัจจุบัน, แล้ว retry — โดยไม่มีการเขียนทับแบบเงียบ ๆ
+
+## Idempotency keys สำหรับ POST
+
+จำไว้ว่า `POST` ไม่เป็น idempotent ดังนั้นการ retry การสร้างอาจทำให้เกิดข้อมูลซ้ำได้ **idempotency key** แก้ปัญหานี้: client สร้าง key ที่ไม่ซ้ำกันและส่งมาพร้อม request; server จัดเก็บผลลัพธ์ไว้กับ key นั้นและคืนผลลัพธ์ *เดิม* สำหรับทุก request ที่ซ้ำ
+
+export const idempCode = `const seen = new Map(); // idempotency-key -> result
+
+function createOrder(key, payload) {
+  if (seen.has(key)) {
+    return { replayed: true, ...seen.get(key) }; // return the original outcome
+  }
+  const result = { id: 'order_' + (seen.size + 1), total: payload.total };
+  seen.set(key, result);
+  return { replayed: false, ...result };
+}
+
+const key = 'idem-abc-123';
+console.log(createOrder(key, { total: 50 })); // first: creates
+console.log(createOrder(key, { total: 50 })); // retry: replays, no duplicate
+console.log('orders created:', seen.size);     // 1`;
+
+<NodeRunner client:visible code={idempCode} />
+
+ธรรมเนียมปฏิบัติทั่วไปคือ request header ชื่อ `Idempotency-Key`; server จะเก็บการ mapping ไว้ช่วงเวลาหนึ่ง (เช่น 24 ชั่วโมง) เพื่อให้การ retry ภายในช่วงเวลานั้นปลอดภัย
+
+<Callout title="validator ปกป้องการเขียน, ไม่ใช่แค่การอ่าน">
+`If-Match` เปลี่ยนการเขียนทับแบบมืดบอดให้กลายเป็นการอัปเดตที่มีการตรวจสอบ — จับคู่ `ETag` ของทุก resource ที่แก้ไขได้เข้ากับ conditional writes เพื่อหลีกเลี่ยง lost update และให้ endpoint สำหรับสร้างมี `Idempotency-Key` เพื่อให้ response ที่หล่นหายไปไม่กลายเป็นการเรียกเก็บเงินหรือคำสั่งซื้อที่ซ้ำกัน ทั้งสองอย่างทำให้ API ของคุณถูกต้องภายใต้ความเป็นจริงอันยุ่งเหยิงของการ retry และ concurrency
+</Callout>
+
+export const quiz = [
+  {
+    q: 'conditional write แบบ If-Match ป้องกันปัญหาใด?',
+    options: [
+      'การอ่านที่ช้า',
+      'ปัญหา lost-update (การเขียนทับการแก้ไขแบบ concurrent อย่างเงียบ ๆ)',
+      'การ over-fetch',
+      'Caching',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'เมื่อ precondition ล้มเหลวเพราะ resource เปลี่ยนไป ควรใช้ status ใด?',
+    options: ['409 Conflict', '412 Precondition Failed', '304 Not Modified', '400 Bad Request'],
+    answer: 1,
+  },
+  {
+    q: 'idempotency key ทำให้การ retry POST ปลอดภัยได้อย่างไร?',
+    options: [
+      'มันเร่งความเร็วของ request',
+      'server คืนผลลัพธ์เดิมสำหรับ key ที่ซ้ำแทนที่จะทำงานอีกครั้ง',
+      'มันแปลง POST ให้เป็น GET',
+      'มัน cache response ไว้ใน browser',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="versioning-caching/conditional-and-idempotency-keys" questions={quiz} />
+
+<ProgressTracker client:visible id="versioning-caching/conditional-and-idempotency-keys" />

@@ -1,0 +1,82 @@
+---
+title: การทดสอบ API
+description: 'การทดสอบแบบ unit, integration และ contract สำหรับ REST API'
+sidebar:
+  order: 3
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+การทดสอบคือสิ่งที่ให้คุณเปลี่ยนแปลง API ได้อย่างมั่นใจ สามชั้น แต่ละชั้นดักจับบั๊กคนละประเภท ให้ความครอบคลุมที่ดีโดยไม่ต้องลงแรงซ้ำซ้อน
+
+## ชั้นต่าง ๆ
+
+export const pyramidDiagram = `flowchart TD
+  U[Unit: handlers, validation, pure logic - many, fast] --> I[Integration: real routes end-to-end - fewer]
+  I --> C[Contract: responses match the OpenAPI spec - focused]`;
+
+<Mermaid code={pyramidDiagram} title="unit test จำนวนมากที่รวดเร็ว, integration test น้อยกว่า, contract check ที่เจาะจง" />
+
+- **Unit tests** — ทดสอบชิ้นส่วนล้วน ๆ เช่น validator, ตัวช่วย pagination, ตัว map error เร็วและมีจำนวนมาก
+- **Integration tests** — ส่ง request จริงผ่าน router ตัวจริงแล้วตรวจสอบ status, header และ body สิ่งเหล่านี้ดักจับบั๊กการเชื่อมต่อที่ unit test มองข้าม
+- **Contract tests** — ตรวจสอบว่า response สอดคล้องกับ schema ของ OpenAPI เพื่อให้การสร้างจริงและ contract ที่เผยแพร่ไปไม่มีวันคลาดเคลื่อนกัน
+
+## การ assert แบบ integration
+
+เฟรมเวิร์กอย่าง Hono เปิดให้ใช้ `app.request(...)` คุณจึงเรียก route แบบ in-process ได้โดยไม่ต้องผ่าน network
+
+export const testCode = `// Simulating an assertion an integration test would make.
+function assert(name, cond) { console.log((cond ? 'PASS' : 'FAIL') + ': ' + name); }
+
+// Pretend this is the response from app.request('/articles/0')
+const response = { status: 404, body: { title: 'Not found', status: 404 } };
+
+assert('missing article returns 404', response.status === 404);
+assert('error body echoes status', response.body.status === 404);
+assert('error body has a title', typeof response.body.title === 'string');`;
+
+<NodeRunner client:visible code={testCode} />
+
+## ควร assert อะไรบ้าง
+
+สำหรับแต่ละ endpoint จงทดสอบทั้ง happy path *และ* failure path ทั้ง status code ที่ถูกต้อง, รูปร่างของ response, error body สำหรับ input ที่ไม่ถูกต้อง (มันตรงกับ `problem+json` ของคุณหรือไม่?), การบังคับ auth ในที่ที่ควรมี และ metadata ของ pagination บน collection
+
+<Callout title="ทดสอบความล้มเหลว ไม่ใช่แค่ happy path">
+เหตุการณ์ขัดข้องใน production ส่วนใหญ่อยู่ใน error path และ edge path ทั้ง `404`, `422`, token ที่หมดอายุ, หน้าที่ว่างเปล่า จง assert สิ่งเหล่านี้อย่างชัดเจน contract test ที่ทดสอบเทียบกับ spec ของ OpenAPI ของคุณมีคุณค่าสูงเป็นพิเศษ มันจะล้มเหลวทันทีที่การสร้างจริงของคุณคลาดเคลื่อนไปจากสิ่งที่คุณสัญญาไว้กับผู้ใช้งาน
+</Callout>
+
+export const quiz = [
+  {
+    q: 'การทดสอบชั้นใดที่ส่ง request จริงผ่าน router ตัวจริง?',
+    options: ['Unit tests', 'Integration tests', 'Contract tests', 'Load tests'],
+    answer: 1,
+  },
+  {
+    q: 'contract test ป้องกันสิ่งใดโดยเฉพาะ?',
+    options: [
+      'response ที่ช้า',
+      'การที่การสร้างจริงคลาดเคลื่อนไปจาก contract ของ OpenAPI ที่เผยแพร่ไว้',
+      'ฐานข้อมูลล่ม',
+      'payload ที่ใหญ่',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'ทำไมจึงต้องทดสอบ failure path อย่างชัดเจน?',
+    options: [
+      'มันเขียนง่ายกว่า',
+      'เหตุการณ์ขัดข้องจำนวนมากอยู่ใน error/edge path (404, 422, token หมดอายุ, หน้าว่างเปล่า)',
+      'HTTP บังคับให้ทำ',
+      'เพื่อเพิ่มจำนวนการทดสอบเท่านั้น',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="docs-testing-building/testing-apis" questions={quiz} />
+
+<ProgressTracker client:visible id="docs-testing-building/testing-apis" />

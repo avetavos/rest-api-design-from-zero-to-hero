@@ -1,0 +1,77 @@
+---
+title: Versioning Strategies
+description: 'versioning แบบ URI, header, และ media-type — และเมื่อไรที่ควรทำ versioning.'
+sidebar:
+  order: 2
+---
+
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+เมื่อการเปลี่ยนแปลงจะทำให้ client ที่มีอยู่พัง คุณจำเป็นต้องมี versioning strategy เพื่อให้ client เก่าและใหม่อยู่ร่วมกันได้ มีสามที่ทั่วไปที่นิยมใช้สำหรับวางเวอร์ชัน
+
+## Breaking กับ non-breaking
+
+อันดับแรก ตัดสินใจก่อนว่าคุณจำเป็นต้องมีเวอร์ชันใหม่จริงหรือไม่ การเปลี่ยนแปลงแบบ **non-breaking** (เพิ่มเติม) ไม่เคยต้องการเวอร์ชันใหม่:
+
+- การเพิ่ม endpoint ใหม่ หรือ field ใหม่ที่เป็น optional
+- การเพิ่ม query parameter ใหม่ที่เป็น optional
+- การเพิ่มค่าใหม่เข้าไปใน enum ที่เป็น output-only (หาก client ได้รับการบอกให้ยอมรับค่าที่ไม่รู้จักได้)
+
+การเปลี่ยนแปลงแบบ **breaking** ต้องการเวอร์ชันใหม่: การลบหรือเปลี่ยนชื่อ field, การเปลี่ยน type, การทำให้ field ที่เป็น optional กลายเป็น required, หรือการเปลี่ยนความหมายของ response
+
+## สามกลยุทธ์
+
+- **URI versioning** — `GET /v1/articles` มองเห็นได้ชัดเจนที่สุดและ route กับ cache ได้ง่ายที่สุด; เวอร์ชันอยู่ตรงนั้นใน URL เลย ข้อเสีย: resource เดียวกันจะอยู่ที่ URI สองที่ในเวอร์ชันต่างกัน
+- **Header versioning** — header แบบ custom หรือมาตรฐาน เช่น `API-Version: 2` ทำให้ URI สะอาด แต่เวอร์ชันมองไม่เห็นใน log และลองผ่าน browser ได้ยากกว่า
+- **Media-type versioning** — เจรจาผ่าน `Accept: application/vnd.example.article+json;version=2` เป็นวิธีที่ RESTful ที่สุด (เวอร์ชันเป็นส่วนหนึ่งของ representation) แต่ใช้งานยุ่งยากที่สุด
+
+```http
+GET /v1/articles            # URI versioning
+GET /articles               # header versioning
+API-Version: 2
+
+GET /articles               # media-type versioning
+Accept: application/vnd.example.article+json;version=2
+```
+
+## การเลือก
+
+สำหรับทีมส่วนใหญ่ **URI versioning** ชนะในแง่ของความเป็นปฏิบัตินิยม: มันชัดเจน, เป็นมิตรกับ cache, และทดสอบได้ง่ายมาก ไม่ว่าคุณจะเลือกแบบไหน ให้ทำเวอร์ชัน **ทั้ง API** ในระดับหยาบ (`v1`, `v2`) ไม่ใช่ทำเวอร์ชันแต่ละ endpoint แยกกัน — เวอร์ชันรายต่อ endpoint จะทำให้ support matrix บานปลาย
+
+<Callout title="ทำเวอร์ชันให้น้อย, deprecate อย่างใจดี">
+ถือว่า major version ใหม่เป็นทางเลือกสุดท้าย, และเมื่อคุณจำเป็นต้องปล่อยมัน ให้เวอร์ชันเก่ายังทำงานต่อไปพร้อมกับ timeline การ deprecation ที่ชัดเจน และ header `Deprecation`/`Sunset` การทำให้ client พังโดยไม่เตือนล่วงหน้าคือวิธีที่ API จะสูญเสียความน่าเชื่อถือ
+</Callout>
+
+export const quiz = [
+  {
+    q: 'ข้อใดเป็น breaking change ที่สมควรมีเวอร์ชันใหม่?',
+    options: [
+      'การเพิ่ม response field ใหม่ที่เป็น optional',
+      'การเพิ่ม endpoint ใหม่',
+      'การลบ field ที่มีอยู่เดิมออก',
+      'การเพิ่ม query parameter ที่เป็น optional',
+    ],
+    answer: 2,
+  },
+  {
+    q: 'versioning strategy แบบใดที่ใส่เวอร์ชันลงใน path โดยตรง?',
+    options: ['Header versioning', 'URI versioning', 'Media-type versioning', 'Cookie versioning'],
+    answer: 1,
+  },
+  {
+    q: 'คุณควรทำเวอร์ชันที่ระดับความละเอียดใด?',
+    options: [
+      'แต่ละ endpoint แยกกัน',
+      'ทั้ง API ในระดับหยาบ (v1, v2)',
+      'แต่ละ field',
+      'รายต่อ request',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="versioning-caching/versioning-strategies" questions={quiz} />
+
+<ProgressTracker client:visible id="versioning-caching/versioning-strategies" />

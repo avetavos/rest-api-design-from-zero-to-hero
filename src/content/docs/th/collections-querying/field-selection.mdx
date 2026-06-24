@@ -1,0 +1,87 @@
+---
+title: Field Selection
+description: 'ให้ client ขอเฉพาะฟิลด์ที่ต้องการ — และ expand ฟิลด์ที่เกี่ยวข้อง'
+sidebar:
+  order: 4
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+เหตุผลหนึ่งที่ทีมหันไปใช้ GraphQL คือ over-fetching: endpoint คืนมา 30 ฟิลด์ทั้งที่ client ต้องการแค่ 3 REST สามารถให้การควบคุมแบบเดียวกันได้ด้วย query parameter ง่าย ๆ สองตัว
+
+## Sparse fieldsets
+
+ให้ client ระบุรายการฟิลด์ที่ต้องการด้วย `?fields=`:
+
+```http
+GET /articles?fields=id,title
+```
+
+เซิร์ฟเวอร์จะคืนเฉพาะ key เหล่านั้น วิธีนี้ช่วยลดขนาด payload สำหรับ client บนมือถือและสำหรับ list view อีกทั้งยังบ่งบอกเจตนาด้วย จงใส่ identifier ของ resource มาด้วยเสมอแม้จะไม่ได้ร้องขอ เพื่อให้ response ยังคงระบุที่อยู่ (addressable) ได้
+
+## การ expand resource ที่เกี่ยวข้อง
+
+โดยปริยายแล้ว ให้ link ไปยัง resource ที่เกี่ยวข้องแทนการฝัง (embed) มันเข้าไป เมื่อ client ต้องการให้แสดงแบบ inline ก็ให้มันเลือกเปิดใช้ได้เองด้วย `?expand=`:
+
+```http
+GET /articles/42?expand=author
+```
+
+หากไม่มี `expand` ตัว `author` จะเป็น reference (`{ "id": 7, "href": "/users/7" }`) แต่ถ้ามี ออบเจ็กต์ author จะถูกฝังเข้ามา วิธีนี้ทำให้ response เริ่มต้นมีขนาดเล็ก ขณะเดียวกันก็เลี่ยงการ round trip เพิ่มเมื่อ client ต้องการข้อมูลที่เกี่ยวข้องจริง ๆ
+
+## การ project ฟิลด์ในโค้ด
+
+export const projectCode = `function project(obj, fields) {
+  if (!fields) return obj;
+  const wanted = new Set(['id', ...fields.split(',')]); // always keep id
+  return Object.fromEntries(Object.entries(obj).filter(([k]) => wanted.has(k)));
+}
+
+const article = { id: 42, title: 'Hello', body: 'long...', views: 1200, authorId: 7 };
+console.log(project(article, 'title,views'));`;
+
+<NodeRunner client:visible code={projectCode} />
+
+<Callout title="ค่าเริ่มต้นเล็ก รายละเอียดแบบเลือกเปิด">
+ออกแบบ response เริ่มต้นให้กระชับและ link ออกไปยัง resource ที่เกี่ยวข้อง จากนั้นให้ `fields` แก่ client เพื่อตัดให้เล็กลงอีก และให้ `expand` เพื่อดึงข้อมูลที่เกี่ยวข้องเข้ามาแบบ inline เมื่อต้องการ คุณจะได้ความยืดหยุ่นคล้าย GraphQL โดยไม่ต้องยอมเสีย caching และความเรียบง่ายของ REST
+</Callout>
+
+export const quiz = [
+  {
+    q: '`?fields=id,title` เป็นการร้องขออะไร?',
+    options: [
+      'เฉพาะฟิลด์ id และ title ใน response',
+      'เรียงตาม id แล้วตาม title',
+      'filter เอาเฉพาะที่ id เท่ากับ title',
+      'resource สองตัวแยกกัน',
+    ],
+    answer: 0,
+  },
+  {
+    q: 'พารามิเตอร์ `?expand=author` มีจุดประสงค์อะไร?',
+    options: [
+      'ลบ author',
+      'ฝัง author ที่เกี่ยวข้องแบบ inline แทนที่จะ link ไปเฉย ๆ',
+      'เรียงตาม author',
+      'ทำ pagination ให้ author',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'ทำไมต้องใส่ identifier มาด้วยเสมอแม้จะไม่ได้อยู่ใน `fields`?',
+    options: [
+      'เพื่อทำให้ payload ใหญ่ขึ้น',
+      'เพื่อให้ออบเจ็กต์ที่คืนกลับมายังคงระบุที่อยู่/ระบุตัวตนได้',
+      'HTTP บังคับให้ทำ',
+      'เพื่อเปิดใช้งาน sorting',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="collections-querying/field-selection" questions={quiz} />
+
+<ProgressTracker client:visible id="collections-querying/field-selection" />

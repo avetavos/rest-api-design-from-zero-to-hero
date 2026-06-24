@@ -1,0 +1,101 @@
+---
+title: OpenAPI
+description: 'อธิบาย API ของคุณเป็น contract ที่เครื่องอ่านได้ด้วย OpenAPI'
+sidebar:
+  order: 2
+---
+
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+OpenAPI (เดิมเรียกว่า Swagger) คือวิธีมาตรฐานที่เครื่องอ่านได้ในการอธิบาย REST API ทั้ง path, operation, parameter, schema ของ request/response และ status code เอกสารเพียงไฟล์เดียวขับเคลื่อนทั้งเอกสาร การสร้าง client, mock server และการทดสอบ
+
+## คำอธิบายแบบย่อที่สุด
+
+นี่คือ endpoint หนึ่งที่อธิบายด้วย OpenAPI 3.1 (YAML)
+
+```yaml
+openapi: 3.1.0
+info:
+  title: Blog API
+  version: 1.0.0
+paths:
+  /articles/{id}:
+    get:
+      summary: Get an article by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The article
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+        '404':
+          description: Not found
+components:
+  schemas:
+    Article:
+      type: object
+      required: [id, title]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        body: { type: string }
+```
+
+แต่ละ operation จะระบุ parameter ของมันและทุก response ที่มันสามารถคืนกลับได้ โดยแต่ละอย่างผูกกับ schema ส่วน `components/schemas` กำหนดรูปแบบที่นำกลับมาใช้ซ้ำได้ ซึ่งถูกอ้างอิงด้วย `$ref`
+
+## spec-first กับ code-first
+
+- **Spec-first** — เขียนเอกสาร OpenAPI ก่อน แล้วจึงสร้างจริงให้ตรงตามนั้น contract ถูกตกลงกันก่อนที่จะมีโค้ด เหมาะมากสำหรับทีมและผู้ใช้งานภายนอก
+- **Code-first** — ใส่ annotation ให้ handler/schema ของคุณแล้วสร้าง spec ออกมาจากมัน ความคลาดเคลื่อนระหว่างโค้ดกับ spec น้อยลง เพราะฝ่ายหนึ่งผลิตอีกฝ่ายหนึ่งออกมา
+
+ไม่ว่าทางไหน เครื่องมือก็เปลี่ยน spec ให้เป็นคุณค่าได้ **Swagger UI** / Redoc แสดงเอกสารแบบโต้ตอบได้ ตัวสร้างผลิต client ที่มี type และตัว validator ตรวจสอบ request เทียบกับมัน
+
+<Callout title="ปล่อยให้ spec ทำงานซ้ำ ๆ แทน">
+เอกสาร OpenAPI ที่ดูแลรักษาไว้ดีจะคุ้มค่าในตัวมันเอง ทั้งเอกสารแบบโต้ตอบ client ที่มี type ที่ถูกสร้างขึ้น mock server สำหรับทีม front-end และการ validate request ล้วนมาจากไฟล์เดียวกัน เลือก spec-first หรือ code-first ตาม workflow ของทีม แต่อย่าเขียนและดูแลคำอธิบายของ API เดียวกันด้วยมือถึงสามชุดแยกกัน
+</Callout>
+
+export const quiz = [
+  {
+    q: 'เอกสาร OpenAPI อธิบายอะไร?',
+    options: [
+      'เฉพาะ schema ของฐานข้อมูล',
+      'path, operation, parameter, schema และ response — นั่นคือ contract ของ API',
+      'ฮาร์ดแวร์ของเซิร์ฟเวอร์',
+      'เฉพาะการยืนยันตัวตน',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'อะไรคือสิ่งที่แยก spec-first ออกจาก code-first?',
+    options: [
+      'spec-first เขียนเอกสาร OpenAPI ก่อนสร้างจริง ส่วน code-first สร้างมันจากโค้ดที่ใส่ annotation',
+      'ทั้งสองอย่างเหมือนกัน',
+      'code-first ไม่มี spec',
+      'spec-first ข้ามการทดสอบไป',
+    ],
+    answer: 0,
+  },
+  {
+    q: 'ข้อใดคือประโยชน์โดยตรงของ spec ของ OpenAPI ที่ดูแลรักษาไว้ดี?',
+    options: [
+      'การ query ฐานข้อมูลเร็วขึ้น',
+      'client ที่ถูกสร้าง เอกสารแบบโต้ตอบ และการ validate request จากแหล่งเดียว',
+      'การยืนยันตัวตนอัตโนมัติ',
+      'response body ที่เล็กลง',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="docs-testing-building/openapi" questions={quiz} />
+
+<ProgressTracker client:visible id="docs-testing-building/openapi" />

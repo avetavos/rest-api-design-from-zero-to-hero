@@ -1,0 +1,89 @@
+---
+title: Search & Envelopes
+description: 'Full-text search และ wrapper ที่สม่ำเสมอสำหรับทุก response แบบ collection'
+sidebar:
+  order: 5
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+ลูกเล่นปิดท้ายสองอย่างทำให้ endpoint แบบ collection ใช้งานได้รื่นรมย์ขึ้น: พารามิเตอร์ search สำหรับการค้นแบบ free-text และรูปร่าง envelope เดียวที่ทุก collection ใช้ร่วมกัน
+
+## Search เทียบกับ structured filter
+
+พารามิเตอร์ `?q=` มีไว้สำหรับการ search แบบ fuzzy ที่เป็น free-text ทั่วทั้ง resource ("อะไรก็ตามที่ตรงกับ *graphql*"):
+
+```http
+GET /articles?q=graphql
+```
+
+structured filter (`?status=published`) ตอบคำถามที่ชัดเจน ส่วน search ตอบคำถามที่คลุมเครือ ทั้งสองทำงานร่วมกันได้ — `?q=graphql&status=published` คือการ search ภายในชุดที่ถูก filter แล้ว จงแยกมันให้ชัด: `q` มีการจัดอันดับ (ranked) เป็น fuzzy และอาจอยู่เบื้องหลังด้วย search engine ส่วน filter เป็น predicate ที่แม่นยำ
+
+## envelope ที่สม่ำเสมอ
+
+ทุก response แบบ collection ควรใช้ wrapper เดียวกัน เพื่อให้ client เขียนโค้ดจัดการการแบ่งหน้าเพียงครั้งเดียว:
+
+export const envelopeCode = `function envelope(data, { page, limit, total, basePath }) {
+  return {
+    data,
+    meta: { page, limit, total },
+    links: {
+      self: basePath + '?page=' + page,
+      next: page * limit < total ? basePath + '?page=' + (page + 1) : null,
+      prev: page > 1 ? basePath + '?page=' + (page - 1) : null,
+    },
+  };
+}
+
+const rows = [{ id: 1 }, { id: 2 }];
+console.log(JSON.stringify(envelope(rows, { page: 1, limit: 2, total: 7, basePath: '/articles' }), null, 2));`;
+
+<NodeRunner client:visible code={envelopeCode} />
+
+## ต้นทุนของการนับจำนวนรวม
+
+การคืน `total` นั้นสะดวก แต่บนตารางขนาดใหญ่ การนับทุกแถวที่ตรงเงื่อนไขอาจมีต้นทุนพอ ๆ กับตัว query เอง ทางเลือก: cache จำนวนนับไว้ คืนจำนวนแบบโดยประมาณ หรือไม่คืนเลย (cursor pagination มักทำแบบนี้ — มันเสนอ `next` โดยไม่มียอดรวม)
+
+<Callout title="envelope เดียว ใช้ได้ทุกที่">
+เลือก envelope ของ collection สักแบบ — `data` + `meta` + `links` เป็นค่าเริ่มต้นที่แน่นหนา — แล้วใช้มันกับทุก endpoint ที่เป็น list รวมถึงผลลัพธ์ของ search ด้วย จากนั้น client จะเรียนรู้ pagination ของคุณเพียงครั้งเดียวและนำกลับมาใช้ซ้ำได้ทั่วทั้ง API และอย่าลืมว่าการนับ `total` ที่แม่นยำนั้นไม่ฟรี ตัดมันทิ้งเมื่อมันสร้างปัญหา
+</Callout>
+
+export const quiz = [
+  {
+    q: '`?q=` ต่างจาก structured filter อย่าง `?status=published` อย่างไร?',
+    options: [
+      'มันเหมือนกันทุกประการ',
+      '`q` เป็น free-text search แบบ fuzzy/ranked ส่วน filter เป็น predicate ที่แม่นยำ',
+      '`q` ใช้ได้กับตัวเลขเท่านั้น',
+      'filter รวมกับ q ไม่ได้',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'ทำไมการคืนจำนวนนับ `total` จึงอาจมีต้นทุนสูง?',
+    options: [
+      'JSON เก็บตัวเลขขนาดใหญ่ไม่ได้',
+      'การนับทุกแถวที่ตรงเงื่อนไขบนตารางขนาดใหญ่อาจมีต้นทุนพอ ๆ กับตัว query',
+      'มันต้องมีการ authentication',
+      'มันทำให้ pagination พัง',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'ประโยชน์ของการมี envelope ของ collection ที่ใช้ร่วมกันชุดเดียวคืออะไร?',
+    options: [
+      'response เล็กลง',
+      'client เรียนรู้ pagination เพียงครั้งเดียวและนำกลับมาใช้ซ้ำได้ทั่วทุก endpoint ที่เป็น list',
+      'มันกำจัดความจำเป็นในการใช้ status code',
+      'มันเปิดให้ GET สามารถ mutate ได้',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="collections-querying/search-and-envelopes" questions={quiz} />
+
+<ProgressTracker client:visible id="collections-querying/search-and-envelopes" />

@@ -1,0 +1,68 @@
+---
+title: ความปลอดภัย (Security)
+description: 'พื้นผิวด้านความปลอดภัยของ API — authentication, authorization, transport, input และการป้องกันการใช้งานในทางที่ผิด'
+sidebar:
+  order: 1
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+ความปลอดภัยไม่ใช่ฟีเจอร์ที่คุณติดเพิ่มเข้าไปทีหลัง แต่เป็นชุดของเรื่องที่ต้องคำนึงถึงในทุก endpoint โมดูลนี้ครอบคลุมเรื่องที่ API ทุกตัวต้องจัดการ
+
+## พื้นผิวด้านความปลอดภัย
+
+export const surfaceDiagram = `flowchart TD
+  API --> T[Transport: HTTPS everywhere]
+  API --> AuthN[Authentication: who are you?]
+  API --> AuthZ[Authorization: what may you do?]
+  API --> In[Input: validate everything]
+  API --> Ab[Abuse: rate limiting & quotas]`;
+
+<Mermaid code={surfaceDiagram} title="ห้าเรื่องที่ครอบคลุมทั้ง API" />
+
+- **Transport** — ให้บริการผ่าน HTTPS เท่านั้น อย่ารับ credentials ผ่าน HTTP แบบ plain เด็ดขาด
+- **Authentication** — ระบุว่าผู้เรียกใช้คือใคร (API key, token)
+- **Authorization** — ตัดสินว่าผู้เรียกใช้คนนั้นทำอะไรได้บ้าง
+- **Input** — มองทุกไบต์ที่มาจาก client ว่าเชื่อถือไม่ได้ และต้อง validate มัน
+- **Abuse** — ปกป้อง API จากการถูกถล่มจนล้นหรือถูก scrape ข้อมูล
+
+## โมดูลนี้ครอบคลุมอะไรบ้าง
+
+- **Authn vs authz** — ความแตกต่าง และ `401` กับ `403`
+- **Tokens, JWT & OAuth** — bearer token และการมอบสิทธิ์การเข้าถึง (delegated access)
+- **CORS** — เบราว์เซอร์ควบคุมการเรียกข้าม origin อย่างไร
+- **Rate limiting & validation** — การจำกัดอัตราการเรียก และการไม่เชื่ออะไรเลย
+
+<Callout title="อย่าใส่ความลับไว้ใน URL เด็ดขาด">
+API key, token และ password ต้องไม่ปรากฏใน path หรือ query string เด็ดขาด — URL จะถูกบันทึก log โดย server, proxy และประวัติของเบราว์เซอร์ อีกทั้งยังรั่วไหลผ่าน header `Referer` ได้ ส่วน credentials นั้นควรอยู่ใน header `Authorization` (หรือ secure cookie) และทุกอย่างต้องเดินทางผ่าน HTTPS
+</Callout>
+
+export const quiz = [
+  {
+    q: 'ทำไม credentials ถึงต้องไม่อยู่ใน URL เด็ดขาด?',
+    options: [
+      'URL สั้นเกินไป',
+      'URL ถูกบันทึก log และรั่วไหลผ่านประวัติและ header Referer',
+      'query string เก็บข้อความไม่ได้',
+      'มันทำให้ caching พัง',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'ควรปฏิบัติต่อ input จาก client อย่างไร?',
+    options: [
+      'เชื่อถือได้เมื่อผ่าน authenticated แล้ว',
+      'ถือว่าเชื่อถือไม่ได้ และ validate ในทุก request',
+      'validate เฉพาะตอน development เท่านั้น',
+      'validate ที่ฝั่ง client เท่านั้น',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="security/index" questions={quiz} />
+
+<ProgressTracker client:visible id="security/index" />

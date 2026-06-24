@@ -1,0 +1,77 @@
+---
+title: การเลือก Status Code
+description: 'เลือก code ที่เหมาะสม รวมถึงกรณีใกล้เคียงที่ client มักสับสน'
+sidebar:
+  order: 2
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+status code เพียงไม่กี่ตัวครอบคลุมเกือบทุกกรณี ความเชี่ยวชาญอยู่ที่กรณีใกล้เคียงกัน — คู่ที่สับสนได้ง่าย
+
+## ตัวที่คุณใช้งานจริง
+
+- `200 OK` — สำเร็จพร้อม body
+- `201 Created` — มีการสร้าง resource ขึ้น; ใส่ header `Location` ไปด้วย
+- `204 No Content` — สำเร็จ ไม่มีอะไรต้องส่งกลับ (เช่น `DELETE`)
+- `400 Bad Request` — request ผิดรูปแบบ (JSON เสีย, ขาดส่วนที่จำเป็น)
+- `401 Unauthorized` — ไม่มี/credential ไม่ถูกต้อง; client ต้อง authenticate
+- `403 Forbidden` — authenticate แล้ว แต่ไม่มีสิทธิ์
+- `404 Not Found` — ไม่มี resource ดังกล่าว
+- `409 Conflict` — request ขัดแย้งกับสถานะปัจจุบัน (ซ้ำ, version ชนกัน)
+- `422 Unprocessable Entity` — ถูกต้องตาม syntax แต่ผิดความหมาย (validation ไม่ผ่าน)
+- `429 Too Many Requests` — ถูกจำกัด rate
+- `500 Internal Server Error` / `503 Service Unavailable` — server ล้มเหลว
+
+## กรณีใกล้เคียงกัน
+
+- **200 vs 201 vs 204** — ส่ง body กลับ → `200`; สร้าง resource → `201`; ไม่มีอะไรจะบอก → `204`
+- **400 vs 422** — server แม้แต่ parse request ได้หรือไม่? parse ไม่ได้ → `400`; parse ได้ดีแต่ค่าไม่ถูกต้อง → `422`
+- **401 vs 403** — เรารู้หรือไม่ว่าคุณเป็นใคร? ยังไม่ได้ authenticate → `401`; authenticate แล้วแต่ไม่ได้รับอนุญาต → `403`
+- **404 vs 409** — resource ไม่มีอยู่ → `404`; มันมีอยู่แต่ request ของคุณขัดแย้งกับสถานะของมัน → `409`
+
+## Code ใน API ที่กำลังทำงาน
+
+export const honoCode = `app.get('/items/:id', (c) => {
+  const id = c.req.param('id');
+  if (id === '0') return c.json({ error: 'Not found' }, 404);
+  return c.json({ id, name: 'Widget' }, 200);
+});
+
+app.post('/items', async (c) => {
+  const body = await c.req.json().catch(() => null);
+  if (body === null) return c.json({ error: 'Invalid JSON' }, 400);      // unparseable
+  if (!body.name) return c.json({ error: 'name is required' }, 422);     // invalid value
+  return c.json({ id: '1', name: body.name }, 201, { Location: '/items/1' });
+});`;
+
+<NodeRunner stackblitz client:visible code={honoCode} />
+
+<Callout title="เมื่อไม่แน่ใจ ให้เลือก code ที่เจาะจงกว่า">
+`400` แบบกว้างๆ มักไม่ผิด แต่ code ที่แม่นยำสอน client ว่าต้องทำอะไร: `401` บอกว่า "ล็อกอินสิ", `403` บอกว่า "เลิกถามได้แล้ว", `422` บอกว่า "แก้ field พวกนี้", `409` บอกว่า "มุมมองของคุณล้าสมัยแล้ว" ความเจาะจงใน status line คือฟีเจอร์อย่างหนึ่ง
+</Callout>
+
+export const quiz = [
+  {
+    q: 'request body เป็น JSON ที่ถูกต้องแต่ขาด field ที่จำเป็น code ที่ดีที่สุดคือ?',
+    options: ['400 Bad Request', '422 Unprocessable Entity', '404 Not Found', '500 Internal Server Error'],
+    answer: 1,
+  },
+  {
+    q: 'ผู้เรียก authenticate แล้วแต่ไม่มีสิทธิ์ ควรใช้ code ใด?',
+    options: ['401 Unauthorized', '403 Forbidden', '404 Not Found', '409 Conflict'],
+    answer: 1,
+  },
+  {
+    q: 'request สร้างของซ้ำกับ resource ที่มีอยู่แล้ว code ใดเหมาะสม?',
+    options: ['200 OK', '201 Created', '409 Conflict', '204 No Content'],
+    answer: 2,
+  },
+];
+
+<Quiz client:visible id="status-and-errors/choosing-status-codes" questions={quiz} />
+
+<ProgressTracker client:visible id="status-and-errors/choosing-status-codes" />

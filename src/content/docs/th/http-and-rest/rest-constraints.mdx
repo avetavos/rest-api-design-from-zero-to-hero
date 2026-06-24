@@ -1,0 +1,67 @@
+---
+title: ข้อจำกัดของ REST
+description: 'หกข้อจำกัดที่นิยาม REST และแต่ละข้อหมายความว่าอย่างไรต่อ API ของคุณ'
+sidebar:
+  order: 4
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+REST ถูกนิยามด้วยชุดของ **ข้อจำกัด** เชิงสถาปัตยกรรม API ที่ทำตามข้อจำกัดเหล่านี้จะได้ scalability, evolvability และ cacheability มาแทบจะฟรี ๆ คุณไม่จำเป็นต้องทำตามทุกข้อจำกัดอย่างสมบูรณ์แบบ แต่การรู้จักมันจะบอกคุณได้ว่าคุณกำลังตัดมุมตรงไหนอยู่
+
+## หกข้อจำกัด
+
+export const constraintsDiagram = `flowchart TD
+  REST --> CS[Client–Server]
+  REST --> ST[Stateless]
+  REST --> CA[Cacheable]
+  REST --> UI[Uniform Interface]
+  REST --> LS[Layered System]
+  REST --> COD[Code on Demand optional]`;
+
+<Mermaid code={constraintsDiagram} title="หกข้อจำกัด; code-on-demand เป็นข้อเดียวที่เป็นทางเลือก" />
+
+- **Client–Server** — แยก UI/ผู้ใช้บริการออกจากที่จัดเก็บข้อมูล ทั้งสองพัฒนาได้อย่างอิสระต่อกัน
+- **Stateless** — แต่ละ request พกพาทุกอย่างที่ server ต้องการไปด้วย ไม่มีการเก็บ session ต่อ client ไว้ระหว่างการเรียก นี่คือสิ่งที่ทำให้คุณเพิ่ม server เข้าหลัง load balancer ได้อย่างอิสระ
+- **Cacheable** — response ต้องบอกว่ามันสามารถถูก cache ได้หรือไม่ (และนานเท่าไร) เพื่อให้ client และตัวกลางต่าง ๆ นำมันกลับมาใช้ซ้ำได้
+- **Uniform Interface** — resource ถูกระบุด้วย URI และจัดการผ่านชุด method และ representation มาตรฐาน นี่คือข้อจำกัดที่ทำให้ API รู้สึก "RESTful"
+- **Layered System** — client ไม่สามารถบอกได้ว่ามันกำลังคุยกับ origin server หรือกับตัวกลาง (proxy, gateway, cache)
+- **Code on Demand** *(ทางเลือก)* — server อาจส่งโค้ดที่รันได้ไปเพื่อขยายความสามารถของ client แต่แทบไม่ค่อยใช้กับ API
+
+## ทำไม statelessness ถึงคุ้มค่า
+
+เพราะ server ไม่เก็บ session ใด ๆ server ตัวใดก็สามารถจัดการ request ใดก็ได้ นั่นทำให้การ scale แนวนอนและการ retry เป็นเรื่องง่าย — แต่ก็หมายความว่า client ต้องส่ง identity ของตัวเอง (token) และ context ที่จำเป็นไปกับ **ทุก** request
+
+<Callout title="Uniform interface + stateless = หัวใจของ REST">
+ถ้าคุณจะจำข้อจำกัดเพียงสองข้อ จงจำสองข้อนี้ uniform interface (URI + method มาตรฐาน + ข้อความที่อธิบายตัวเองได้) คือสิ่งที่ทำให้ API ของคุณคาดเดาได้ ส่วน statelessness คือสิ่งที่ทำให้มัน scale ได้ ข้อถกเถียงส่วนใหญ่ที่ว่า "นี่เป็น RESTful ไหม?" ล้วนวนกลับมาที่สองข้อนี้
+</Callout>
+
+export const quiz = [
+  {
+    q: 'ข้อจำกัดใดที่ทำให้คุณวาง request ใดก็ได้บน server ใดก็ได้หลัง load balancer?',
+    options: ['Cacheable', 'Stateless', 'Code on Demand', 'Layered System'],
+    answer: 1,
+  },
+  {
+    q: 'ข้อจำกัด REST ข้อใดเป็นทางเลือก?',
+    options: ['Uniform Interface', 'Client–Server', 'Code on Demand', 'Stateless'],
+    answer: 2,
+  },
+  {
+    q: 'ข้อจำกัด "uniform interface" มอบอะไรให้แก่ API?',
+    options: [
+      'การเข้ารหัสโดยปริยาย',
+      'วิธีมาตรฐานที่คาดเดาได้ในการระบุและจัดการ resource',
+      'pagination อัตโนมัติ',
+      'latency ต่ำที่รับประกันได้',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="http-and-rest/rest-constraints" questions={quiz} />
+
+<ProgressTracker client:visible id="http-and-rest/rest-constraints" />

@@ -1,0 +1,55 @@
+---
+title: Resource & URI Design
+description: 'การสร้างแบบจำลองคำนาม (noun) ของ API และการตั้งชื่อ URI ที่ใช้อ้างถึงสิ่งเหล่านั้น'
+sidebar:
+  order: 1
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+ใน REST นั้น **resource** คือ abstraction หลัก resource คือสิ่งใดก็ตามที่มีค่าพอจะตั้งชื่อและอ้างอิงถึง ไม่ว่าจะเป็น user, article, order หรือ shopping cart การออกแบบ API ส่วนใหญ่ก็คือการตัดสินใจว่า resource ของคุณคืออะไร และ URI ของพวกมันอ่านออกมาเป็นอย่างไร
+
+## Resource และความสัมพันธ์ระหว่างกัน
+
+export const domainDiagram = `classDiagram
+  class User { +id +name +email }
+  class Article { +id +title +body +authorId }
+  class Comment { +id +body +articleId +authorId }
+  User "1" --> "*" Article : writes
+  Article "1" --> "*" Comment : has
+  User "1" --> "*" Comment : posts`;
+
+<Mermaid code={domainDiagram} title="โดเมนเล็ก ๆ: user เขียน article ซึ่งมี comment" />
+
+แต่ละกล่องจะกลายเป็น collection ที่คุณสามารถอ้างถึงได้ (`/users`, `/articles`, `/comments`) และความสัมพันธ์ระหว่างกันก็เป็นใบ้ให้เห็นว่า URI จะ nest และ link กันอย่างไร
+
+## โมดูลนี้ครอบคลุมอะไรบ้าง
+
+- **Modeling resources** — หาคำนามที่เหมาะสมและระดับความละเอียด (granularity) ที่เหมาะสม
+- **URI naming** — แนวปฏิบัติที่ทำให้ API คาดเดาได้
+- **Nesting & relationships** — เลือกระหว่าง sub-resource กับการ link
+- **Consistency & conventions** — รักษาให้ทั้ง API สอดคล้องกัน
+
+<Callout title="Resource คือสิ่งของ ไม่ใช่กระบวนการ">
+ถ้าคุณพบว่าตัวเองอยากได้ `/createUser` หรือ `/getArticleList` ให้ถอยกลับมาตั้งหลัก: resource คือคำนาม (`/users`, `/articles`) ส่วน HTTP method เป็นตัวจัดหา verb ให้ คำกริยาในเส้นทาง (path) คือสัญญาณที่ชัดเจนที่สุดว่า API ได้หลุดออกจาก REST ไปทาง RPC แล้ว
+</Callout>
+
+export const quiz = [
+  {
+    q: 'ใน REST อะไรคือ abstraction หลักที่คุณออกแบบโดยยึดเป็นศูนย์กลาง?',
+    options: ['Functions', 'Resources (คำนาม)', 'ตารางในฐานข้อมูล', 'Endpoint ที่ตั้งชื่อตามคำกริยา'],
+    answer: 1,
+  },
+  {
+    q: 'URL ใดมีกลิ่นของ RPC มากกว่า REST?',
+    options: ['/articles', '/articles/42', '/getArticleById', '/articles/42/comments'],
+    answer: 2,
+  },
+];
+
+<Quiz client:visible id="resource-and-uri-design/index" questions={quiz} />
+
+<ProgressTracker client:visible id="resource-and-uri-design/index" />

@@ -1,0 +1,92 @@
+---
+title: Nesting & Relationships
+description: 'เมื่อใดควร nest sub-resource ไว้ใน path และเมื่อใดควร link แทน'
+sidebar:
+  order: 4
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+resource มีความสัมพันธ์ระหว่างกัน และโครงสร้างของ URI สามารถสื่อความสัมพันธ์บางส่วนเหล่านั้นได้ เคล็ดลับคือ nest ให้มากพอที่จะเข้าใจง่ายโดยไม่สร้าง path ที่ nest ลึกจนเปราะบาง
+
+## Sub-resources
+
+เมื่อ resource หนึ่งเป็นของอีก resource หนึ่งอย่างชัดเจน ให้ nest มันลงไปหนึ่งระดับ:
+
+```http
+GET  /articles/42/comments        # comments of article 42
+POST /articles/42/comments        # add a comment to article 42
+GET  /users/7/articles            # articles written by user 7
+```
+
+export const relDiagram = `flowchart LR
+  A[/articles/42/] --> C[/articles/42/comments/]
+  C --> CI[/articles/42/comments/9/]`;
+
+<Mermaid code={relDiagram} title="การ nest หนึ่งระดับอ่านแล้วเป็นธรรมชาติ ยิ่งลึกยิ่งเทอะทะ" />
+
+## ควร nest ลึกแค่ไหน
+
+หยุดที่หนึ่งระดับ หรือบางครั้งสองระดับ path อย่าง `/users/7/articles/42/comments/9/reactions/3` นั้นอ่านยากและผูก resource ที่ควรยืนอยู่ได้ด้วยตัวเองเข้าด้วยกัน เมื่อ sub-resource มีตัวตน (identity) ของตัวเองแล้ว ก็ให้ URI ระดับ top-level แก่มันด้วย แล้ว **link** ไปหามันแทนที่จะ nest ลึกลงไปอีก:
+
+```http
+GET /comments/9          # the comment as a first-class resource
+GET /articles/42/comments # still fine as a scoped collection
+```
+
+## Linking
+
+แทนที่จะฝัง (embed) ทุกอย่างลงไป ให้ส่งกลับ reference ที่ client สามารถตามไปได้:
+
+export const linkCode = `function articleResponse(article) {
+  return {
+    id: article.id,
+    title: article.title,
+    author: { id: article.authorId, href: '/users/' + article.authorId },
+    comments: { href: '/articles/' + article.id + '/comments' },
+  };
+}
+
+console.log(JSON.stringify(articleResponse({ id: 42, title: 'Hi', authorId: 7 }), null, 2));`;
+
+<NodeRunner client:visible code={linkCode} />
+
+<Callout title="nest เพื่อความเป็นเจ้าของ link สำหรับทุกอย่างที่เหลือ">
+จง nest sub-resource ก็ต่อเมื่อมันอาศัยอยู่ภายใน parent ของมันอย่างแท้จริง และคุณจะไม่อ้างถึงมันโดยปราศจาก parent นั้น ทันทีที่ resource มีตัวตนที่มั่นคงเป็นของตัวเอง ให้มอบ URI ระดับ top-level แก่มันแล้วอ้างอิงด้วย link path ที่ตื้นบวกกับ link จะแก่ตัวได้ดีกว่าการ nest ลึกมาก
+</Callout>
+
+export const quiz = [
+  {
+    q: 'โดยปกติแล้วการ nest URI ควรลึกแค่ไหน?',
+    options: ['ลึกเท่ากับ data model', 'หนึ่งระดับ บางครั้งสองระดับ', 'ไม่ nest เลย', 'สามระดับเป๊ะ ๆ'],
+    answer: 1,
+  },
+  {
+    q: 'เมื่อ sub-resource มีตัวตนที่มั่นคงเป็นของตัวเองแล้ว คุณควร:',
+    options: [
+      'nest มันต่อไปทุกที่',
+      'มอบ URI ระดับ top-level แก่มันแล้ว link ไปหามัน',
+      'นำมันออกจาก API',
+      'ฝังข้อมูลทั้งหมดของมันลงในทุก parent',
+    ],
+    answer: 1,
+  },
+  {
+    q: '`POST /articles/42/comments` สื่อถึงอะไร?',
+    options: [
+      'แทนที่ article 42',
+      'สร้าง comment ที่เป็นของ article 42',
+      'ลบ comment ของ article 42',
+      'แสดงรายการ comment ทั้งเว็บไซต์',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="resource-and-uri-design/nesting-and-relationships" questions={quiz} />
+
+<ProgressTracker client:visible id="resource-and-uri-design/nesting-and-relationships" />

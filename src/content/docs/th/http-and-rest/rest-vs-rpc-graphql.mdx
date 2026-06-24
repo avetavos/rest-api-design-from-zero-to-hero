@@ -1,0 +1,64 @@
+---
+title: REST กับ RPC กับ GraphQL
+description: 'สามรูปแบบของ API แต่ละแบบ optimize เพื่ออะไร และเมื่อไรควรเลือกแบบไหน'
+sidebar:
+  order: 5
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+REST เป็นวิธีหนึ่งในการสร้าง API ไม่ใช่วิธีเดียว การรู้จักทางเลือกอื่นช่วยลับความรู้สึกของคุณให้คมขึ้นว่าเมื่อไร REST คือเครื่องมือที่เหมาะสม
+
+## สามรูปแบบ
+
+- **REST** จัดระเบียบ API รอบ ๆ **resource** (คำนาม) ที่คุณกระทำต่อด้วย HTTP method มาตรฐาน จุดแข็ง: ได้ caching ฟรี ๆ มี uniform interface และเหมาะอย่างยิ่งกับ domain แบบ CRUD และ public API จุดอ่อน: บางครั้ง client เกิด over-fetch (ได้ field มากกว่าที่ต้องการ) หรือ under-fetch (ต้องไป-กลับหลายรอบ)
+- **RPC** จัดระเบียบ API รอบ ๆ **procedure** (คำกริยา) — คุณเรียก operation ที่มีชื่อ เช่น `createUser` หรือ `sendEmail` โดยมักผ่าน HTTP POST หรือ gRPC จุดแข็ง: เหมาะตามธรรมชาติกับ API ที่เน้น action และการเรียกระหว่าง service ภายในด้วยกัน จุดอ่อน: ความเป็นมาตรฐานน้อยกว่า, HTTP caching อ่อนแอกว่า และพื้นผิวของ API โตขึ้นทุกครั้งที่มีคำกริยาใหม่
+- **GraphQL** เปิดเผย endpoint เดียวและ **query language**: client ขอ field ที่ต้องการมาอย่างแม่นยำ จุดแข็ง: ไม่มี over/under-fetching, ไป-กลับรอบเดียวสำหรับหน้าจอที่ซับซ้อน จุดอ่อน: HTTP caching ทำได้ยากกว่า และ server ต้องป้องกัน query ที่มีต้นทุนสูง
+
+export const stylesDiagram = `flowchart TD
+  Need{What does the client need?} --> CRUD[Resource CRUD, public API, caching]
+  Need --> Action[Action-oriented, internal services]
+  Need --> Flexible[Flexible field selection, many clients]
+  CRUD --> REST
+  Action --> RPC
+  Flexible --> GraphQL`;
+
+<Mermaid code={stylesDiagram} title="จับคู่รูปแบบให้ตรงกับสิ่งที่ client ต้องการจริง ๆ" />
+
+## การเลือก
+
+เลือกใช้ **REST** เมื่อ domain ของคุณมีรูปร่างเป็น resource ตามธรรมชาติ คุณต้องการ HTTP caching และ public contract ที่คนเข้าใจกันอย่างกว้างขวาง และ CRUD บวกกับ action อีกไม่กี่อย่างก็ครอบคลุม use case ได้ — ซึ่งก็คือ back end ของเว็บและมือถือส่วนใหญ่ เลือกใช้ **RPC/gRPC** สำหรับการเรียก service ภายในที่มี throughput สูง เลือกใช้ **GraphQL** เมื่อ client ที่แตกต่างกันจำนวนมากต้องการข้อมูลคนละส่วนจาก data graph ที่อุดมและเชื่อมโยงกัน
+
+<Callout title="พวกมันไม่ได้แยกขาดจากกัน">
+ระบบจำนวนมากใช้ REST ที่ขอบเพื่อ public contract ที่เสถียร และใช้ gRPC ระหว่าง service ภายใน จงเลือกตามขอบเขต ไม่ใช่ตามบริษัท ส่วนที่เหลือของคอร์สนี้ว่าด้วยการทำส่วนของ REST ให้ดี
+</Callout>
+
+export const quiz = [
+  {
+    q: 'GraphQL ถูกออกแบบมาเพื่อแก้ปัญหาใดโดยเฉพาะ?',
+    options: [
+      'การเข้ารหัสระหว่างส่ง',
+      'การ over-fetching และ under-fetching ของ field',
+      'Rate limiting',
+      'การทำ database indexing',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'REST จัดระเบียบ API หลัก ๆ รอบ ๆ อะไร?',
+    options: ['Procedure (คำกริยา)', 'Resource (คำนาม)', 'Database table', 'Event'],
+    answer: 1,
+  },
+  {
+    q: 'รูปแบบใดที่ได้ HTTP caching "ฟรี ๆ" อย่างเป็นธรรมชาติที่สุด?',
+    options: ['REST', 'GraphQL บน endpoint POST เดียว', 'gRPC', 'WebSocket'],
+    answer: 0,
+  },
+];
+
+<Quiz client:visible id="http-and-rest/rest-vs-rpc-graphql" questions={quiz} />
+
+<ProgressTracker client:visible id="http-and-rest/rest-vs-rpc-graphql" />

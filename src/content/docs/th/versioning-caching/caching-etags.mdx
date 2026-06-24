@@ -1,0 +1,96 @@
+---
+title: Caching และ ETags
+description: 'Cache-Control, validator, และ 304 Not Modified เพื่อหลีกเลี่ยงการทำงานซ้ำ.'
+sidebar:
+  order: 4
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+HTTP มีโมเดล caching ที่ทรงพลังติดตัวมาอยู่แล้ว การใช้มันให้ดีหมายความว่า client (หรือ CDN) สามารถหลีกเลี่ยงการดาวน์โหลดข้อมูลที่ไม่ได้เปลี่ยนแปลงซ้ำได้ — ซึ่งมักจะเป็นชัยชนะด้านประสิทธิภาพชิ้นเดียวที่ใหญ่ที่สุดที่ API จะได้รับ
+
+## Cache-Control: นี่จะ fresh นานแค่ไหน?
+
+`Cache-Control` บอก cache ว่า response สามารถนำกลับมาใช้ซ้ำได้หรือไม่และนานเท่าใด:
+
+```http
+Cache-Control: public, max-age=60        # any cache may reuse for 60s
+Cache-Control: private, max-age=0        # only the client, must revalidate
+Cache-Control: no-store                  # never cache (sensitive data)
+```
+
+ในขณะที่ response ยัง *fresh* อยู่ client จะนำมันกลับมาใช้ซ้ำโดยไม่ต้องส่ง request เลย เมื่อมันกลายเป็น stale แล้ว มันจึงจะ revalidate
+
+## ETag + If-None-Match: มันเปลี่ยนหรือเปล่า?
+
+`ETag` คือ validator — ลายนิ้วมือของ representation ปัจจุบัน ใน request ถัดไป client จะส่งมันกลับมาใน `If-None-Match`; หากมันยังคงตรงกัน server จะคืน `304 Not Modified` โดยไม่มี body:
+
+export const flowDiagram = `sequenceDiagram
+  participant C as Client
+  participant S as Server
+  C->>S: GET /articles/42
+  S-->>C: 200 OK + ETag: "v7"
+  Note over C: later...
+  C->>S: GET /articles/42 (If-None-Match: "v7")
+  S-->>C: 304 Not Modified (no body)`;
+
+<Mermaid code={flowDiagram} title="ETag ที่ตรงกันเปลี่ยน response เต็มรูปแบบให้กลายเป็น 304 เล็ก ๆ" />
+
+`Last-Modified` + `If-Modified-Since` คือสิ่งเทียบเท่าที่อิงตาม timestamp ETag แม่นยำกว่า (มันจับการเปลี่ยนแปลงใด ๆ ได้ ไม่ใช่แค่การเปลี่ยนแปลงเวลาในระดับวินาที)
+
+## การคำนวณ ETag
+
+export const etagCode = `function etagFor(resource) {
+  const json = JSON.stringify(resource);
+  let hash = 0;
+  for (let i = 0; i < json.length; i++) hash = (hash * 31 + json.charCodeAt(i)) | 0;
+  return '"' + (hash >>> 0).toString(16) + '"';
+}
+
+const article = { id: 42, title: 'Hello', version: 7 };
+const tag = etagFor(article);
+console.log('ETag:', tag);
+
+// Conditional request: client sends back the tag it has.
+function handle(ifNoneMatch) {
+  return ifNoneMatch === tag ? 304 : 200;
+}
+console.log('with stale tag:', handle('"old"'));   // 200
+console.log('with current tag:', handle(tag));      // 304`;
+
+<NodeRunner client:visible code={etagCode} />
+
+<Callout title="ตั้ง Cache-Control บนทุก response">
+แม้แต่ `Cache-Control: no-store` ก็เป็นการตัดสินใจที่ควรระบุออกมาอย่างชัดเจน — มันบอก cache ว่าควรทำอะไรแทนที่จะปล่อยให้คลุมเครือ เพิ่ม `ETag` ให้กับ representation ที่คำนวณหรือถ่ายโอนแล้วมีต้นทุนสูง, และ conditional requests จะเปลี่ยนการตรวจสอบแบบ "มันยังเป็นปัจจุบันอยู่ไหม?" ส่วนใหญ่ให้กลายเป็น `304` ที่ราคาถูก
+</Callout>
+
+export const quiz = [
+  {
+    q: 'response แบบ 304 Not Modified มีอะไรอยู่ข้างใน?',
+    options: [
+      'resource ฉบับอัปเดตแบบเต็ม',
+      'ไม่มี body — client นำสำเนาที่ cache ไว้กลับมาใช้ซ้ำ',
+      'ข้อความ error',
+      'URL สำหรับ redirect',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'header ใดที่นำ validator ซึ่ง client ส่งกลับมาเพื่อ revalidate?',
+    options: ['If-None-Match (พร้อม ETag)', 'Cache-Control', 'Accept', 'Authorization'],
+    answer: 0,
+  },
+  {
+    q: 'directive ของ Cache-Control ใดที่หมายความว่า "อย่าจัดเก็บ response นี้เลย"?',
+    options: ['max-age=0', 'public', 'no-store', 'private'],
+    answer: 2,
+  },
+];
+
+<Quiz client:visible id="versioning-caching/caching-etags" questions={quiz} />
+
+<ProgressTracker client:visible id="versioning-caching/caching-etags" />

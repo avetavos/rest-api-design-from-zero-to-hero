@@ -1,0 +1,102 @@
+---
+title: Tokens, JWT & OAuth
+description: 'bearer token, โครงสร้างของ JWT และ OAuth2 authorization-code flow'
+sidebar:
+  order: 3
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+API ส่วนใหญ่ทำ authenticate ด้วย **bearer token**: credential ที่ client แสดงในทุก request JWT เป็นรูปแบบ token ที่ได้รับความนิยม และ OAuth2 คือ protocol สำหรับการขอ token ในนามของ user
+
+## bearer token
+
+```http
+Authorization: Bearer <token>
+```
+
+"Bearer" หมายความว่าใครก็ตามที่ถือ token ไว้สามารถใช้มันได้ — ดังนั้น token จึงต้องเดินทางผ่าน HTTPS, มีอายุสั้น และเพิกถอนได้
+
+## JWT คืออะไร
+
+JSON Web Token มีสามส่วนที่เข้ารหัสแบบ base64url คั่นด้วยจุด: `header.payload.signature` ส่วน header ระบุ algorithm ส่วน payload เก็บ **claims** (เช่น `sub`, `exp`, `aud`, `iss`) และ signature ถูกคำนวณโดยผู้ออก (issuer) จากสองส่วนแรก
+
+export const jwtCode = `// A JWT payload is base64url JSON — readable, but you must VERIFY the signature server-side.
+const token = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyXzQyIiwiZXhwIjoxOTAwMDAwMDAwfQ.sig';
+const payloadB64 = token.split('.')[1];
+const json = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/'));
+const claims = JSON.parse(json);
+console.log('claims:', claims);
+console.log('subject:', claims.sub);
+console.log('expires:', new Date(claims.exp * 1000).toISOString());`;
+
+<NodeRunner client:visible code={jwtCode} />
+
+ใครก็ตามสามารถ *อ่าน* payload ของ JWT ได้ — มันไม่ได้ถูกเข้ารหัส ความเชื่อถือมาจากการ **verify signature** ด้วยกุญแจของ issuer เท่านั้น และการตรวจ `exp` (ยังไม่หมดอายุ), `aud` (ออกมาเพื่อ API ของคุณ) และ `iss` (มาจาก issuer ที่เชื่อถือได้) อย่าเชื่อ claims ที่คุณยังไม่ได้ verify เด็ดขาด
+
+## OAuth2 authorization-code flow
+
+OAuth2 ทำให้ user มอบสิทธิ์การเข้าถึงแบบจำกัดให้แอปได้โดยไม่ต้องแชร์ password ส่วน flow ที่ใช้กันมากที่สุด:
+
+export const oauthDiagram = `sequenceDiagram
+  participant U as User
+  participant App as Client App
+  participant AS as Authorization Server
+  participant API as Resource API
+  U->>App: use the app
+  App->>AS: redirect to authorize (scopes)
+  U->>AS: log in + consent
+  AS-->>App: authorization code
+  App->>AS: exchange code (+ secret) for tokens
+  AS-->>App: access token (+ refresh token)
+  App->>API: request + Bearer access token
+  API-->>App: protected resource`;
+
+<Mermaid code={oauthDiagram} title="OAuth2 authorization-code flow (OIDC เพิ่ม identity token เข้ามา)" />
+
+**Scope** จำกัดว่า token ทำอะไรได้บ้าง (`articles:read`, `articles:write`) API ของคุณจะตรวจ scope ของ token ในระหว่างขั้นตอน authorization ส่วน OpenID Connect (OIDC) เพิ่มชั้นของตัวตน (`id_token`) ทับลงบน OAuth2 อีกที
+
+<Callout title="ต้อง verify อย่าแค่ decode">
+payload ของ JWT ใครก็อ่านได้ — การ decode มันไม่ได้พิสูจน์อะไรเลย จง verify signature เทียบกับกุญแจของ issuer เสมอ และ validate `exp`, `aud` และ `iss` ก่อนจะเชื่อ claim แม้แต่ตัวเดียว ให้ access token มีอายุสั้น และใช้ refresh token (หรือ re-auth) เพื่อต่ออายุมัน
+</Callout>
+
+export const quiz = [
+  {
+    q: 'JWT มีสามส่วนใดบ้าง?',
+    options: [
+      'method.path.body',
+      'header.payload.signature',
+      'user.role.scope',
+      'issuer.audience.expiry',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'ทำไมการอ่าน payload ของ JWT จึงยังไม่พอที่จะเชื่อถือมัน?',
+    options: [
+      'payload ถูกเข้ารหัสไว้',
+      'payload เป็นแค่ base64 — ความเชื่อถือต้องอาศัยการ verify signature และ claims',
+      'อ่าน JWT ไม่ได้',
+      'payload ว่างเปล่าเสมอ',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'OAuth2 scope ควบคุมอะไร?',
+    options: [
+      'รูปแบบของ token',
+      'action ที่ token ได้รับอนุญาตให้ทำ',
+      'HTTP method',
+      'ระยะเวลา cache',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="security/tokens-jwt-oauth" questions={quiz} />
+
+<ProgressTracker client:visible id="security/tokens-jwt-oauth" />

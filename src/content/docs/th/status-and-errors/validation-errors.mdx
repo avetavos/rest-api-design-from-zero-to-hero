@@ -1,0 +1,101 @@
+---
+title: Validation Error
+description: 'รายงาน input ที่ไม่ถูกต้องอย่างชัดเจน ทีละ field'
+sidebar:
+  order: 4
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+Validation error เป็น error ที่ API ส่งกลับบ่อยที่สุด และเป็นชนิดที่ client อยากแสดงผลให้สวยงามที่สุด validation response ที่ดีบอกผู้ใช้ได้อย่างชัดเจนว่า field ไหนผิดและเพราะอะไร — ทั้งหมดในคราวเดียว ไม่ใช่ทีละอันต่อหนึ่งรอบ
+
+## Status: 422 (หรือ 400)
+
+เมื่อ request parse ได้ถูกต้องแต่ค่าไม่ผ่านกฎของคุณ ให้ตอบ `422 Unprocessable Entity` บางทีมใช้ `400` สำหรับ client error ทั้งหมด; ทั้งสองอย่างมีเหตุผลรองรับได้ แต่ต้องสม่ำเสมอ เก็บ `400` ไว้สำหรับ request ที่คุณแม้แต่ parse ไม่ได้
+
+## error body ระดับ field
+
+ขยาย Problem Details ด้วย array `errors` หนึ่งรายการต่อหนึ่ง field ที่มีปัญหา:
+
+```json
+{
+  "type": "https://api.example.com/problems/validation",
+  "title": "Validation failed",
+  "status": 422,
+  "detail": "The request has 2 invalid fields.",
+  "errors": [
+    { "field": "email", "message": "must be a valid email address" },
+    { "field": "age", "message": "must be 18 or greater" }
+  ]
+}
+```
+
+## รวบรวม error ทั้งหมด แล้วจึงตอบกลับ
+
+ตรวจสอบทุก field และรวบรวมความล้มเหลวทั้งหมดก่อนตอบกลับ — อย่าหยุดที่ตัวแรก นี่สะท้อนวิธีที่ schema validator ทั่วไปทำงาน:
+
+export const validateCode = `function validateUser(input) {
+  const errors = [];
+  if (typeof input.email !== 'string' || !input.email.includes('@')) {
+    errors.push({ field: 'email', message: 'must be a valid email address' });
+  }
+  if (typeof input.age !== 'number' || input.age < 18) {
+    errors.push({ field: 'age', message: 'must be 18 or greater' });
+  }
+  return errors;
+}
+
+const errors = validateUser({ email: 'nope', age: 16 });
+if (errors.length > 0) {
+  const body = {
+    type: 'https://api.example.com/problems/validation',
+    title: 'Validation failed',
+    status: 422,
+    detail: 'The request has ' + errors.length + ' invalid fields.',
+    errors,
+  };
+  console.log(JSON.stringify(body, null, 2));
+}`;
+
+<NodeRunner client:visible code={validateCode} />
+
+ในโปรเจกต์ TypeScript schema library (เช่น zod) ให้สิ่งนี้แก่คุณฟรี: parse input เทียบกับ schema และเมื่อล้มเหลวก็ map issue เหล่านั้นไปยัง array `errors` ของคุณ
+
+<Callout title="ส่ง error ทุกตัวกลับในคราวเดียว">
+การ validate ทีละ field บังคับให้ผู้ใช้วนลูป submit-fix-submit ที่น่าหงุดหงิด รันการตรวจสอบทั้งหมดของคุณ รวบรวมความล้มเหลวทุกอย่างไว้ใน array `errors` แล้วส่งกลับพร้อมกัน key `field` ที่เสถียรและอ่านได้ด้วยเครื่องช่วยให้ client ไฮไลต์ input ที่ผิดได้ตรงจุด
+</Callout>
+
+export const quiz = [
+  {
+    q: 'input parse ได้ดีแต่มีสอง field ที่ละเมิดกฎทางธุรกิจ status ที่ดีที่สุดคือ?',
+    options: ['200 OK', '422 Unprocessable Entity', '404 Not Found', '500 Internal Server Error'],
+    answer: 1,
+  },
+  {
+    q: 'ทำไมจึงส่ง validation error ทั้งหมดกลับในคราวเดียวแทนที่จะส่งแค่ตัวแรก?',
+    options: [
+      'มันเร็วกว่าสำหรับ server',
+      'มันหลีกเลี่ยงลูป submit-fix-submit ที่น่าหงุดหงิดสำหรับผู้ใช้',
+      'HTTP บังคับให้ทำ',
+      'มันลด status code',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'อะไรที่ทำให้ validation error body แสดงผลได้ง่ายสำหรับ client?',
+    options: [
+      'string ข้อความอิสระเพียงตัวเดียว',
+      'key field ที่เสถียรและอ่านได้ด้วยเครื่อง พร้อมข้อความ',
+      'หน้า HTML',
+      'แค่ status code',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="status-and-errors/validation-errors" questions={quiz} />
+
+<ProgressTracker client:visible id="status-and-errors/validation-errors" />

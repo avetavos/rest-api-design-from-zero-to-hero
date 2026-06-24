@@ -1,0 +1,68 @@
+---
+title: สรุปแนวปฏิบัติที่ดี
+description: 'เช็กลิสต์รวบทุกอย่างที่คอร์สนี้ครอบคลุม'
+sidebar:
+  order: 5
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+ตอนนี้คุณมีชุดเครื่องมือครบถ้วนแล้ว นี่คือทั้งคอร์สรวมเป็นเช็กลิสต์เดียวที่คุณนำไปใช้กับ API ใด ๆ ที่คุณออกแบบหรือรีวิวได้
+
+## แผนผัง
+
+export const recapDiagram = `flowchart TD
+  Start[Design a REST API] --> R[Resources & URIs]
+  Start --> M[Methods & idempotency]
+  Start --> E[Status & errors]
+  Start --> Q[Querying collections]
+  Start --> VC[Versioning & caching]
+  Start --> Sec[Security]
+  Start --> Ship[Docs, tests, build]`;
+
+<Mermaid code={recapDiagram} title="เจ็ดด้านที่ประกอบกันเป็น API ที่ออกแบบมาอย่างดี" />
+
+## เช็กลิสต์
+
+**Resources & URIs** — สร้างโมเดลเป็นคำนาม ไม่ใช่การกระทำ; collection เป็นพหูพจน์ (`/articles`); path เป็นตัวพิมพ์เล็กคั่นด้วยขีดกลาง; ID อยู่ใน path; ซ้อน (nest) เฉพาะเมื่อเป็นความเป็นเจ้าของ มิฉะนั้นให้ลิงก์แทน ดู [Resource & URI Design](/rest-api-design-from-zero-to-hero/th/resource-and-uri-design/)
+
+**Methods & idempotency** — map CRUD ไปยัง GET/POST/PUT/PATCH/DELETE; ห้ามเปลี่ยนแปลงข้อมูลบน GET; ทำให้การเขียนเป็น idempotent ในที่ที่ทำได้; ปกป้องการสร้างที่ไม่ใช่ idempotent ด้วย idempotency key ดู [Methods, CRUD & Idempotency](/rest-api-design-from-zero-to-hero/th/methods-crud-idempotency/)
+
+**Status & errors** — เลือก status code ที่แม่นยำ; ห้ามคืน `200` สำหรับความล้มเหลว; ใช้รูปแบบ error `problem+json` ที่สม่ำเสมอเพียงหนึ่งเดียว; คืน error จากการ validate ทั้งหมดในคราวเดียว ดู [Status Codes & Errors](/rest-api-design-from-zero-to-hero/th/status-and-errors/)
+
+**Querying collections** — ทำ pagination เสมอ (เลือก cursor สำหรับข้อมูลที่ใหญ่/เปลี่ยนแปลงบ่อย); ทำ allowlist สำหรับ field ที่ filter/sort; เสนอ sparse fieldset และ envelope ที่สม่ำเสมอ ดู [Querying Collections](/rest-api-design-from-zero-to-hero/th/collections-querying/)
+
+**Versioning & caching** — เน้นการเปลี่ยนแปลงแบบเพิ่มเติมที่ไม่ทำให้พัง; ทำ version แบบหยาบเมื่อจำเป็น; ตั้งค่า `Cache-Control` และ `ETag`; ใช้ conditional request เพื่อจัดการ concurrency ดู [Versioning & Caching](/rest-api-design-from-zero-to-hero/th/versioning-caching/)
+
+**Security** — ใช้ HTTPS เท่านั้น; ห้ามใส่ secret ใน URL; แยกแยะ `401`/`403`; ตรวจสอบ token (อย่าเพียงแค่ decode); allowlist CORS ที่รัดกุม; rate-limit และ validate input ทั้งหมด ดู [Security](/rest-api-design-from-zero-to-hero/th/security/)
+
+**Ship it** — อธิบาย API ด้วย OpenAPI; ทดสอบทั้งชั้น unit/integration/contract; ให้ handler บางและ service ปลอดจาก HTTP ดู [OpenAPI](/rest-api-design-from-zero-to-hero/th/docs-testing-building/openapi/)
+
+<Callout title="ความสม่ำเสมอเหนือกว่าความฉลาด">
+API ที่ดีที่สุดไม่ใช่ API ที่ฉลาดที่สุด แต่เป็น API ที่คาดเดาได้มากที่สุด ใช้แนวปฏิบัติเหล่านี้อย่างสม่ำเสมอ แล้วนักพัฒนาที่เคยใช้ endpoint หนึ่งของคุณก็จะเดาที่เหลือได้ ความสามารถในการคาดเดาได้นั้น มากกว่าฟีเจอร์ใด ๆ เพียงอย่างเดียว คือสิ่งที่ทำให้ API เป็นเรื่องน่ายินดีที่จะพัฒนาเทียบเคียงด้วย
+</Callout>
+
+export const quiz = [
+  {
+    q: 'คุณภาพเดียวใดที่ทำให้ API น่าใช้มากที่สุด?',
+    options: ['ความฉลาด', 'ความสม่ำเสมอที่คาดเดาได้ทั่วทุก endpoint', 'เฟรมเวิร์กที่ใหม่ที่สุด', 'เอกสารที่น้อยที่สุด'],
+    answer: 1,
+  },
+  {
+    q: 'ข้อใดคือกฎทั่วทั้งคอร์สที่คุณไม่ควรฝ่าฝืน?',
+    options: [
+      'ใช้ cursor pagination เสมอ',
+      'ห้ามคืน 200 สำหรับความล้มเหลว',
+      'ซ้อน sub-resource ลึก ๆ เสมอ',
+      'ใส่ version ใน header เสมอ',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="docs-testing-building/best-practices-recap" questions={quiz} />
+
+<ProgressTracker client:visible id="docs-testing-building/best-practices-recap" />

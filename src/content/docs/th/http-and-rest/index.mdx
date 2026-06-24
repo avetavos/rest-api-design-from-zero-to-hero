@@ -1,5 +1,72 @@
 ---
-title: HTTP & REST Foundations
-description: The HTTP request/response cycle and the constraints that make an API RESTful.
+title: พื้นฐาน HTTP และ REST
+description: 'วงจร request/response ของ HTTP และข้อจำกัดที่ทำให้ API เป็น RESTful'
+sidebar:
+  order: 1
 ---
-Coming soon.
+
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+โดยแก่นแท้แล้ว REST API คือชุดของ resource ที่เราโต้ตอบด้วยผ่าน HTTP ก่อนที่จะออกแบบมัน เราควรทำความเข้าใจสองเรื่องนี้ให้ชัดเจนเสียก่อน นั่นคือ ข้อความ HTTP ไหลเวียนระหว่าง client กับ server อย่างไรจริง ๆ และคำว่า "RESTful" นั้นผูกมัดเราไว้กับอะไรกันแน่
+
+## วงจร request/response
+
+ทุกการโต้ตอบคือ client ส่ง **request** ออกไปและ server ส่ง **response** กลับมา request จะระบุ method และ path ส่วน server จะทำงานบางอย่างแล้วตอบกลับด้วย status code และ (โดยปกติ) body
+
+export const cycleDiagram = `sequenceDiagram
+  participant C as Client
+  participant S as API Server
+  C->>S: GET /articles/42
+  S->>S: look up resource
+  S-->>C: 200 OK + JSON body`;
+
+<Mermaid code={cycleDiagram} title="หนึ่ง request หนึ่ง response — server ไม่เก็บ state ของ client ไว้ระหว่างทั้งสอง" />
+
+การไป-กลับแบบ stateless นี้คือหน่วยพื้นฐานของทุกอย่างที่จะตามมา API ที่ออกแบบมาดีจะทำให้แต่ละ request อธิบายตัวเองได้ครบถ้วน method บอกว่าเราต้องการทำอะไร path บอกว่าทำกับอะไร และ status code บอกว่าผลเป็นอย่างไร
+
+## คอร์สนี้ครอบคลุมอะไรบ้าง
+
+คอร์สนี้สร้างการออกแบบ REST API ตั้งแต่พื้นฐาน พร้อมตัวอย่าง TypeScript ที่รันได้จริง:
+
+- **พื้นฐาน HTTP และ REST** — ข้อความ, method, status code และข้อจำกัดของ REST (คุณอยู่ที่นี่)
+- **การออกแบบ Resource และ URI** — การจำลอง resource และการตั้งชื่อ URI ของมัน
+- **Method, CRUD และ Idempotency** — การจับคู่ operation เข้ากับ method อย่างปลอดภัย
+- **Status Code และ Error** — การเลือก code และการออกแบบ body ของ error
+- **การสืบค้น Collection** — pagination, filtering, sorting, การเลือก field
+- **Versioning และ Caching** — การพัฒนา API ให้เติบโตและทำให้มันเร็ว
+- **Security** — authentication, authorization, CORS และ rate limiting
+- **เอกสาร, การทดสอบ และการสร้าง** — OpenAPI, การทดสอบ และ implementation ที่ใช้งานได้จริง
+
+<Callout title="'RESTful' หมายความว่าอะไรกันแน่">
+REST ไม่ใช่ protocol หรือ library — แต่มันคือชุดของข้อจำกัดเกี่ยวกับวิธีที่คุณใช้ HTTP สองข้อที่สำคัญที่สุดในทางปฏิบัติคือ ทุก request ต้องเป็น **stateless** (server ไม่เก็บ session ของแต่ละ client ไว้ระหว่างการเรียก) และ API นำเสนอ **uniform interface** (resource ถูกระบุด้วย URI และจัดการด้วย method มาตรฐาน)
+</Callout>
+
+export const quiz = [
+  {
+    q: 'ใน API แบบ stateless นั้น state ของ session ต่อ client ถูกเก็บไว้ที่ไหนระหว่าง request?',
+    options: [
+      'บน server โดยผูกกับ connection',
+      'ไม่ได้ถูกเก็บไว้บน server — แต่ละ request พกพาสิ่งที่ตัวเองต้องการไปด้วย',
+      'ใน HTTP method',
+      'ใน status code',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'สามสิ่งใดที่ทำให้ HTTP request หนึ่ง ๆ อธิบายตัวเองได้?',
+    options: [
+      'Method, target resource (path) และผลลัพธ์ (status code)',
+      'Cookie, session และ token',
+      'HTML, CSS และ JavaScript',
+      'Host, port และ protocol เท่านั้น',
+    ],
+    answer: 0,
+  },
+];
+
+<Quiz client:visible id="http-and-rest/index" questions={quiz} />
+
+<ProgressTracker client:visible id="http-and-rest/index" />

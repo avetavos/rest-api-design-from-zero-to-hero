@@ -1,0 +1,97 @@
+---
+title: Bulk & Async Operations
+description: 'การเปลี่ยนแปลงแบบ batch และงานที่ใช้เวลานานโดยไม่ทำลาย semantics ของ REST'
+sidebar:
+  order: 5
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+API จริงบางครั้งจำเป็นต้องเปลี่ยนแปลง resource จำนวนมากในคราวเดียว หรือเริ่มงานที่ใช้เวลานานกว่าที่คำขอหนึ่งควรรอ ทั้งสองกรณีนี้ยืดโมเดลแบบหนึ่งคำขอต่อหนึ่ง resource ออกไป จึงต้องการการออกแบบอย่างตั้งใจ
+
+## การทำงานแบบ Bulk
+
+ในการกระทำต่อ item หลายตัวในการเรียกครั้งเดียว ให้ `POST` ไปยัง batch endpoint พร้อม list และคืน **ผลลัพธ์รายตัว** (per-item result) เพื่อให้ผู้เรียกรู้ได้อย่างแม่นยำว่าอะไรสำเร็จบ้าง:
+
+```http
+POST /articles/batch HTTP/1.1
+Content-Type: application/json
+
+{ "items": [ { "title": "A" }, { "title": "" } ] }
+```
+
+response รายงานผลลัพธ์ของ item แต่ละตัวแทนที่จะเป็น status รวมเพียงค่าเดียว — ความสำเร็จบางส่วน (partial success) คือเรื่องปกติสำหรับ batch:
+
+export const batchCode = `function processBatch(items) {
+  return items.map((item, i) => {
+    if (!item.title) {
+      return { index: i, status: 422, error: 'title is required' };
+    }
+    return { index: i, status: 201, id: 1000 + i };
+  });
+}
+
+const results = processBatch([{ title: 'A' }, { title: '' }, { title: 'C' }]);
+console.log(JSON.stringify(results, null, 2));
+const ok = results.filter((r) => r.status < 400).length;
+console.log(ok + '/' + results.length + ' succeeded');`;
+
+<NodeRunner client:visible code={batchCode} />
+
+## งานที่ใช้เวลานาน (async)
+
+เมื่อ operation ไม่สามารถทำเสร็จภายในคำขอหนึ่งได้ (การ export ขนาดใหญ่ การ transcode วิดีโอ) อย่าค้างการเชื่อมต่อเอาไว้ ให้รับงานนั้นไว้แล้วคืน `202 Accepted` พร้อมลิงก์ไปยัง **status resource** ที่ client สามารถ poll ได้:
+
+export const asyncDiagram = `sequenceDiagram
+  participant C as Client
+  participant S as API
+  C->>S: POST /exports
+  S-->>C: 202 Accepted + Location: /exports/job-1
+  C->>S: GET /exports/job-1
+  S-->>C: 200 OK { status: "running" }
+  C->>S: GET /exports/job-1
+  S-->>C: 200 OK { status: "done", result: "/files/x" }`;
+
+<Mermaid code={asyncDiagram} title="202 Accepted พร้อม status resource ที่ poll ได้" />
+
+ตัวงานเองกลายเป็น resource: `POST /exports` สร้างมันขึ้นมา, `GET /exports/{id}` รายงานความคืบหน้า และ response สุดท้ายลิงก์ไปยังผลลัพธ์ที่ผลิตออกมา
+
+<Callout title="ทำให้งานกลายเป็น resource">
+ทั้งสองแพตเทิร์นพึ่งพาแนวคิดเดียวกัน: เมื่อคำขอเดียวไม่สามารถสื่อ operation ได้ ให้จำลอง operation นั้นเป็น resource batch คืนผลลัพธ์รายตัว ส่วน async job กลายเป็นสิ่งที่คุณสร้างขึ้นแล้ว poll ตามทีหลัง คุณยังคงความเป็น RESTful ได้ด้วยการเปลี่ยนคำกริยา (verb) ให้เป็นคำนาม (noun)
+</Callout>
+
+export const quiz = [
+  {
+    q: 'bulk endpoint ควรคืนค่าอะไรกลับมาสำหรับ batch ที่ผลลัพธ์ปนกัน?',
+    options: [
+      'status เดียวเป็น 200 หรือ 500 สำหรับทั้ง batch',
+      'ผลลัพธ์รายตัวเพื่อให้ผู้เรียกเห็นว่าอะไรสำเร็จและอะไรล้มเหลว',
+      'เฉพาะ error แรกเท่านั้น',
+      'ไม่ส่งอะไรเลย — 204 No Content',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'status ใดเหมาะกับการรับงานที่ใช้เวลานานเพื่อประมวลผลภายหลัง?',
+    options: ['200 OK', '201 Created', '202 Accepted', '204 No Content'],
+    answer: 2,
+  },
+  {
+    q: 'client ติดตามงาน async อย่างไรหลังจากได้รับ 202?',
+    options: [
+      'มันค้างการเชื่อมต่อไว้จนกว่าจะเสร็จ',
+      'มัน poll status resource ที่ลิงก์ผ่าน Location',
+      'มันส่งคำขอเดิมซ้ำใหม่',
+      'มันรออีเมล',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="methods-crud-idempotency/bulk-and-async" questions={quiz} />
+
+<ProgressTracker client:visible id="methods-crud-idempotency/bulk-and-async" />

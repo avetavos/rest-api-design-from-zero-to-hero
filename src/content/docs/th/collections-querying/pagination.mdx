@@ -1,0 +1,95 @@
+---
+title: Pagination
+description: 'Offset เทียบกับ cursor pagination และ response envelope ที่มาคู่กัน'
+sidebar:
+  order: 2
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+Pagination คือการคืน collection ออกมาเป็นชิ้น (slice) มีกลยุทธ์ที่นิยมใช้กันสองแบบ และการเลือกที่ถูกต้องขึ้นอยู่กับว่าข้อมูลของคุณใหญ่และเปลี่ยนแปลงบ่อยแค่ไหน
+
+## Offset pagination
+
+client ขอหน้าตามตำแหน่ง: `?page=3&limit=20` (หรือ `?offset=40&limit=20`) เรียบง่าย กระโดดไปหน้าไหนก็ได้ และแสดงจำนวนรวมได้ง่าย
+
+```http
+GET /articles?page=2&limit=20
+```
+
+จุดอ่อนของมันคือ **offset ที่ลึกจะช้า** (ฐานข้อมูลต้องข้ามทุกแถวที่อยู่ก่อนหน้า) และ **การ insert จะทำให้ window เลื่อน** — ถ้ามีแถวถูกเพิ่มเข้ามาระหว่างที่คุณกำลังเปิดหน้า คุณอาจเห็นข้อมูลซ้ำหรือข้ามรายการไป
+
+## Cursor pagination
+
+client ส่ง **cursor** แบบ opaque ที่บอกตำแหน่งที่หน้าก่อนหน้าจบลง: `?limit=20&cursor=eyJpZCI6MTQwfQ` เซิร์ฟเวอร์จะคืน slice ถัดไปพร้อม cursor สำหรับหน้าหลังจากนั้น
+
+export const cursorDiagram = `flowchart LR
+  A[GET /articles?limit=20] --> B[20 items + nextCursor]
+  B --> C[GET /articles?limit=20&cursor=...]
+  C --> D[next 20 + nextCursor]`;
+
+<Mermaid code={cursorDiagram} title="แต่ละหน้าจะส่ง cursor สำหรับหน้าถัดไปกลับมาด้วย" />
+
+cursor มีความเสถียรเมื่อมีการ insert และเร็วไม่ว่าจะอยู่ลึกแค่ไหน แต่คุณจะกระโดดไปหน้าใด ๆ ตามใจชอบไม่ได้ และการนับจำนวนรวมที่แม่นยำก็ทำได้ยากกว่า มันเป็นค่าเริ่มต้นที่ดีกว่าสำหรับ collection ขนาดใหญ่หรือที่เปลี่ยนแปลงบ่อย (feed, log, search)
+
+## การ slice และ envelope
+
+หนึ่งหน้าควรถูกห่อไว้ใน envelope ที่มี `data` พร้อมกับ metadata ของการแบ่งหน้าและ links:
+
+export const pageCode = `function paginate(items, page, limit) {
+  const start = (page - 1) * limit;
+  const slice = items.slice(start, start + limit);
+  return {
+    data: slice,
+    meta: { page, limit, total: items.length, totalPages: Math.ceil(items.length / limit) },
+    links: {
+      self: '/articles?page=' + page + '&limit=' + limit,
+      next: start + limit < items.length ? '/articles?page=' + (page + 1) + '&limit=' + limit : null,
+    },
+  };
+}
+
+const all = Array.from({ length: 53 }, (_, i) => ({ id: i + 1 }));
+console.log(JSON.stringify(paginate(all, 2, 20), null, 2));`;
+
+<NodeRunner client:visible code={pageCode} />
+
+<Callout title="ใช้ cursor เป็นค่าเริ่มต้นสำหรับข้อมูลใหญ่และเปลี่ยนแปลงบ่อย">
+Offset pagination ใช้ได้ดีกับ list ขนาดเล็กที่เสถียร และตาราง admin ที่การกระโดดไปหน้า 50 มีความสำคัญ ส่วน feed, log และอะไรก็ตามที่โตขึ้นในขณะที่ผู้ใช้กำลังเลื่อนดู ควรเลือก cursor pagination: มันยังคงถูกต้องเมื่อมีการ insert และเร็วไม่ว่าจะลึกแค่ไหน
+</Callout>
+
+export const quiz = [
+  {
+    q: 'จุดอ่อนหลักของ offset pagination บนข้อมูลขนาดใหญ่ที่เปลี่ยนแปลงบ่อยคืออะไร?',
+    options: [
+      'มันคืน JSON ไม่ได้',
+      'offset ที่ลึกจะช้า และการ insert อาจทำให้เกิดการข้าม/ซ้ำ',
+      'มันต้องมีการ authentication',
+      'มันแสดงหน้าแรกไม่ได้',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'cursor แทนอะไร?',
+    options: [
+      'หมายเลขหน้า',
+      'marker แบบ opaque ที่บอกตำแหน่งที่หน้าก่อนหน้าจบลง',
+      'จำนวนแถวรวมทั้งหมด',
+      'ฟิลด์สำหรับ sort',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'กลยุทธ์ใดเป็นค่าเริ่มต้นที่ดีกว่าสำหรับ feed แบบไม่สิ้นสุด?',
+    options: ['Offset pagination', 'Cursor pagination', 'ไม่มี pagination', 'ทำที่ฝั่ง client เท่านั้น'],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="collections-querying/pagination" questions={quiz} />
+
+<ProgressTracker client:visible id="collections-querying/pagination" />

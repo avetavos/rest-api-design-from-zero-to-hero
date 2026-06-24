@@ -1,0 +1,93 @@
+---
+title: GET & POST
+description: 'การอ่าน resource อย่างปลอดภัยและการสร้างมันด้วย POST'
+sidebar:
+  order: 2
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+`GET` และ `POST` คือสอง method ที่คุณจะใช้บ่อยที่สุด ทั้งคู่อยู่คนละขั้วของสเปกตรัมเรื่อง safety โดย `GET` ทำได้แค่อ่าน ในขณะที่ `POST` ใช้สร้างและเป็น method ที่มีข้อจำกัดน้อยที่สุดในบรรดาทั้งหมด
+
+## GET — ปลอดภัยและแคชได้
+
+`GET` ดึงตัวแทน (representation) ของ resource มา และต้องไม่เปลี่ยนแปลง state ของ server เด็ดขาด เพราะมันปลอดภัย response จึงสามารถถูกแคชได้และคำขอสามารถ retry ได้อย่างอิสระ `GET` บน collection จะคืนรายการกลับมา ส่วน `GET` บน item เดียวจะคืน item นั้นหรือ `404`
+
+```http
+GET /articles/42 HTTP/1.1
+Accept: application/json
+```
+
+`GET` ไม่ควรพก request body ที่มีความหมายติดไปด้วย และต้องไม่มี side effect — ห้ามทำอย่าง "เพิ่มยอดวิวผ่าน GET" ไม่เช่นนั้น cache และ prefetcher จะสร้างเรื่องเซอร์ไพรส์ให้คุณ
+
+## POST — การสร้างและการกระทำที่ไม่ idempotent
+
+`POST` ส่งข้อมูลไปยัง collection ซึ่งโดยทั่วไปคือการสร้าง resource ใหม่ มันไม่ทั้ง safe และไม่ idempotent การส่ง `POST` เดิมซ้ำสองครั้งมักจะสร้าง resource ขึ้นสองตัว เมื่อสำเร็จ ให้คืน `201 Created` พร้อม header `Location` ที่ชี้ไปยัง resource ใหม่
+
+## ทั้งสองอย่าง ใน API ที่กำลังทำงานจริง
+
+แอป Hono นี้เปิด collection ที่คุณสามารถอ่านและเพิ่มข้อมูลเข้าไปได้ เปิดมันใน StackBlitz แล้วลอง `GET /articles`, `GET /articles/1` และ `POST /articles`:
+
+export const honoCode = `const articles = [{ id: 1, title: 'First post' }];
+
+app.get('/articles', (c) => c.json(articles));
+
+app.get('/articles/:id', (c) => {
+  const id = Number(c.req.param('id'));
+  const found = articles.find((a) => a.id === id);
+  if (!found) return c.json({ error: 'Not found' }, 404);
+  return c.json(found);
+});
+
+app.post('/articles', async (c) => {
+  const input = await c.req.json();
+  const created = { id: articles.length + 1, title: String(input.title ?? '') };
+  articles.push(created);
+  return c.json(created, 201, { Location: '/articles/' + created.id });
+});`;
+
+<NodeRunner stackblitz client:visible code={honoCode} />
+
+<Callout title="อย่าเปลี่ยนแปลงข้อมูลผ่าน GET">
+ความผิดพลาดเรื่อง REST ที่พบบ่อยที่สุดอย่างหนึ่งคือการทำการกระทำผ่าน `GET` (เพราะมันง่ายที่จะ trigger จาก browser) ทั้ง cache, link prefetcher และ crawler ต่างสมมติว่า `GET` ปลอดภัยและอาจเรียกมันซ้ำ ๆ การเปลี่ยนแปลง state ใด ๆ ควรอยู่บน `POST`, `PUT`, `PATCH` หรือ `DELETE`
+</Callout>
+
+export const quiz = [
+  {
+    q: 'ทำไม GET จึงต้องไม่เปลี่ยนแปลง state ของ server เด็ดขาด?',
+    options: [
+      'คำขอ GET ช้ากว่า',
+      'GET ถูกสมมติว่าปลอดภัย ดังนั้น cache/prefetcher อาจทำซ้ำได้อย่างอิสระ',
+      'GET ส่ง header ไม่ได้',
+      'response ของ GET เป็น JSON ไม่ได้',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'การส่ง POST เดิมไปยัง collection ซ้ำสองครั้งมักให้ผลลัพธ์อย่างไร?',
+    options: [
+      'หนึ่ง resource (POST เป็น idempotent)',
+      'สอง resource (POST ไม่ idempotent)',
+      'ได้ 304 Not Modified',
+      'เกิด validation error',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'การสร้างที่สำเร็จควรคืนค่าอะไรกลับมา?',
+    options: [
+      '200 OK โดยไม่มี header',
+      '201 Created พร้อม header Location',
+      '204 No Content',
+      '302 Found',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="methods-crud-idempotency/get-and-post" questions={quiz} />
+
+<ProgressTracker client:visible id="methods-crud-idempotency/get-and-post" />

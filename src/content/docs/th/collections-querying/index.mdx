@@ -1,0 +1,58 @@
+---
+title: การ Query Collection
+description: 'Pagination, filtering, sorting และ field selection สำหรับ endpoint แบบ collection'
+sidebar:
+  order: 1
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+endpoint แบบ collection อย่าง `GET /articles` อาจคืนค่ามาแค่สิบแถวหรือสิบล้านแถวก็ได้ การคืนทั้งหมดออกมาไม่เคยเป็นคำตอบที่ถูกต้อง ความสามารถในการ query สี่อย่างจะเปลี่ยน list ดิบ ๆ ให้กลายเป็นสิ่งที่ client ใช้งานได้อย่างมีประสิทธิภาพ
+
+## คันโยกทั้งสี่
+
+export const queryDiagram = `flowchart LR
+  C[GET /articles] --> P[Pagination: how many, which slice]
+  C --> F[Filtering: which rows]
+  C --> S[Sorting: what order]
+  C --> Fl[Field selection: which fields]`;
+
+<Mermaid code={queryDiagram} title="ทั้งสี่อย่างถูกระบุผ่าน query parameter บน collection" />
+
+ทั้งสี่อย่างนี้อยู่ใน **query string** เพราะมันอธิบายว่า *คุณต้องการมุมมองแบบไหนของ collection* ไม่ใช่ *ต้องการ resource ตัวไหน* ตัวตน (identity) อยู่ที่ path ส่วน query เป็นตัวกำหนดรูปร่างของผลลัพธ์
+
+## โมดูลนี้ครอบคลุมอะไรบ้าง
+
+- **Pagination** — offset เทียบกับ cursor และ response envelope
+- **Filtering & sorting** — การเลือกและจัดลำดับแถว
+- **Field selection** — sparse fieldsets และการ expand ความสัมพันธ์
+- **Search & envelopes** — full-text search และ wrapper ที่สม่ำเสมอ
+
+<Callout title="ทำ pagination ให้ collection เสมอโดยปริยาย">
+อย่าคืน list แบบไม่จำกัดจำนวน ให้ใส่ค่า page size เริ่มต้นที่สมเหตุสมผลแม้ client จะไม่ได้ร้องขออะไรมา และจำกัดค่าสูงสุดไว้ด้วย endpoint ที่คืนทุกอย่างทำงานได้ดีตอนพัฒนา แต่จะล่มในวันที่ตารางข้อมูลโตขึ้น
+</Callout>
+
+export const quiz = [
+  {
+    q: 'พารามิเตอร์ pagination, filtering และ sorting ควรอยู่ที่ไหน?',
+    options: ['ใน path', 'ใน query string', 'ใน request body', 'ใน custom header เท่านั้น'],
+    answer: 1,
+  },
+  {
+    q: 'การทำ GET แบบไม่ filter บน collection ขนาดใหญ่ ควรทำอะไรโดยปริยาย?',
+    options: [
+      'คืนทุกแถว',
+      'ใส่ค่า page size เริ่มต้น (ที่มีการจำกัดเพดาน)',
+      'คืน error 400',
+      'คืนแค่จำนวนนับ',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="collections-querying/index" questions={quiz} />
+
+<ProgressTracker client:visible id="collections-querying/index" />

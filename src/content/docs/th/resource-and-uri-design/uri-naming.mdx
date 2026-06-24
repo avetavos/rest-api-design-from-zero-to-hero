@@ -1,0 +1,67 @@
+---
+title: URI Naming
+description: 'แนวปฏิบัติที่ทำให้ URI ของ resource คาดเดาได้และสะอาดตา'
+sidebar:
+  order: 3
+---
+
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+URI คือชื่อของ resource การตั้งชื่อที่สอดคล้องกันทำให้ developer เดา endpoint ตัวถัดไปได้ถูกต้องโดยไม่ต้องอ่าน docs ซึ่งเป็นคำชมสูงสุดที่ API จะได้รับ
+
+## แนวปฏิบัติ
+
+- **คำนาม ไม่ใช่คำกริยา** — `/articles` ไม่ใช่ `/getArticles` ตัว method คือคำกริยา
+- **collection เป็นพหูพจน์** — `/articles` คือ collection ส่วน `/articles/42` คือหนึ่ง item ในนั้น เลือกใช้พหูพจน์แล้วยึดไว้ให้ตลอด
+- **ตัวพิมพ์เล็กคั่นด้วยขีดกลาง** — `/blog-posts` ไม่ใช่ `/blogPosts` หรือ `/Blog_Posts` path นั้นโดยจิตวิญญาณแล้วแยกตัวพิมพ์เล็กใหญ่ จงเก็บให้เป็นตัวพิมพ์เล็กเพื่อเลี่ยงเรื่องเซอร์ไพรส์
+- **ID อยู่ใน path ไม่ใช่ใน query** — `/articles/42` ไม่ใช่ `/articles?id=42` query string มีไว้สำหรับ filter collection ไม่ใช่ระบุตัว item
+- **ไม่มีนามสกุลไฟล์** — `/articles/42` ไม่ใช่ `/articles/42.json` ให้ใช้ header `Accept` ในการเจรจารูปแบบ (format negotiation)
+- **แนวปฏิบัติเรื่อง trailing slash** — เลือกว่าจะมีหรือไม่มีและทำให้สอดคล้องกัน (API ส่วนใหญ่ละไว้)
+
+## ดีกับไม่ดี
+
+```http
+GET /articles                 # collection
+GET /articles/42              # one item
+GET /articles/42/comments     # that item's comments
+GET /articles?status=draft    # filtered collection
+
+# Avoid:
+GET /getArticles
+GET /article/42               # inconsistent singular
+GET /articles/42.json
+GET /articles?articleId=42    # identity belongs in the path
+```
+
+<Callout title="ความคาดเดาได้คือเป้าหมาย">
+กฎการตั้งชื่อทุกข้อรับใช้เป้าหมายเดียว: client ที่เคยเห็น `/articles/42/comments` สามารถเดา `/users/7/articles` ได้อย่างมั่นใจ ความสอดคล้องมีค่ามากกว่ากฎแต่ละข้อใด ๆ จงเลือกแนวปฏิบัติแล้วนำไปใช้ทุกที่
+</Callout>
+
+export const quiz = [
+  {
+    q: 'URI ใดเป็นไปตามแนวปฏิบัติการตั้งชื่อแบบ REST สำหรับ article ตัวเดียว?',
+    options: ['/getArticle/42', '/articles/42', '/article?id=42', '/Articles/42.json'],
+    answer: 1,
+  },
+  {
+    q: 'ตัวระบุ resource (identifier) ควรอยู่ที่ไหน?',
+    options: ['ใน query string', 'ใน path', 'ใน header', 'ใน body'],
+    answer: 1,
+  },
+  {
+    q: 'คุณควรเลือกระหว่าง JSON กับรูปแบบอื่นอย่างไร?',
+    options: [
+      'ใส่นามสกุลไฟล์ .json ที่ path',
+      'ใส่ query param ?format=json',
+      'ใช้ header Accept (content negotiation)',
+      'ใช้ prefix /json/ แยกต่างหาก',
+    ],
+    answer: 2,
+  },
+];
+
+<Quiz client:visible id="resource-and-uri-design/uri-naming" questions={quiz} />
+
+<ProgressTracker client:visible id="resource-and-uri-design/uri-naming" />

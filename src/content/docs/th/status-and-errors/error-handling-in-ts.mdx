@@ -1,0 +1,108 @@
+---
+title: การจัดการ Error ใน TypeScript
+description: 'แปลง error ที่ถูก throw ให้เป็น problem+json response ที่สม่ำเสมอด้วย Hono'
+sidebar:
+  order: 5
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+การกระจาย error response ไปทั่วทุก handler รับประกันความไม่สม่ำเสมอ แทนที่จะทำเช่นนั้น ให้ throw typed error ใน handler ของคุณ แล้วแปลงเป็น `problem+json` ที่จุดเดียว
+
+## typed error + central handler
+
+export const flowDiagram = `flowchart LR
+  H[Handler throws ApiError] --> M[Error middleware]
+  M --> P[Map to problem+json]
+  P --> R[Response with correct status]`;
+
+<Mermaid code={flowDiagram} title="handler โยน error; ที่เดียวทำหน้าที่ map error เป็น response" />
+
+นิยาม error type ที่พก status และ field ของ problem ไว้ จากนั้นมี handler เดียวที่แปลงมัน อะไรที่ไม่คาดคิดจะกลายเป็น `500` — และคุณจะไม่รั่ว stack trace ออกไปยัง client เลย
+
+export const honoCode = `class ApiError extends Error {
+  constructor(status, title, detail) {
+    super(title);
+    this.status = status;
+    this.title = title;
+    this.detail = detail;
+  }
+}
+
+app.get('/articles/:id', (c) => {
+  if (c.req.param('id') === '0') {
+    throw new ApiError(404, 'Article not found', 'No article with id 0');
+  }
+  return c.json({ id: c.req.param('id'), title: 'Hello' });
+});
+
+// Central error handler: everything funnels through here.
+app.onError((err, c) => {
+  if (err instanceof ApiError) {
+    return c.json(
+      { type: 'about:blank', title: err.title, status: err.status, detail: err.detail },
+      err.status,
+      { 'Content-Type': 'application/problem+json' },
+    );
+  }
+  // Unexpected: log server-side, return a safe 500.
+  console.error(err);
+  return c.json(
+    { type: 'about:blank', title: 'Internal Server Error', status: 500 },
+    500,
+    { 'Content-Type': 'application/problem+json' },
+  );
+});`;
+
+<NodeRunner stackblitz client:visible code={honoCode} />
+
+## ทำไมต้องรวมศูนย์
+
+- **ความสม่ำเสมอ** — ทุก error ออกไปด้วยรูปทรงเดียวกัน
+- **ความปลอดภัย** — error ที่ไม่คาดคิดกลายเป็น `500` แบบทั่วไป; ส่วนภายในไม่รั่วไหล
+- **โค้ดน้อยลง** — handler แค่ throw หนึ่งบรรทัด; ไม่ต้องสร้าง response เองทุกตัว
+
+<Callout title="โยน typed error แล้วแปลงที่เดียว">
+ให้ handler แสดงความล้มเหลวด้วยการ throw typed error (`throw new ApiError(404, ...)`) และนำการจัดรูปแบบทั้งหมดไปไว้ใน hook `onError` เดียว คุณจะได้ `problem+json` ที่เหมือนกันทุกที่ มี fallback ที่ปลอดภัยรับประกันสำหรับสิ่งที่ไม่คาดคิด และ handler ที่จดจ่ออยู่กับ happy path
+</Callout>
+
+export const quiz = [
+  {
+    q: 'ประโยชน์หลักของ central error handler คืออะไร?',
+    options: [
+      'response เร็วขึ้น',
+      'ทุก error ออกไปด้วยรูปทรงที่สม่ำเสมอหนึ่งเดียว พร้อม fallback ที่ปลอดภัย',
+      'มันลบความจำเป็นในการใช้ status code',
+      'มันเปิดใช้งาน caching',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'error ที่ไม่คาดคิด (ไม่ได้คาดการณ์ไว้) ควรถูกส่งกลับไปยัง client อย่างไร?',
+    options: [
+      'พร้อม stack trace แบบเต็ม',
+      'เป็น 500 problem+json แบบทั่วไป โดย log รายละเอียดไว้ฝั่ง server เท่านั้น',
+      'เป็น 200 พร้อม error field',
+      'ด้วยการทำให้ server crash',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'ในรูปแบบนี้ handler ส่งสัญญาณความล้มเหลวอย่างไร?',
+    options: [
+      'สร้าง response แบบเต็มทุกครั้ง',
+      'โยน typed error ที่ central handler แปลงให้',
+      'ส่งคืน null',
+      'เรียก process.exit',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="status-and-errors/error-handling-in-ts" questions={quiz} />
+
+<ProgressTracker client:visible id="status-and-errors/error-handling-in-ts" />

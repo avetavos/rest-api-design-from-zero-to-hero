@@ -1,0 +1,105 @@
+---
+title: กายวิภาคของข้อความ HTTP
+description: 'ส่วนประกอบต่าง ๆ ของ HTTP request และ response — method, path, header, status และ body'
+sidebar:
+  order: 2
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+การออกแบบ API ให้ดีเริ่มต้นจากการมองเห็นอย่างชัดเจนว่ามีอะไรวิ่งผ่านสายส่งบ้าง การแลกเปลี่ยน HTTP ก็เป็นเพียงข้อความเท่านั้น คือ request จาก client และ response จาก server ซึ่งแต่ละฝั่งมีสามส่วนเหมือนกัน
+
+## Request
+
+request มี **start line** (method + target + เวอร์ชัน HTTP) ชุดของ **header** และ **body** ที่จะมีหรือไม่ก็ได้:
+
+```http
+POST /articles HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+Authorization: Bearer eyJhbGci...
+Accept: application/json
+
+{ "title": "Designing APIs", "body": "..." }
+```
+
+method (`POST`) บอกว่า *จะทำ* อะไร target (`/articles`) บอกว่า *ทำกับ* อะไร ส่วน header พกพา metadata (content type, auth, สิ่งที่ client ยอมรับได้) และ body พกพา payload
+
+## Response
+
+response สะท้อนรูปแบบนั้น คือ **status line** (เวอร์ชัน + status code + reason) **header** และ **body** ที่จะมีหรือไม่ก็ได้:
+
+```http
+HTTP/1.1 201 Created
+Content-Type: application/json
+Location: /articles/42
+
+{ "id": 42, "title": "Designing APIs" }
+```
+
+export const msgDiagram = `flowchart LR
+  subgraph Request
+    A[Start line: method + path] --> B[Headers] --> C[Body optional]
+  end
+  subgraph Response
+    D[Status line: code + reason] --> E[Headers] --> F[Body optional]
+  end
+  Request -->|over HTTP| Response`;
+
+<Mermaid code={msgDiagram} title="Request และ response มีโครงสร้างสามส่วนเหมือนกัน" />
+
+## การสร้าง response ในโค้ด
+
+framework ฝั่ง server ซ่อนรายละเอียดเหล่านี้ไว้เกือบทั้งหมด แต่การได้ลองสร้าง response ด้วยมือสักครั้งก็ช่วยได้มาก โค้ดส่วนนี้สร้าง header และ JSON body สำหรับ response แบบ "created" แล้ว log ออกมา:
+
+export const buildCode = `function buildCreated(resource) {
+  const body = JSON.stringify(resource);
+  const headers = {
+    'Content-Type': 'application/json',
+    'Content-Length': String(body.length),
+    'Location': '/articles/' + resource.id,
+  };
+  return { status: 201, headers, body };
+}
+
+const res = buildCreated({ id: 42, title: 'Designing APIs' });
+console.log('status:', res.status);
+console.log('headers:', res.headers);
+console.log('body:', res.body);`;
+
+<NodeRunner client:visible code={buildCode} />
+
+<Callout title="Header เป็นส่วนหนึ่งของการออกแบบ">
+body มักได้รับความสนใจทั้งหมด แต่ header ต่างหากที่พกพา contract ไว้ `Content-Type` บอก client ว่าจะ parse body อย่างไร `Location` ชี้ไปยัง resource ที่เพิ่งถูกสร้างขึ้น และ `Authorization`/`Accept` กำหนดรูปแบบของการแลกเปลี่ยน จงปฏิบัติต่อมันในฐานะส่วนสำคัญลำดับแรกของการออกแบบ API ไม่ใช่เรื่องที่ค่อยมาคิดทีหลัง
+</Callout>
+
+export const quiz = [
+  {
+    q: 'ส่วนใดของ HTTP request ที่บอกว่า client ต้องการทำ operation อะไร?',
+    options: ['Body', 'Method', 'Header Content-Type', 'Status line'],
+    answer: 1,
+  },
+  {
+    q: 'หลังจากสร้าง resource แล้ว response header ใดที่ตามธรรมเนียมจะชี้ไปยังมัน?',
+    options: ['Content-Type', 'Accept', 'Location', 'Host'],
+    answer: 2,
+  },
+  {
+    q: 'Header Content-Type บน response บอกอะไรแก่ client?',
+    options: [
+      'วิธีการ authenticate',
+      'วิธีการ parse body ของ response',
+      'method ใดที่จะใช้ต่อไป',
+      'ชื่อ software ของ server',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="http-and-rest/http-basics" questions={quiz} />
+
+<ProgressTracker client:visible id="http-and-rest/http-basics" />

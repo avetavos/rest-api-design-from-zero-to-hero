@@ -1,0 +1,98 @@
+---
+title: Filtering & Sorting
+description: 'การเลือกว่าแถวไหนจะถูกคืนกลับมา และในลำดับใด'
+sidebar:
+  order: 3
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+Filtering คือการจำกัด collection ให้เหลือเฉพาะแถวที่ client สนใจ ส่วน sorting เป็นตัวกำหนดลำดับ ทั้งสองอย่างเป็น query parameter บน collection และการมีธรรมเนียมเล็ก ๆ น้อย ๆ ช่วยให้มันอ่านง่าย
+
+## Filtering
+
+รูปแบบที่ง่ายที่สุดและค้นพบได้ง่ายที่สุดคือหนึ่ง query parameter ต่อหนึ่งฟิลด์:
+
+```http
+GET /articles?status=published&author=42
+```
+
+สำหรับช่วง (range) และ operator ธรรมเนียมที่นิยมคือใช้ operator แบบใส่วงเล็บหรือต่อท้าย:
+
+```http
+GET /articles?createdAt[gte]=2026-01-01&views[gt]=1000
+```
+
+จงให้ vocabulary ของ operator มีจำนวนน้อยและมีเอกสารกำกับ (`gte`, `lte`, `gt`, `lt`, `ne`, `in`) ไม่ว่าคุณจะเลือกอะไร ก็จงใช้มันแบบเดียวกันในทุก collection
+
+## Sorting
+
+รับพารามิเตอร์ `sort` ที่ระบุรายการฟิลด์ โดยใส่ `-` นำหน้าเพื่อเรียงจากมากไปน้อย:
+
+```http
+GET /articles?sort=-createdAt,title
+```
+
+นั่นอ่านได้ว่า "ใหม่สุดก่อน แล้วค่อยเรียงตาม title จากน้อยไปมาก" จงกำหนดว่าฟิลด์ไหนบ้างที่ sort ได้ (การ sort บนคอลัมน์ที่ไม่มี index อาจมีต้นทุนสูง) และปฏิเสธฟิลด์ที่เหลือด้วย `400`
+
+## การนำทั้งสองมาใช้ในโค้ด
+
+export const queryCode = `const articles = [
+  { id: 1, status: 'published', views: 1200, title: 'B' },
+  { id: 2, status: 'draft', views: 50, title: 'A' },
+  { id: 3, status: 'published', views: 300, title: 'C' },
+];
+
+function query(items, { status, sort }) {
+  let out = items;
+  if (status) out = out.filter((a) => a.status === status);
+  if (sort) {
+    const desc = sort.startsWith('-');
+    const key = desc ? sort.slice(1) : sort;
+    out = [...out].sort((a, b) => (a[key] > b[key] ? 1 : -1) * (desc ? -1 : 1));
+  }
+  return out;
+}
+
+console.log(query(articles, { status: 'published', sort: '-views' }));`;
+
+<NodeRunner client:visible code={queryCode} />
+
+<Callout title="ทำ allowlist ว่าจะ filter และ sort บนอะไรได้บ้าง">
+อย่าป้อน query param ดิบ ๆ เข้าไปใน query ของฐานข้อมูลตรง ๆ — นั่นเปิดช่องให้เกิด injection และทำให้ client sort บนคอลัมน์ที่ช้าและไม่มี index ได้ จงตรวจสอบแต่ละฟิลด์ของ filter/sort เทียบกับ allowlist ที่ชัดเจน และคืน `400` สำหรับอะไรก็ตามที่ไม่รู้จัก ยืดหยุ่นให้ client ควบคุมไว้ที่คุณ
+</Callout>
+
+export const quiz = [
+  {
+    q: '`?sort=-createdAt,title` หมายความว่าอย่างไร?',
+    options: [
+      'เรียงตาม createdAt จากน้อยไปมาก แล้วเรียง title จากมากไปน้อย',
+      'เรียงตาม createdAt จากมากไปน้อย แล้วเรียง title จากน้อยไปมาก',
+      'ลบฟิลด์ createdAt และ title ออก',
+      'filter เอาเฉพาะที่ createdAt เท่ากับ title',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'ทำไมต้อง allowlist ฟิลด์ที่ filter และ sort ได้?',
+    options: [
+      'เพื่อทำให้ response ใหญ่ขึ้น',
+      'เพื่อป้องกัน injection และเลี่ยงการ sort ที่มีต้นทุนสูงบนคอลัมน์ที่ไม่มี index',
+      'เพราะ HTTP บังคับให้ทำ',
+      'เพื่อเปิดใช้งาน caching',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'พารามิเตอร์ filter และ sort ควรอยู่ที่ไหน?',
+    options: ['path', 'query string', 'request body', 'cookie'],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="collections-querying/filtering-and-sorting" questions={quiz} />
+
+<ProgressTracker client:visible id="collections-querying/filtering-and-sorting" />

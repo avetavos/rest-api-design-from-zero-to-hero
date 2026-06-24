@@ -1,0 +1,86 @@
+---
+title: Rate Limiting & Validation
+description: 'การจำกัดอัตราการเรียกของผู้ใช้งานในทางที่ผิด และการมองทุก input ว่าเชื่อถือไม่ได้'
+sidebar:
+  order: 5
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+มีสองแนวป้องกันที่ทำให้ความปลอดภัยของ API สมบูรณ์ขึ้น: การจำกัดความถี่ที่ผู้เรียกใช้สามารถยิงเข้ามาหาคุณได้ และการไม่เชื่อสิ่งที่พวกเขาส่งมาเลย
+
+## Rate limiting
+
+Rate limiting จำกัดจำนวน request ต่อ client ต่อช่วงเวลา (window) เพื่อป้องกันการใช้งานในทางที่ผิด, client ที่ทำงานผิดเพี้ยน และลูปที่เกิดขึ้นโดยไม่ตั้งใจ เมื่อผู้เรียกใช้เกินขีดจำกัด ให้ตอบกลับ `429 Too Many Requests` พร้อมกับ header `Retry-After` ที่บอกพวกเขาว่าควรลองใหม่เมื่อไหร่ ถือเป็นแนวปฏิบัติที่ดีที่จะประกาศ budget ด้วย header `RateLimit-Limit`, `RateLimit-Remaining` และ `RateLimit-Reset`
+
+algorithm ที่พบบ่อยคือ **token bucket**: แต่ละ client มีถังหนึ่งใบที่เติม token กลับเข้าไปด้วยอัตราคงที่ แต่ละ request ใช้ token ไปหนึ่งตัว ถังที่ว่างเปล่าหมายถึง `429`
+
+export const bucketCode = `function makeBucket(capacity, refillPerSec) {
+  let tokens = capacity;
+  let last = 0; // logical time in seconds
+  return function take(now) {
+    tokens = Math.min(capacity, tokens + (now - last) * refillPerSec);
+    last = now;
+    if (tokens >= 1) { tokens -= 1; return { ok: true, remaining: Math.floor(tokens) }; }
+    return { ok: false, status: 429, retryAfter: Math.ceil((1 - tokens) / refillPerSec) };
+  };
+}
+
+const take = makeBucket(3, 1); // burst of 3, refill 1/sec
+console.log(take(0), take(0), take(0)); // three allowed
+console.log(take(0));                    // 4th: 429 with retryAfter`;
+
+<NodeRunner client:visible code={bucketCode} />
+
+## validate ทุกอย่าง
+
+ทุกค่าที่มาจาก client เชื่อถือไม่ได้จนกว่าจะผ่านการ validate ความเสี่ยงหลัก ๆ ได้แก่:
+
+- **Injection** — อย่าสร้าง SQL/command ด้วยการต่อ string เด็ดขาด ให้ใช้ parameterized query
+- **Mass assignment** — อย่าเอา request body ไป spread ทับลงบน model แบบไม่ดูตาม้าตาเรือ ให้รับเฉพาะ field ที่อยู่ใน allowlist เท่านั้น มิฉะนั้น user อาจตั้งค่า `isAdmin: true` ได้
+- **Oversized payloads** — จำกัดขนาด request body และความยาวของ array เพื่อหลีกเลี่ยงการทำให้ resource หมดเกลี้ยง
+- **Type and range** — validate ชนิดข้อมูล, ความยาว และช่วงค่าด้วย schema และปฏิเสธด้วย `422` (ดู [Validation Errors](/rest-api-design-from-zero-to-hero/th/status-and-errors/validation-errors/))
+
+<Callout title="allowlist สำหรับ input, throttle สำหรับการใช้งานในทางที่ผิด">
+รับเฉพาะ field และรูปแบบที่คุณคาดหวังไว้เท่านั้น — allowlist เหนือกว่า blocklist ทุกครั้ง และมันหยุดการโจมตีแบบ mass-assignment ได้อย่างเด็ดขาด จับคู่สิ่งนั้นเข้ากับ rate limit ต่อ client และการจำกัดขนาด body เพื่อให้ผู้เรียกใช้คนเดียวไม่สามารถทั้งทำลายข้อมูลของคุณหรือทำให้ขีดความสามารถของคุณหมดลงได้
+</Callout>
+
+export const quiz = [
+  {
+    q: 'status และ header ใดที่บ่งบอกว่า client ถูก rate limit?',
+    options: [
+      '403 Forbidden พร้อม Allow',
+      '429 Too Many Requests พร้อม Retry-After',
+      '503 พร้อม Location',
+      '409 พร้อม ETag',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'mass assignment คืออะไร และจะป้องกันมันอย่างไร?',
+    options: [
+      'การส่ง request มากเกินไป แก้ด้วย rate limiting',
+      'การ bind field ของ request เข้ากับ model แบบไม่ดูตาม้าตาเรือ แก้ด้วยการทำ allowlist ของ field ที่รับ',
+      'การคืน field มากเกินไป แก้ด้วย sparse fieldsets',
+      'บั๊กของ caching แก้ด้วย ETags',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'ควรป้องกัน SQL injection อย่างไร?',
+    options: [
+      'escape string ด้วยมือ',
+      'ใช้ parameterized query แทนการต่อ string',
+      'validate ที่ฝั่ง client เท่านั้น',
+      'คืน 500 เมื่อ input ไม่ถูกต้อง',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="security/rate-limiting-and-validation" questions={quiz} />
+
+<ProgressTracker client:visible id="security/rate-limiting-and-validation" />

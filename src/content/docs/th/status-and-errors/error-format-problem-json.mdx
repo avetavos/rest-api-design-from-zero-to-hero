@@ -1,0 +1,96 @@
+---
+title: รูปแบบของ Error — problem+json
+description: 'error body มาตรฐานหนึ่งเดียวที่สม่ำเสมอสำหรับทั้ง API (RFC 9457)'
+sidebar:
+  order: 3
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+status code บอก *ประเภทไหน* ของ error; ส่วน body ควรบอกว่า *อะไรเฉพาะเจาะจง* ที่ผิดพลาด ในรูปทรงที่เหมือนกันทุก endpoint การคิดค้นรูปทรง error ใหม่ในแต่ละ endpoint คือภาษีที่ client ต้องจ่ายไปตลอด
+
+## RFC 9457 Problem Details
+
+มีมาตรฐานสำหรับเรื่องนี้โดยเฉพาะ: **Problem Details for HTTP APIs** (RFC 9457) ซึ่งให้บริการเป็น `application/problem+json` สมาชิกของมันได้แก่:
+
+- `type` — URI ที่ระบุประเภทของปัญหา (key ที่เสถียรและจัดทำเอกสารได้)
+- `title` — สรุปสั้นๆ ที่คนอ่านเข้าใจ (เสถียรตาม `type` แต่ละตัว)
+- `status` — HTTP status code ที่ระบุซ้ำใน body
+- `detail` — คำอธิบายที่คนอ่านเข้าใจ เจาะจงเฉพาะกรณีนี้
+- `instance` — URI สำหรับกรณีนี้โดยเฉพาะ (มักเป็น path ของ request)
+- รวมถึง **extension member** ใดๆ ที่คุณต้องการ (เช่น array `errors`)
+
+```json
+{
+  "type": "https://api.example.com/problems/out-of-stock",
+  "title": "Item is out of stock",
+  "status": 409,
+  "detail": "Only 2 units of SKU-123 remain; you requested 5.",
+  "instance": "/orders/8821",
+  "available": 2
+}
+```
+
+## การสร้างมันขึ้นมาในโค้ด
+
+export const problemCode = `function problem(opts) {
+  return {
+    status: opts.status,
+    headers: { 'Content-Type': 'application/problem+json' },
+    body: {
+      type: opts.type ?? 'about:blank',
+      title: opts.title,
+      status: opts.status,
+      detail: opts.detail,
+      instance: opts.instance,
+      ...(opts.extra ?? {}),
+    },
+  };
+}
+
+const res = problem({
+  status: 409,
+  type: 'https://api.example.com/problems/out-of-stock',
+  title: 'Item is out of stock',
+  detail: 'Only 2 units remain; you requested 5.',
+  instance: '/orders/8821',
+  extra: { available: 2 },
+});
+console.log(res.headers['Content-Type']);
+console.log(JSON.stringify(res.body, null, 2));`;
+
+<NodeRunner client:visible code={problemCode} />
+
+<Callout title="ใช้ about:blank เมื่อไม่มีอะไรต้องเพิ่ม">
+ถ้าปัญหาไม่ต้องการ type พิเศษ RFC 9457 บอกให้ตั้ง `type` เป็น `"about:blank"` แล้วให้ `title` สะท้อนเหตุผลของ status เก็บ custom `type` URI ไว้สำหรับปัญหาที่ client ควรตรวจจับและจัดการแบบ programmatic — URI เหล่านั้นจะกลายเป็นส่วนหนึ่งของ contract ที่เสถียรและมีเอกสาร
+</Callout>
+
+export const quiz = [
+  {
+    q: 'RFC 9457 ใช้ media type ใดสำหรับ error body?',
+    options: ['application/json', 'application/problem+json', 'text/plain', 'application/error'],
+    answer: 1,
+  },
+  {
+    q: 'สมาชิก `type` มีจุดประสงค์อะไร?',
+    options: [
+      'HTTP method',
+      'URI ที่เสถียรซึ่งระบุประเภทของปัญหา (สำหรับการจัดการแบบ programmatic)',
+      'hostname ของ server',
+      'timestamp ของ response',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'เมื่อปัญหาไม่ต้องการหมวดหมู่พิเศษ `type` ควรเป็น:',
+    options: ['ละทิ้งไปทั้งหมด', '"about:blank"', 'request body', 'UUID แบบสุ่ม'],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="status-and-errors/error-format-problem-json" questions={quiz} />
+
+<ProgressTracker client:visible id="status-and-errors/error-format-problem-json" />

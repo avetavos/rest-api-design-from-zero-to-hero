@@ -1,0 +1,104 @@
+---
+title: Method และ Status Code
+description: 'HTTP method, safe กับ idempotent และตระกูลของ status code ที่คุณใช้จริง'
+sidebar:
+  order: 3
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+คำศัพท์เล็ก ๆ สองชุดทำงานส่วนใหญ่ใน REST API นั่นคือ HTTP **method** ไม่กี่ตัวที่บอกเจตนา และ **status code** ที่รายงานผลลัพธ์ เรียนรู้สองสิ่งนี้ให้ดีแล้วการตัดสินใจด้านการออกแบบส่วนใหญ่จะง่ายขึ้น
+
+## Method
+
+| Method | ความหมาย | Safe | Idempotent |
+| --- | --- | --- | --- |
+| `GET` | อ่าน resource | yes | yes |
+| `HEAD` | อ่านเฉพาะ header | yes | yes |
+| `POST` | สร้าง / ส่งข้อมูล | no | no |
+| `PUT` | แทนที่ resource | no | yes |
+| `PATCH` | อัปเดตบางส่วน | no | no |
+| `DELETE` | ลบ resource | no | yes |
+| `OPTIONS` | อธิบายว่าทำอะไรได้บ้าง | yes | yes |
+
+**Safe** หมายถึงการเรียกนั้นไม่มี side effect ที่สังเกตได้ (มันแค่อ่านเท่านั้น) **Idempotent** หมายถึงการเรียกซ้ำเดิมหลายครั้งให้ผลเหมือนกับการเรียกเพียงครั้งเดียว สองคุณสมบัตินี้ขับเคลื่อนความถูกต้องอยู่มาก client และ proxy สามารถ retry request ที่ safe/idempotent ได้อย่างอิสระ แต่ต้องระมัดระวังเมื่อจะ retry `POST`
+
+## ตระกูลของ status code
+
+export const statusDiagram = `flowchart TD
+  R[Response status] --> I[1xx Informational]
+  R --> S[2xx Success]
+  R --> RD[3xx Redirection]
+  R --> C[4xx Client error]
+  R --> SE[5xx Server error]
+  S --> S2[200 OK / 201 Created / 204 No Content]
+  C --> C2[400 / 401 / 403 / 404 / 409 / 422]
+  SE --> SE2[500 / 503]`;
+
+<Mermaid code={statusDiagram} title="ห้าตระกูล; ในทางปฏิบัติคุณใช้เพียงส่วนย่อยเล็ก ๆ เท่านั้น" />
+
+ตัวที่คุณใช้อยู่ตลอด: `200 OK`, `201 Created`, `204 No Content`, `400 Bad Request`, `401 Unauthorized`, `403 Forbidden`, `404 Not Found`, `409 Conflict`, `422 Unprocessable Entity`, `500 Internal Server Error` กฎทองคือ `2xx` หมายถึง request สำเร็จ `4xx` หมายถึง **client** ต้องเปลี่ยนแปลงอะไรบางอย่าง และ `5xx` หมายถึง **server** ทำงานล้มเหลว
+
+## Method และ status ใน API จริง
+
+แอป Hono นี้เปิดเผยสาม route ที่ส่งคืน method และ status ต่างกัน เปิดมันใน StackBlitz เพื่อรัน server จริงและยิงไปยัง endpoint:
+
+export const honoCode = `// A tiny read-only resource with sensible statuses.
+const articles = [{ id: 1, title: 'Hello' }];
+
+app.get('/articles', (c) => c.json(articles)); // 200 OK
+
+app.get('/articles/:id', (c) => {
+  const found = articles.find((a) => a.id === Number(c.req.param('id')));
+  if (!found) return c.json({ error: 'Not found' }, 404);
+  return c.json(found); // 200 OK
+});
+
+app.post('/articles', async (c) => {
+  const body = await c.req.json();
+  const created = { id: articles.length + 1, ...body };
+  articles.push(created);
+  return c.json(created, 201); // 201 Created
+});`;
+
+<NodeRunner stackblitz client:visible code={honoCode} />
+
+<Callout title="เลือก status ก่อน แล้วค่อยเลือก body">
+ตัดสินใจเรื่อง status code ก่อน — มันคือส่วนของ response ที่ client ใช้แตกแขนงการทำงาน `201 Created` ที่มี body ว่างเปล่าก็ใช้ได้ แต่ `200 OK` ที่ห่อ error ซ่อนไว้นั้นใช้ไม่ได้ อย่าส่งคืน `200` สำหรับความล้มเหลวเด็ดขาด
+</Callout>
+
+export const quiz = [
+  {
+    q: 'คุณสมบัติใดที่หมายถึง "การเรียกหลายครั้งให้ผลเหมือนกับเรียกครั้งเดียว"?',
+    options: ['Safe', 'Idempotent', 'Cacheable', 'Stateless'],
+    answer: 1,
+  },
+  {
+    q: 'status code แบบ 4xx บ่งบอกถึงอะไร?',
+    options: [
+      'server พังลง',
+      'client ต้องเปลี่ยนแปลง request',
+      'resource ถูกย้ายไปแล้ว',
+      'request ยังประมวลผลอยู่',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'method ใดที่ไม่ใช่ idempotent?',
+    options: ['GET', 'PUT', 'DELETE', 'POST'],
+    answer: 3,
+  },
+  {
+    q: 'status ใดที่เหมาะสมที่สุดกับการสร้าง resource สำเร็จ?',
+    options: ['200 OK', '201 Created', '202 Accepted', '204 No Content'],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="http-and-rest/methods-and-status" questions={quiz} />
+
+<ProgressTracker client:visible id="http-and-rest/methods-and-status" />

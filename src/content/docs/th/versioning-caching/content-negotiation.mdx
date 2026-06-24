@@ -1,0 +1,75 @@
+---
+title: Content Negotiation
+description: 'ให้ client ขอ representation ที่ต้องการด้วย Accept.'
+sidebar:
+  order: 3
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+resource เดียวสามารถมีได้หลาย representation — JSON, CSV, ภาษาต่าง ๆ Content negotiation ให้ client ระบุความต้องการและให้ server เลือกตัวที่ตรงที่สุด ทั้งหมดนี้โดยไม่ต้องเปลี่ยน URI
+
+## มันทำงานอย่างไร
+
+client ส่ง `Accept` (media type ใดบ้างที่มันต้องการ) และอาจส่ง `Accept-Language` ด้วย; server ตอบกลับด้วย representation ที่เลือกพร้อม `Content-Type` ที่สอดคล้องกัน:
+
+```http
+GET /reports/42 HTTP/1.1
+Accept: text/csv, application/json;q=0.8
+Accept-Language: th, en;q=0.5
+```
+
+ค่า `q` คือน้ำหนักด้านคุณภาพ (quality weight) — ในที่นี้ client ชอบ CSV มากกว่า แล้วจึงเป็น JSON server ควรให้เกียรติ type ที่ดีที่สุดที่มันรองรับและสะท้อนมันกลับมาใน `Content-Type`
+
+## เมื่อมันไม่สามารถทำตามได้
+
+- หาก server ไม่สามารถสร้าง type ใดที่ยอมรับได้เลย ให้ตอบ `406 Not Acceptable`
+- หาก **body** ของ request มาในรูปแบบ type ที่ server แยกวิเคราะห์ (parse) ไม่ได้ ให้ตอบ `415 Unsupported Media Type`
+
+## การเจรจาใน API ที่กำลังทำงานจริง
+
+export const honoCode = `const report = { id: 42, total: 99 };
+
+app.get('/reports/:id', (c) => {
+  const accept = c.req.header('Accept') ?? 'application/json';
+  if (accept.includes('text/csv')) {
+    return c.body('id,total\\n' + report.id + ',' + report.total, 200, {
+      'Content-Type': 'text/csv',
+    });
+  }
+  if (accept.includes('application/json') || accept.includes('*/*')) {
+    return c.json(report);
+  }
+  return c.json({ title: 'Not Acceptable', status: 406 }, 406);
+});`;
+
+<NodeRunner stackblitz client:visible code={honoCode} />
+
+<Callout title="resource เดียว, หลาย representation">
+Content negotiation ทำให้ URI เสถียรในขณะที่ให้ client เลือกรูปแบบและภาษาได้ — การ export เป็น CSV และมุมมองแบบ JSON ของ report เดียวกันใช้ที่อยู่เดียวกัน จงสะท้อน type ที่เลือกกลับไปใน `Content-Type` เสมอ, และคืน `406` แทนที่จะส่งรูปแบบที่ client บอกว่ายอมรับไม่ได้ไปแบบเงียบ ๆ
+</Callout>
+
+export const quiz = [
+  {
+    q: 'client ใช้ header ใดในการร้องขอรูปแบบของ representation?',
+    options: ['Content-Type', 'Accept', 'Location', 'Authorization'],
+    answer: 1,
+  },
+  {
+    q: 'server ไม่รองรับ type ใดเลยใน Accept ควรใช้ status ใด?',
+    options: ['400 Bad Request', '406 Not Acceptable', '415 Unsupported Media Type', '404 Not Found'],
+    answer: 1,
+  },
+  {
+    q: 'body ของ request มาในรูปแบบ media type ที่ server แยกวิเคราะห์ไม่ได้ ควรใช้ status ใด?',
+    options: ['406 Not Acceptable', '415 Unsupported Media Type', '422 Unprocessable Entity', '409 Conflict'],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="versioning-caching/content-negotiation" questions={quiz} />
+
+<ProgressTracker client:visible id="versioning-caching/content-negotiation" />

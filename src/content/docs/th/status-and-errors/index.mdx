@@ -1,0 +1,64 @@
+---
+title: Status Code และ Error
+description: 'เลือก status code ที่เหมาะสมและออกแบบ error body ที่ client เชื่อถือได้'
+sidebar:
+  order: 1
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+วิธีที่ API รายงานผลลัพธ์เป็นส่วนหนึ่งของ contract ของมัน สองสิ่งที่ทำให้ contract นั้นน่าเชื่อถือคือ **status code** (ส่วนที่ client ใช้แตกกิ่งเงื่อนไข) และ **error body ที่สม่ำเสมอ** (ส่วนที่คนและโค้ดอ่านเพื่อกู้สถานการณ์)
+
+## สำเร็จ, client error หรือ server fault?
+
+export const decisionDiagram = `flowchart TD
+  Q{Did the request succeed?} -->|Yes| S[2xx]
+  Q -->|No, caller's fault| C[4xx: fix the request]
+  Q -->|No, our fault| E[5xx: retry may help]
+  C --> C1[400 / 401 / 403 / 404 / 409 / 422]
+  E --> E1[500 / 503]`;
+
+<Mermaid code={decisionDiagram} title="ตัดสินใจเลือกกลุ่มก่อน แล้วจึงเลือก code ที่เจาะจง" />
+
+กฎที่สำคัญที่สุดเพียงข้อเดียว: อย่าห่อความล้มเหลวไว้ใน `200` เด็ดขาด การตอบกลับที่บอกว่า `200 OK` แต่กลับแนบ `{ "error": "..." }` มาด้วยนั้นทำลายทุก client, cache และเครื่องมือ monitoring ที่เชื่อถือ status line
+
+## โมดูลนี้ครอบคลุมอะไรบ้าง
+
+- **การเลือก status code** — code ที่พบบ่อยและวิธีเลือกในกรณีที่ใกล้เคียงกัน
+- **รูปแบบของ error (problem+json)** — รูปทรงเดียวที่สม่ำเสมอสำหรับทุก error
+- **Validation error** — รายงาน input ที่ผิดทีละ field
+- **การจัดการ error ใน TypeScript** — แปลง error ที่ถูก throw ให้กลายเป็น response ที่สะอาด
+
+<Callout title="status code คือคำตอบของ API">
+client จะแตกกิ่งเงื่อนไขจาก status code ก่อน แล้วจึงอ่าน body ทีหลัง ถ้าเลือก code ถูก — `2xx`/`4xx`/`5xx` — แม้แต่ client ที่ไม่สนใจ body ของคุณก็จะทำงานได้ถูกต้อง แต่ถ้าเลือกผิด รายละเอียดใน body มากแค่ไหนก็ช่วยพวกเขาไม่ได้
+</Callout>
+
+export const quiz = [
+  {
+    q: 'status code กลุ่ม 5xx สื่อถึงอะไร?',
+    options: [
+      'client ต้องเปลี่ยน request',
+      'server ล้มเหลว; การ retry อาจสำเร็จ',
+      'resource ย้ายที่แล้ว',
+      'สำเร็จแต่ไม่มีเนื้อหา',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'ทำไมการตอบ 200 พร้อม error body จึงเป็นปัญหา?',
+    options: [
+      'มันช้ากว่า',
+      'client, cache และ monitoring เชื่อถือ status line และจะถือว่าเป็นความสำเร็จ',
+      'JSON เก็บ error ไม่ได้',
+      'มันไม่ใช่ HTTP ที่ถูกต้อง',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="status-and-errors/index" questions={quiz} />
+
+<ProgressTracker client:visible id="status-and-errors/index" />

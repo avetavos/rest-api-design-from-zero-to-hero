@@ -1,0 +1,78 @@
+---
+title: Consistency & Conventions
+description: 'การรักษาให้ทั้ง API สอดคล้องกัน ทั้งการตั้งชื่อ รูปแบบ และโครงสร้างของ collection'
+sidebar:
+  order: 5
+---
+
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+กฎแต่ละข้อนั้นสำคัญน้อยกว่าการนำไปใช้ทุกที่ API ที่สอดคล้อง 90% สร้างความสับสนมากกว่า API ที่พิลึกอย่างสม่ำเสมอ เพราะข้อยกเว้นคือจุดที่บั๊กและ support ticket ไปอาศัยอยู่
+
+## เลือกแนวปฏิบัติเสียครั้งเดียว
+
+ตัดสินใจสิ่งเหล่านี้สำหรับทั้ง API แล้วจดมันไว้:
+
+- **รูปแบบตัวพิมพ์ของ field** — `camelCase` หรือ `snake_case` ให้เหมือนกันในทุก response
+- **พหูพจน์** — ทุก collection เป็นพหูพจน์ (`/articles`, `/users`) อย่าปนกัน
+- **ID** — รูปแบบเดียว (UUID, ULID หรือ integer) และชื่อ field เดียว (`id`)
+- **Timestamps** — สตริงแบบ ISO 8601 UTC (`2026-06-24T10:00:00Z`) พร้อมชื่อ field ที่สอดคล้องกันอย่าง `createdAt`/`updatedAt`
+- **เงินและ enum** — ใช้หน่วยย่อย (integer) สำหรับเงิน ใช้ string enum ที่มี doc กำกับ ไม่ใช่ตัวเลขปริศนา (magic number)
+
+## Collection กับ singleton
+
+resource ส่วนใหญ่เป็น item ใน collection (`/articles/42`) มีบางตัวที่เป็น **singleton** คือมีอยู่หนึ่งเดียวต่อบริบทหนึ่ง จึงไม่มี ID:
+
+```http
+GET   /me              # the authenticated user
+GET   /settings        # the account's settings
+PATCH /settings        # update them
+```
+
+singleton จงใจข้ามระดับ collection ไป อย่าคิดค้น ID ปลอม ๆ ให้มัน
+
+## เช็กลิสต์แนวปฏิบัติ
+
+- collection เป็นพหูพจน์ ส่วน item เป็น `/collection/{id}`
+- path ตัวพิมพ์เล็กคั่นด้วยขีดกลาง ไม่มีคำกริยา ไม่มีนามสกุลไฟล์
+- รูปแบบตัวพิมพ์เดียว รูปแบบ ID เดียว รูปแบบ timestamp เดียว ในทุก resource
+- error ใช้โครงสร้างร่วมกันแบบเดียว (กล่าวถึงใน Status Codes & Errors)
+- field เดียวกันหมายถึงสิ่งเดียวกันทุกที่
+
+<Callout title="จดแนวปฏิบัติไว้">
+วิธีที่ถูกที่สุดในการรักษาความสอดคล้องคือ style guide สั้น ๆ ที่ทีมของคุณและตัวคุณในอนาคตสามารถเช็กเทียบได้ แนวปฏิบัติที่อยู่ในหัวของใครคนเดียวจะเริ่มเพี้ยนทันทีที่ developer คนที่สองเพิ่ม endpoint หน้าเดียวของกฎป้องกันความไม่สอดคล้องได้ตั้งร้อยจุด
+</Callout>
+
+export const quiz = [
+  {
+    q: 'ทำไมความสอดคล้องเพียงบางส่วนจึงมักแย่กว่าการพิลึกอย่างสม่ำเสมอ?',
+    options: [
+      'มันช้ากว่า',
+      'ข้อยกเว้นคือจุดที่ความสับสนและบั๊กไปกระจุกตัวกัน',
+      'มันใช้ bandwidth มากกว่า',
+      'มันทำให้ HTTPS พัง',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'ควรอ้างถึง singleton resource อย่าง user ปัจจุบันอย่างไร?',
+    options: [
+      'ด้วย ID ปลอมอย่าง /users/0',
+      'เป็น path แบบ singleton เช่น /me โดยไม่มี ID',
+      'ผ่าน query param เท่านั้น',
+      'มันไม่สามารถเป็น resource ได้',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'รูปแบบที่แนะนำสำหรับ timestamp ใน response คืออะไร?',
+    options: ['Unix seconds เท่านั้น', 'สตริงที่จัดรูปแบบตาม locale', 'สตริงแบบ ISO 8601 UTC', 'อะไรก็ตามที่ฐานข้อมูลส่งกลับมา'],
+    answer: 2,
+  },
+];
+
+<Quiz client:visible id="resource-and-uri-design/consistency-and-conventions" questions={quiz} />
+
+<ProgressTracker client:visible id="resource-and-uri-design/consistency-and-conventions" />
