@@ -1,0 +1,77 @@
+---
+title: Modeling Resources
+description: 'Finding the right resources and the right granularity for your domain.'
+sidebar:
+  order: 2
+---
+
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+Before naming a single URI, decide *what* your resources are. Good resource modeling makes the rest of the API fall into place; poor modeling shows up later as awkward endpoints and special cases.
+
+## Find the nouns
+
+Start from the domain language. The persistent things your users talk about — orders, invoices, playlists, devices — are your primary resources. They usually map to collections you create, read, update, and delete.
+
+```ts
+// The resources of a small blog API, as TypeScript shapes.
+type User = { id: string; name: string; email: string };
+type Article = { id: string; title: string; body: string; authorId: string };
+type Comment = { id: string; body: string; articleId: string; authorId: string };
+```
+
+Not every database table is a resource, and not every resource is a table. A resource is anything worth addressing with a URI — including computed or virtual things like `/me` (the current user) or `/search`.
+
+## Resource, not action
+
+When a use case sounds like a verb — "publish an article", "cancel an order" — resist inventing `/publishArticle`. Two cleaner options:
+
+- Model the change as a field update: `PATCH /articles/42` with `{ "status": "published" }`.
+- Model the action as a sub-resource it creates: `POST /orders/42/cancellation`.
+
+## Granularity
+
+Aim for resources that are neither too coarse (one giant `/data` blob) nor too fine (a separate resource per field). A good test: a resource should be something a client wants to fetch, create, or change as a unit.
+
+<Callout title="Model for the consumer, not the schema">
+Resources are an API's public vocabulary, so shape them around how clients think, not how your tables are laid out. It is fine for one resource to join several tables, or for one table to surface as two resources. Decouple the contract from the storage.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'How should "publish an article" usually be modeled?',
+    options: [
+      'A POST /publishArticle endpoint',
+      'A PATCH that sets status, or a sub-resource the action creates',
+      'A GET with a ?publish=true flag',
+      'A new top-level /publish collection',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'Which statement about resources and database tables is correct?',
+    options: [
+      'Every table must be exactly one resource',
+      'Resources should mirror tables one-to-one',
+      'A resource is anything worth addressing — it need not map 1:1 to a table',
+      'Resources cannot join multiple tables',
+    ],
+    answer: 2,
+  },
+  {
+    q: 'What is a good test of resource granularity?',
+    options: [
+      'It matches a single column',
+      'It is something a client fetches or changes as a unit',
+      'It is as large as possible',
+      'It has no relationships',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="resource-and-uri-design/modeling-resources" questions={quiz} />
+
+<ProgressTracker client:visible id="resource-and-uri-design/modeling-resources" />

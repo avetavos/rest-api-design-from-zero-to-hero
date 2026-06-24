@@ -1,0 +1,78 @@
+---
+title: Consistency & Conventions
+description: 'Keeping the whole API coherent — naming, formats, and collection shapes.'
+sidebar:
+  order: 5
+---
+
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+The individual rules matter less than applying them everywhere. An API that is 90% consistent is more confusing than one that is consistently quirky, because the exceptions are where bugs and support tickets live.
+
+## Pick conventions once
+
+Decide these for the whole API and write them down:
+
+- **Casing of fields** — `camelCase` or `snake_case`, the same in every response.
+- **Plurals** — every collection plural (`/articles`, `/users`), no mixing.
+- **IDs** — one format (UUID, ULID, or integer) and one field name (`id`).
+- **Timestamps** — ISO 8601 UTC strings (`2026-06-24T10:00:00Z`), with consistent field names like `createdAt`/`updatedAt`.
+- **Money & enums** — minor units (integers) for money; documented string enums, not magic numbers.
+
+## Collections vs singletons
+
+Most resources are items in a collection (`/articles/42`). A few are **singletons** — there is exactly one per context, so there is no ID:
+
+```http
+GET   /me              # the authenticated user
+GET   /settings        # the account's settings
+PATCH /settings        # update them
+```
+
+Singletons skip the collection level on purpose; do not invent a fake ID for them.
+
+## A conventions checklist
+
+- Collections are plural; items are `/collection/{id}`.
+- Lowercase, hyphenated paths; no verbs; no file extensions.
+- One casing, one ID format, one timestamp format across every resource.
+- Errors share one shape (covered in Status Codes & Errors).
+- The same field means the same thing everywhere.
+
+<Callout title="Write the conventions down">
+The cheapest way to stay consistent is a short style guide your team and your future self can check against. Conventions that live only in someone's head drift the moment a second developer adds an endpoint. A page of rules prevents a hundred inconsistencies.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'Why is partial consistency often worse than consistent quirkiness?',
+    options: [
+      'It is slower',
+      'The exceptions are where confusion and bugs concentrate',
+      'It uses more bandwidth',
+      'It breaks HTTPS',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'How should a singleton resource like the current user be addressed?',
+    options: [
+      'With a fake ID like /users/0',
+      'As a singleton path such as /me, with no ID',
+      'Only via query params',
+      'It cannot be a resource',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'What is the recommended format for timestamps in responses?',
+    options: ['Unix seconds only', 'Locale-formatted strings', 'ISO 8601 UTC strings', 'Whatever the database returns'],
+    answer: 2,
+  },
+];
+
+<Quiz client:visible id="resource-and-uri-design/consistency-and-conventions" questions={quiz} />
+
+<ProgressTracker client:visible id="resource-and-uri-design/consistency-and-conventions" />

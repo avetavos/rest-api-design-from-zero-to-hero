@@ -1,0 +1,55 @@
+---
+title: Resource & URI Design
+description: 'Modeling the nouns of your API and naming the URIs that address them.'
+sidebar:
+  order: 1
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+In REST, the **resource** is the central abstraction. A resource is any thing worth naming and addressing — a user, an article, an order, a shopping cart. Designing an API is mostly deciding what your resources are and how their URIs read.
+
+## Resources and their relationships
+
+export const domainDiagram = `classDiagram
+  class User { +id +name +email }
+  class Article { +id +title +body +authorId }
+  class Comment { +id +body +articleId +authorId }
+  User "1" --> "*" Article : writes
+  Article "1" --> "*" Comment : has
+  User "1" --> "*" Comment : posts`;
+
+<Mermaid code={domainDiagram} title="A small domain: users author articles, which have comments" />
+
+Each box becomes a collection you can address (`/users`, `/articles`, `/comments`), and the relationships hint at how URIs nest and link.
+
+## What this module covers
+
+- **Modeling resources** — finding the right nouns and the right granularity.
+- **URI naming** — the conventions that make an API predictable.
+- **Nesting & relationships** — sub-resources versus links.
+- **Consistency & conventions** — keeping the whole API coherent.
+
+<Callout title="A resource is a thing, not a procedure">
+If you find yourself wanting `/createUser` or `/getArticleList`, step back: the resource is the noun (`/users`, `/articles`) and the HTTP method supplies the verb. Verbs in the path are the clearest sign an API has drifted from REST toward RPC.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'In REST, what is the central abstraction you design around?',
+    options: ['Functions', 'Resources (nouns)', 'Database tables', 'Endpoints named after verbs'],
+    answer: 1,
+  },
+  {
+    q: 'Which URL smells like RPC rather than REST?',
+    options: ['/articles', '/articles/42', '/getArticleById', '/articles/42/comments'],
+    answer: 2,
+  },
+];
+
+<Quiz client:visible id="resource-and-uri-design/index" questions={quiz} />
+
+<ProgressTracker client:visible id="resource-and-uri-design/index" />

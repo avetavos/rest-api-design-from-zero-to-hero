@@ -1,0 +1,92 @@
+---
+title: Nesting & Relationships
+description: 'When to nest sub-resources in the path and when to link instead.'
+sidebar:
+  order: 4
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+Resources relate to each other, and the URI structure can express some of those relationships. The trick is nesting enough to be intuitive without building brittle, deeply nested paths.
+
+## Sub-resources
+
+When one resource clearly belongs to another, nest it one level:
+
+```http
+GET  /articles/42/comments        # comments of article 42
+POST /articles/42/comments        # add a comment to article 42
+GET  /users/7/articles            # articles written by user 7
+```
+
+export const relDiagram = `flowchart LR
+  A[/articles/42/] --> C[/articles/42/comments/]
+  C --> CI[/articles/42/comments/9/]`;
+
+<Mermaid code={relDiagram} title="One level of nesting reads naturally; deeper gets unwieldy" />
+
+## How deep to nest
+
+Stop at one, occasionally two, levels. A path like `/users/7/articles/42/comments/9/reactions/3` is hard to read and couples resources that should stand alone. Once a sub-resource has its own identity, give it a top-level URI too and **link** to it instead of nesting further:
+
+```http
+GET /comments/9          # the comment as a first-class resource
+GET /articles/42/comments # still fine as a scoped collection
+```
+
+## Linking
+
+Rather than embedding everything, return references the client can follow:
+
+export const linkCode = `function articleResponse(article) {
+  return {
+    id: article.id,
+    title: article.title,
+    author: { id: article.authorId, href: '/users/' + article.authorId },
+    comments: { href: '/articles/' + article.id + '/comments' },
+  };
+}
+
+console.log(JSON.stringify(articleResponse({ id: 42, title: 'Hi', authorId: 7 }), null, 2));`;
+
+<NodeRunner client:visible code={linkCode} />
+
+<Callout title="Nest for ownership, link for everything else">
+Nest a sub-resource only when it truly lives inside its parent and you would not address it without that parent. The moment a resource has a stable identity of its own, give it a top-level URI and reference it by link. Shallow paths plus links age far better than deep nesting.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'How deep should URI nesting usually go?',
+    options: ['As deep as the data model', 'One, occasionally two, levels', 'Never nest', 'Exactly three levels'],
+    answer: 1,
+  },
+  {
+    q: 'Once a sub-resource has its own stable identity, you should:',
+    options: [
+      'Keep nesting it everywhere',
+      'Give it a top-level URI and link to it',
+      'Remove it from the API',
+      'Embed its full data in every parent',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'What does `POST /articles/42/comments` express?',
+    options: [
+      'Replace article 42',
+      'Create a comment belonging to article 42',
+      'Delete article 42 comments',
+      'List all comments site-wide',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="resource-and-uri-design/nesting-and-relationships" questions={quiz} />
+
+<ProgressTracker client:visible id="resource-and-uri-design/nesting-and-relationships" />

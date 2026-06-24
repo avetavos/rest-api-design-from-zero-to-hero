@@ -1,0 +1,67 @@
+---
+title: URI Naming
+description: 'The conventions that make resource URIs predictable and clean.'
+sidebar:
+  order: 3
+---
+
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+A URI is the name of a resource. Consistent naming lets a developer guess the next endpoint correctly without reading the docs — the highest compliment an API can earn.
+
+## The conventions
+
+- **Nouns, not verbs** — `/articles`, never `/getArticles`. The method is the verb.
+- **Plural collections** — `/articles` is the collection; `/articles/42` is one item in it. Pick plural and stick with it.
+- **Lowercase with hyphens** — `/blog-posts`, not `/blogPosts` or `/Blog_Posts`. Paths are case-sensitive in spirit; keep them lowercase to avoid surprises.
+- **IDs in the path, not the query** — `/articles/42`, not `/articles?id=42`. The query string is for filtering a collection, not identifying an item.
+- **No file extensions** — `/articles/42`, not `/articles/42.json`. Use the `Accept` header for format negotiation.
+- **No trailing slash** convention — choose with or without and be consistent (most APIs omit it).
+
+## Good vs. not
+
+```http
+GET /articles                 # collection
+GET /articles/42              # one item
+GET /articles/42/comments     # that item's comments
+GET /articles?status=draft    # filtered collection
+
+# Avoid:
+GET /getArticles
+GET /article/42               # inconsistent singular
+GET /articles/42.json
+GET /articles?articleId=42    # identity belongs in the path
+```
+
+<Callout title="Predictability is the goal">
+Every naming rule serves one aim: a client who has seen `/articles/42/comments` can confidently guess `/users/7/articles`. Consistency is worth more than any individual rule — pick conventions and apply them everywhere.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'Which URI follows REST naming conventions for a single article?',
+    options: ['/getArticle/42', '/articles/42', '/article?id=42', '/Articles/42.json'],
+    answer: 1,
+  },
+  {
+    q: 'Where does a resource identifier belong?',
+    options: ['In the query string', 'In the path', 'In a header', 'In the body'],
+    answer: 1,
+  },
+  {
+    q: 'How should you choose between JSON and other formats?',
+    options: [
+      'A .json file extension on the path',
+      'A ?format=json query param',
+      'The Accept header (content negotiation)',
+      'A separate /json/ prefix',
+    ],
+    answer: 2,
+  },
+];
+
+<Quiz client:visible id="resource-and-uri-design/uri-naming" questions={quiz} />
+
+<ProgressTracker client:visible id="resource-and-uri-design/uri-naming" />
