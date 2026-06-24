@@ -1,0 +1,102 @@
+---
+title: Tokens, JWT & OAuth
+description: 'Bearer tokens, the shape of a JWT, and the OAuth2 authorization-code flow.'
+sidebar:
+  order: 3
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+Most APIs authenticate with **bearer tokens**: a credential the client presents on each request. JWTs are a popular token format, and OAuth2 is the protocol for obtaining tokens on a user's behalf.
+
+## Bearer tokens
+
+```http
+Authorization: Bearer <token>
+```
+
+"Bearer" means whoever holds the token can use it — so tokens must travel over HTTPS, be short-lived, and be revocable.
+
+## What a JWT is
+
+A JSON Web Token has three base64url parts separated by dots: `header.payload.signature`. The header names the algorithm, the payload holds **claims** (such as `sub`, `exp`, `aud`, `iss`), and the signature is computed by the issuer over the first two parts.
+
+export const jwtCode = `// A JWT payload is base64url JSON — readable, but you must VERIFY the signature server-side.
+const token = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyXzQyIiwiZXhwIjoxOTAwMDAwMDAwfQ.sig';
+const payloadB64 = token.split('.')[1];
+const json = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/'));
+const claims = JSON.parse(json);
+console.log('claims:', claims);
+console.log('subject:', claims.sub);
+console.log('expires:', new Date(claims.exp * 1000).toISOString());`;
+
+<NodeRunner client:visible code={jwtCode} />
+
+Anyone can *read* a JWT payload — it is not encrypted. Trust comes only from **verifying the signature** with the issuer's key, and checking `exp` (not expired), `aud` (intended for your API), and `iss` (from a trusted issuer). Never trust claims you have not verified.
+
+## OAuth2 authorization-code flow
+
+OAuth2 lets a user grant an app limited access without sharing their password. The dominant flow:
+
+export const oauthDiagram = `sequenceDiagram
+  participant U as User
+  participant App as Client App
+  participant AS as Authorization Server
+  participant API as Resource API
+  U->>App: use the app
+  App->>AS: redirect to authorize (scopes)
+  U->>AS: log in + consent
+  AS-->>App: authorization code
+  App->>AS: exchange code (+ secret) for tokens
+  AS-->>App: access token (+ refresh token)
+  App->>API: request + Bearer access token
+  API-->>App: protected resource`;
+
+<Mermaid code={oauthDiagram} title="The OAuth2 authorization-code flow (OIDC adds an identity token)" />
+
+**Scopes** limit what a token can do (`articles:read`, `articles:write`); your API checks the token's scopes during authorization. OpenID Connect (OIDC) layers identity (an `id_token`) on top of OAuth2.
+
+<Callout title="Verify, don't just decode">
+A JWT's payload is readable by anyone — decoding it proves nothing. Always verify the signature against the issuer's key and validate `exp`, `aud`, and `iss` before trusting a single claim. Keep access tokens short-lived and use refresh tokens (or re-auth) to renew them.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'What are the three parts of a JWT?',
+    options: [
+      'method.path.body',
+      'header.payload.signature',
+      'user.role.scope',
+      'issuer.audience.expiry',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'Why is reading a JWT payload not enough to trust it?',
+    options: [
+      'The payload is encrypted',
+      'The payload is only base64 — trust requires verifying the signature and claims',
+      'JWTs cannot be read',
+      'The payload is always empty',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'What do OAuth2 scopes control?',
+    options: [
+      'The token format',
+      'What actions a token is permitted to perform',
+      'The HTTP method',
+      'The cache duration',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="security/tokens-jwt-oauth" questions={quiz} />
+
+<ProgressTracker client:visible id="security/tokens-jwt-oauth" />

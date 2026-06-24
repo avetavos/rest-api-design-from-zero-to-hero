@@ -1,0 +1,86 @@
+---
+title: Rate Limiting & Validation
+description: 'Throttling abusive callers and treating all input as untrusted.'
+sidebar:
+  order: 5
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+Two defenses round out API security: limiting how often a caller may hit you, and never trusting what they send.
+
+## Rate limiting
+
+Rate limiting caps requests per client per window, protecting against abuse, runaway clients, and accidental loops. When a caller exceeds the limit, respond `429 Too Many Requests` with a `Retry-After` header telling them when to try again. It is good practice to advertise the budget with `RateLimit-Limit`, `RateLimit-Remaining`, and `RateLimit-Reset` headers.
+
+A common algorithm is the **token bucket**: each client has a bucket that refills at a steady rate; each request spends a token; an empty bucket means `429`.
+
+export const bucketCode = `function makeBucket(capacity, refillPerSec) {
+  let tokens = capacity;
+  let last = 0; // logical time in seconds
+  return function take(now) {
+    tokens = Math.min(capacity, tokens + (now - last) * refillPerSec);
+    last = now;
+    if (tokens >= 1) { tokens -= 1; return { ok: true, remaining: Math.floor(tokens) }; }
+    return { ok: false, status: 429, retryAfter: Math.ceil((1 - tokens) / refillPerSec) };
+  };
+}
+
+const take = makeBucket(3, 1); // burst of 3, refill 1/sec
+console.log(take(0), take(0), take(0)); // three allowed
+console.log(take(0));                    // 4th: 429 with retryAfter`;
+
+<NodeRunner client:visible code={bucketCode} />
+
+## Validate everything
+
+Every value from a client is untrusted until validated. The main risks:
+
+- **Injection** — never build SQL/commands by string concatenation; use parameterized queries.
+- **Mass assignment** — do not blindly spread a request body onto a model; accept only an allowlist of fields, or a user could set `isAdmin: true`.
+- **Oversized payloads** — cap request body size and array lengths to avoid resource exhaustion.
+- **Type and range** — validate types, lengths, and ranges with a schema, and reject with `422` (see [Validation Errors](/rest-api-design-from-zero-to-hero/en/status-and-errors/validation-errors/)).
+
+<Callout title="Allowlist input, throttle abuse">
+Accept only the fields and shapes you expect — an allowlist beats a blocklist every time, and it stops mass-assignment attacks cold. Pair that with per-client rate limits and body-size caps so a single caller can neither corrupt your data nor exhaust your capacity.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'Which status and header signal that a client is rate limited?',
+    options: [
+      '403 Forbidden with Allow',
+      '429 Too Many Requests with Retry-After',
+      '503 with Location',
+      '409 with ETag',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'What is mass assignment, and how do you prevent it?',
+    options: [
+      'Sending too many requests; fix with rate limiting',
+      'Blindly binding request fields to a model; fix by allowlisting accepted fields',
+      'Returning too many fields; fix with sparse fieldsets',
+      'A caching bug; fix with ETags',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'How should you prevent SQL injection?',
+    options: [
+      'Escape strings by hand',
+      'Use parameterized queries rather than string concatenation',
+      'Validate only on the client',
+      'Return 500 on bad input',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="security/rate-limiting-and-validation" questions={quiz} />
+
+<ProgressTracker client:visible id="security/rate-limiting-and-validation" />

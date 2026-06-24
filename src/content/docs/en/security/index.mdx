@@ -1,0 +1,68 @@
+---
+title: Security
+description: 'The security surface of an API — authentication, authorization, transport, input, and abuse.'
+sidebar:
+  order: 1
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+Security is not a feature you bolt on; it is a set of concerns that touch every endpoint. This module covers the ones every API must address.
+
+## The surface
+
+export const surfaceDiagram = `flowchart TD
+  API --> T[Transport: HTTPS everywhere]
+  API --> AuthN[Authentication: who are you?]
+  API --> AuthZ[Authorization: what may you do?]
+  API --> In[Input: validate everything]
+  API --> Ab[Abuse: rate limiting & quotas]`;
+
+<Mermaid code={surfaceDiagram} title="Five concerns that span the whole API" />
+
+- **Transport** — serve only over HTTPS; never accept credentials over plain HTTP.
+- **Authentication** — establish who the caller is (API key, token).
+- **Authorization** — decide what that caller may do.
+- **Input** — treat every byte from the client as untrusted; validate it.
+- **Abuse** — protect the API from being overwhelmed or scraped.
+
+## What this module covers
+
+- **Authn vs authz** — the difference, and `401` vs `403`.
+- **Tokens, JWT & OAuth** — bearer tokens and delegated access.
+- **CORS** — how browsers gate cross-origin calls.
+- **Rate limiting & validation** — throttling and trusting nothing.
+
+<Callout title="Never put secrets in the URL">
+API keys, tokens, and passwords must never appear in the path or query string — URLs are logged by servers, proxies, and browser history, and leak through `Referer` headers. Credentials belong in the `Authorization` header (or a secure cookie), and everything travels over HTTPS.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'Why must credentials never go in the URL?',
+    options: [
+      'URLs are too short',
+      'URLs are logged and leak via history and Referer headers',
+      'The query string cannot hold text',
+      'It breaks caching',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'How should client input be treated?',
+    options: [
+      'As trusted once authenticated',
+      'As untrusted and validated on every request',
+      'Only validated in development',
+      'Validated by the client only',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="security/index" questions={quiz} />
+
+<ProgressTracker client:visible id="security/index" />

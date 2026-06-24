@@ -1,0 +1,91 @@
+---
+title: CORS
+description: 'How browsers gate cross-origin API calls, and how to configure it correctly.'
+sidebar:
+  order: 4
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+If your API is called from browser JavaScript on a different origin, you will meet CORS. It is one of the most misunderstood parts of web APIs, so let's be precise about what it is and is not.
+
+## What CORS actually does
+
+The browser's same-origin policy blocks a page on `https://app.example.com` from reading a response from `https://api.example.com` unless the API explicitly opts in with **Cross-Origin Resource Sharing** headers. CORS is enforced **by the browser**, on behalf of the user — it is not a server-side access control.
+
+## Simple requests and preflight
+
+For "non-simple" requests (most JSON `POST`/`PUT`/`DELETE`, custom headers), the browser first sends a **preflight** `OPTIONS` request asking permission:
+
+export const preflightDiagram = `sequenceDiagram
+  participant B as Browser
+  participant S as API
+  B->>S: OPTIONS /articles (preflight)
+  S-->>B: 204 + Access-Control-Allow-Origin/Methods/Headers
+  B->>S: POST /articles (actual request)
+  S-->>B: 201 Created + Access-Control-Allow-Origin`;
+
+<Mermaid code={preflightDiagram} title="The browser checks permission with OPTIONS before the real request" />
+
+The key response headers: `Access-Control-Allow-Origin` (which origins may read responses), `-Allow-Methods`, `-Allow-Headers`, and `-Allow-Credentials` (whether cookies/credentials are allowed).
+
+## Configuring it
+
+export const honoCode = `const ALLOWED = new Set(['https://app.example.com']);
+
+app.use('*', async (c, next) => {
+  const origin = c.req.header('Origin');
+  if (origin && ALLOWED.has(origin)) {
+    c.header('Access-Control-Allow-Origin', origin);
+    c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+    c.header('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+  }
+  if (c.req.method === 'OPTIONS') return c.body(null, 204); // preflight
+  await next();
+});
+
+app.get('/articles', (c) => c.json([{ id: 1 }]));`;
+
+<NodeRunner stackblitz client:visible code={honoCode} />
+
+Avoid the classic mistake of reflecting any origin (`Access-Control-Allow-Origin: *`) **together with** `Allow-Credentials: true` — the combination is forbidden and, more importantly, would expose authenticated responses to any site.
+
+<Callout title="CORS is not authentication">
+Loosening CORS does not make your API less secure to non-browser clients — curl, mobile apps, and servers ignore it entirely. CORS only decides which web origins a browser will let read your responses. Keep a tight allowlist of origins, and never rely on CORS as your access control; that is what authn/authz are for.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'Who enforces CORS?',
+    options: ['The server', 'The browser, on the user’s behalf', 'The DNS resolver', 'The TLS layer'],
+    answer: 1,
+  },
+  {
+    q: 'What is the preflight request?',
+    options: [
+      'A GET to warm the cache',
+      'An OPTIONS request the browser sends to check permission before the real request',
+      'A retry of a failed POST',
+      'A health check',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'Why is `Allow-Origin: *` with `Allow-Credentials: true` a problem?',
+    options: [
+      'It is slow',
+      'It is forbidden and would expose authenticated responses to any site',
+      'It breaks JSON',
+      'It disables caching',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="security/cors" questions={quiz} />
+
+<ProgressTracker client:visible id="security/cors" />
