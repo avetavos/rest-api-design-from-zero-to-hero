@@ -1,6 +1,63 @@
 ---
 title: REST API Design — From Zero to Hero
-description: Design clean, robust RESTful HTTP APIs — resources, methods, status codes, errors, pagination, versioning, caching, security, and OpenAPI — with TypeScript.
+description: Design clean, robust RESTful HTTP APIs from first principles — resources, methods, status codes, errors, pagination, versioning, caching, security, and OpenAPI — with runnable TypeScript examples.
 template: splash
+hero:
+  tagline: A standalone, beginner→advanced course on designing RESTful HTTP APIs, taught with TypeScript. From HTTP foundations to resources, errors, pagination, caching, security, and a working Hono implementation — with examples you can run in the browser.
+  actions:
+    - text: Start here
+      link: /rest-api-design-from-zero-to-hero/en/http-and-rest/
+      icon: right-arrow
+      variant: primary
+    - text: Jump to Status & Errors
+      link: /rest-api-design-from-zero-to-hero/en/status-and-errors/
+      icon: open-book
 ---
-Coming soon.
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## What you'll learn
+
+<CardGrid>
+  <Card title="HTTP & REST Foundations" icon="rocket">
+    The request/response cycle, methods, status codes, and the REST constraints. [Start →](/rest-api-design-from-zero-to-hero/en/http-and-rest/)
+  </Card>
+  <Card title="Resource & URI Design" icon="seti:plan">
+    Modeling resources and naming clean, predictable URIs. [Design →](/rest-api-design-from-zero-to-hero/en/resource-and-uri-design/)
+  </Card>
+  <Card title="Methods, CRUD & Idempotency" icon="random">
+    GET/POST/PUT/PATCH/DELETE, safety, idempotency, bulk & async. [Map →](/rest-api-design-from-zero-to-hero/en/methods-crud-idempotency/)
+  </Card>
+  <Card title="Status Codes & Errors" icon="warning">
+    Choosing codes and a consistent problem+json error shape. [Report →](/rest-api-design-from-zero-to-hero/en/status-and-errors/)
+  </Card>
+  <Card title="Querying Collections" icon="list-format">
+    Pagination, filtering, sorting, field selection, and envelopes. [Query →](/rest-api-design-from-zero-to-hero/en/collections-querying/)
+  </Card>
+  <Card title="Versioning & Caching" icon="seti:clock">
+    Evolving safely; Cache-Control, ETags, and conditional requests. [Scale →](/rest-api-design-from-zero-to-hero/en/versioning-caching/)
+  </Card>
+  <Card title="Security" icon="approve-check">
+    Authn vs authz, JWT/OAuth2, CORS, rate limiting, validation. [Secure →](/rest-api-design-from-zero-to-hero/en/security/)
+  </Card>
+  <Card title="Docs, Testing & Building" icon="seti:config">
+    OpenAPI, testing layers, and a cohesive Hono implementation. [Ship →](/rest-api-design-from-zero-to-hero/en/docs-testing-building/)
+  </Card>
+</CardGrid>
+
+## How this course works
+
+<CardGrid>
+  <Card title="Runnable TypeScript" icon="rocket">
+    Run logic snippets in the browser, and open real Hono API servers in StackBlitz — endpoints you can actually call.
+  </Card>
+  <Card title="Diagrams that explain" icon="puzzle">
+    Request/response cycles, resource models, and auth flows as theme-aware Mermaid diagrams.
+  </Card>
+  <Card title="Design, not just syntax" icon="approve-check">
+    Every topic covers the why and the trade-offs — when to use a pattern, and when not to.
+  </Card>
+  <Card title="Bilingual + read mode" icon="translate">
+    English and ไทย, quizzes with saved progress, and a distraction-free read mode.
+  </Card>
+</CardGrid>

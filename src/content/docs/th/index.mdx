@@ -1,6 +1,63 @@
 ---
 title: REST API Design — From Zero to Hero
-description: Design clean, robust RESTful HTTP APIs — resources, methods, status codes, errors, pagination, versioning, caching, security, and OpenAPI — with TypeScript.
+description: ออกแบบ RESTful HTTP API ที่สะอาดและแข็งแรงตั้งแต่พื้นฐาน — resource, method, status code, error, pagination, versioning, caching, security และ OpenAPI พร้อมตัวอย่าง TypeScript ที่รันได้
 template: splash
+hero:
+  tagline: คอร์สออกแบบ RESTful HTTP API แบบ standalone ตั้งแต่ผู้เริ่มต้นจนถึงขั้นสูง สอนด้วย TypeScript ตั้งแต่พื้นฐาน HTTP ไปจนถึง resource, error, pagination, caching, security และการ implement ด้วย Hono จริง พร้อมตัวอย่างที่รันได้ในเบราว์เซอร์
+  actions:
+    - text: เริ่มที่นี่
+      link: /rest-api-design-from-zero-to-hero/th/http-and-rest/
+      icon: right-arrow
+      variant: primary
+    - text: ข้ามไปที่ Status & Errors
+      link: /rest-api-design-from-zero-to-hero/th/status-and-errors/
+      icon: open-book
 ---
-Coming soon.
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## สิ่งที่คุณจะได้เรียน
+
+<CardGrid>
+  <Card title="HTTP & REST Foundations" icon="rocket">
+    request/response cycle, method, status code และ REST constraints [เริ่ม →](/rest-api-design-from-zero-to-hero/th/http-and-rest/)
+  </Card>
+  <Card title="Resource & URI Design" icon="seti:plan">
+    การออกแบบ resource และตั้งชื่อ URI ที่สะอาดและคาดเดาได้ [ออกแบบ →](/rest-api-design-from-zero-to-hero/th/resource-and-uri-design/)
+  </Card>
+  <Card title="Methods, CRUD & Idempotency" icon="random">
+    GET/POST/PUT/PATCH/DELETE, safety, idempotency, bulk & async [แมป →](/rest-api-design-from-zero-to-hero/th/methods-crud-idempotency/)
+  </Card>
+  <Card title="Status Codes & Errors" icon="warning">
+    การเลือก status code และรูปแบบ error ที่สม่ำเสมอด้วย problem+json [รายงาน →](/rest-api-design-from-zero-to-hero/th/status-and-errors/)
+  </Card>
+  <Card title="Querying Collections" icon="list-format">
+    pagination, filtering, sorting, field selection และ envelope [ค้นหา →](/rest-api-design-from-zero-to-hero/th/collections-querying/)
+  </Card>
+  <Card title="Versioning & Caching" icon="seti:clock">
+    การพัฒนา API อย่างปลอดภัย; Cache-Control, ETag และ conditional request [สเกล →](/rest-api-design-from-zero-to-hero/th/versioning-caching/)
+  </Card>
+  <Card title="Security" icon="approve-check">
+    authn เทียบ authz, JWT/OAuth2, CORS, rate limiting, validation [ป้องกัน →](/rest-api-design-from-zero-to-hero/th/security/)
+  </Card>
+  <Card title="Docs, Testing & Building" icon="seti:config">
+    OpenAPI, ชั้นของการทดสอบ และการ implement ด้วย Hono [ส่งขึ้นจริง →](/rest-api-design-from-zero-to-hero/th/docs-testing-building/)
+  </Card>
+</CardGrid>
+
+## คอร์สนี้ทำงานยังไง
+
+<CardGrid>
+  <Card title="TypeScript ที่รันได้" icon="rocket">
+    รัน logic snippet ในเบราว์เซอร์ และเปิด Hono API server จริงใน StackBlitz — endpoint ที่เรียกได้จริง
+  </Card>
+  <Card title="ไดอะแกรมที่อธิบายชัด" icon="puzzle">
+    request/response cycle, โมเดล resource และ flow ของ auth เป็นไดอะแกรม Mermaid ที่รองรับธีม
+  </Card>
+  <Card title="เน้นการออกแบบ ไม่ใช่แค่ syntax" icon="approve-check">
+    ทุกหัวข้อครอบคลุมเหตุผลและ trade-off — ควรใช้แพตเทิร์นเมื่อไร และเมื่อไรไม่ควร
+  </Card>
+  <Card title="สองภาษา + read mode" icon="translate">
+    ภาษาอังกฤษและไทย, แบบทดสอบที่บันทึกความคืบหน้า และโหมดอ่านแบบไร้สิ่งรบกวน
+  </Card>
+</CardGrid>
