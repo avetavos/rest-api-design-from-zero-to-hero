@@ -1,0 +1,53 @@
+---
+title: Methods, CRUD & Idempotency
+description: 'Mapping create/read/update/delete onto HTTP methods — safely and predictably.'
+sidebar:
+  order: 1
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+Most of a REST API is create, read, update, and delete over resources. The art is mapping those operations onto HTTP methods so that clients, proxies, and your own retry logic all behave correctly.
+
+## CRUD to HTTP
+
+export const crudDiagram = `flowchart LR
+  Create -->|POST /articles| C[201 Created]
+  Read -->|GET /articles or /articles/42| R[200 OK]
+  Update -->|PUT or PATCH /articles/42| U[200 OK]
+  Delete -->|DELETE /articles/42| D[204 No Content]`;
+
+<Mermaid code={crudDiagram} title="The conventional mapping from CRUD to HTTP methods" />
+
+The mapping is not arbitrary: each method carries guarantees about **safety** (does it mutate?) and **idempotency** (is repeating it the same as doing it once?). Those guarantees are what let a client safely retry a dropped request, or a proxy cache a response.
+
+## What this module covers
+
+- **GET & POST** — reading safely and creating resources.
+- **PUT, PATCH & DELETE** — replacing, partially updating, and removing.
+- **Idempotency & safety** — the properties that make retries safe.
+- **Bulk & async** — batch operations and long-running work.
+
+<Callout title="Method choice is a promise">
+Choosing a method is not just labeling — it is promising clients how the operation behaves. A `GET` that mutates state or a `DELETE` that is not idempotent will break caches, retries, and trust. Honor the contract each method implies.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'Which HTTP method conventionally creates a new resource in a collection?',
+    options: ['GET', 'POST', 'PUT', 'DELETE'],
+    answer: 1,
+  },
+  {
+    q: 'A successful DELETE that returns no body typically uses which status?',
+    options: ['200 OK', '201 Created', '204 No Content', '404 Not Found'],
+    answer: 2,
+  },
+];
+
+<Quiz client:visible id="methods-crud-idempotency/index" questions={quiz} />
+
+<ProgressTracker client:visible id="methods-crud-idempotency/index" />

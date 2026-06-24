@@ -1,0 +1,93 @@
+---
+title: GET & POST
+description: 'Reading resources safely and creating them with POST.'
+sidebar:
+  order: 2
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+`GET` and `POST` are the two methods you will use most. They sit at opposite ends of the safety spectrum: `GET` only reads, while `POST` creates and is the least constrained method of all.
+
+## GET — safe and cacheable
+
+A `GET` retrieves a representation of a resource and must never change server state. Because it is safe, responses can be cached and requests can be freely retried. A `GET` on a collection returns the list; a `GET` on an item returns that item or `404`.
+
+```http
+GET /articles/42 HTTP/1.1
+Accept: application/json
+```
+
+A `GET` should never carry a meaningful request body, and must not have side effects — no "increment view count via GET", or caches and prefetchers will surprise you.
+
+## POST — create and non-idempotent actions
+
+A `POST` submits data to a collection, typically creating a new resource. It is neither safe nor idempotent: sending the same `POST` twice usually creates two resources. On success, return `201 Created` with a `Location` header pointing to the new resource.
+
+## Both, in a running API
+
+This Hono app exposes a collection you can read and append to. Open it in StackBlitz and try `GET /articles`, `GET /articles/1`, and `POST /articles`:
+
+export const honoCode = `const articles = [{ id: 1, title: 'First post' }];
+
+app.get('/articles', (c) => c.json(articles));
+
+app.get('/articles/:id', (c) => {
+  const id = Number(c.req.param('id'));
+  const found = articles.find((a) => a.id === id);
+  if (!found) return c.json({ error: 'Not found' }, 404);
+  return c.json(found);
+});
+
+app.post('/articles', async (c) => {
+  const input = await c.req.json();
+  const created = { id: articles.length + 1, title: String(input.title ?? '') };
+  articles.push(created);
+  return c.json(created, 201, { Location: '/articles/' + created.id });
+});`;
+
+<NodeRunner stackblitz client:visible code={honoCode} />
+
+<Callout title="Never mutate on GET">
+The single most common REST mistake is performing an action through `GET` (because it is easy to trigger from a browser). Caches, link prefetchers, and crawlers all assume `GET` is safe and may call it repeatedly. Any state change belongs on `POST`, `PUT`, `PATCH`, or `DELETE`.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'Why must a GET never change server state?',
+    options: [
+      'GET requests are slower',
+      'GET is assumed safe, so caches/prefetchers may repeat it freely',
+      'GET cannot send headers',
+      'GET responses cannot be JSON',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'Sending the same POST to a collection twice usually results in what?',
+    options: [
+      'One resource (POST is idempotent)',
+      'Two resources (POST is not idempotent)',
+      'A 304 Not Modified',
+      'A validation error',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'What should a successful create return?',
+    options: [
+      '200 OK with no headers',
+      '201 Created with a Location header',
+      '204 No Content',
+      '302 Found',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="methods-crud-idempotency/get-and-post" questions={quiz} />
+
+<ProgressTracker client:visible id="methods-crud-idempotency/get-and-post" />

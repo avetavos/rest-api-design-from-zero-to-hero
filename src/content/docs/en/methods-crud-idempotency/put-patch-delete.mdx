@@ -1,0 +1,104 @@
+---
+title: PUT, PATCH & DELETE
+description: 'Replacing, partially updating, and removing resources.'
+sidebar:
+  order: 3
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+These three methods cover the "U" and "D" of CRUD. The subtle one is the difference between `PUT` and `PATCH` — get it right and updates stay predictable.
+
+## PUT — full replacement
+
+`PUT` replaces the resource at a URI with the representation in the body. Send the **whole** resource; any field you omit is, semantically, being set to absent. Because the result of `PUT`-ing the same body twice is identical to once, `PUT` is **idempotent**.
+
+```http
+PUT /articles/42 HTTP/1.1
+Content-Type: application/json
+
+{ "title": "Updated title", "body": "Full new body" }
+```
+
+## PATCH — partial update
+
+`PATCH` applies a **partial** modification. Two common formats:
+
+- **JSON Merge Patch** (`application/merge-patch+json`): send only the fields to change; `null` means "remove this field".
+- **JSON Patch** (`application/json-patch+json`): send an array of explicit operations (`add`, `remove`, `replace`, ...).
+
+`PATCH` is not guaranteed idempotent in general (an op like "append to a list" is not), though many merge-patch updates happen to be.
+
+## DELETE — remove
+
+`DELETE` removes the resource. It is idempotent: deleting an already-deleted resource still leaves it deleted. Return `204 No Content` (or `200 OK` with a body) on success; a second `DELETE` may return `204` or `404` depending on your policy — pick one and be consistent.
+
+## Update in a running API
+
+export const honoCode = `const store = new Map([[1, { id: 1, title: 'Original', body: 'Hello' }]]);
+
+// PUT — full replacement (idempotent)
+app.put('/articles/:id', async (c) => {
+  const id = Number(c.req.param('id'));
+  const body = await c.req.json();
+  const replaced = { id, title: String(body.title ?? ''), body: String(body.body ?? '') };
+  store.set(id, replaced);
+  return c.json(replaced);
+});
+
+// PATCH — merge only provided fields
+app.patch('/articles/:id', async (c) => {
+  const id = Number(c.req.param('id'));
+  const current = store.get(id);
+  if (!current) return c.json({ error: 'Not found' }, 404);
+  const patch = await c.req.json();
+  const updated = { ...current, ...patch, id };
+  store.set(id, updated);
+  return c.json(updated);
+});
+
+app.delete('/articles/:id', (c) => {
+  store.delete(Number(c.req.param('id')));
+  return c.body(null, 204); // idempotent
+});`;
+
+<NodeRunner stackblitz client:visible code={honoCode} />
+
+<Callout title="PUT replaces, PATCH merges">
+If the client sends the complete resource and expects omitted fields to be cleared, that is `PUT`. If the client sends only what changed and expects everything else preserved, that is `PATCH`. Choosing `PUT` semantics but merging (or vice versa) is a frequent source of "why did my field disappear?" bugs.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'What does PUT do to fields omitted from the request body?',
+    options: [
+      'Leaves them unchanged',
+      'Treats the resource as fully replaced, so omitted fields are not preserved',
+      'Returns a 422',
+      'Appends them',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'In JSON Merge Patch, what does a field set to null mean?',
+    options: ['Leave it unchanged', 'Remove/clear that field', 'Validation error', 'Set it to 0'],
+    answer: 1,
+  },
+  {
+    q: 'Why is DELETE considered idempotent?',
+    options: [
+      'It never changes state',
+      'Deleting an already-deleted resource still leaves it deleted',
+      'It returns a body',
+      'It can be cached',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="methods-crud-idempotency/put-patch-delete" questions={quiz} />
+
+<ProgressTracker client:visible id="methods-crud-idempotency/put-patch-delete" />

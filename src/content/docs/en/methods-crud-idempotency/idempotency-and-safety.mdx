@@ -1,0 +1,87 @@
+---
+title: Idempotency & Safety
+description: 'The two properties that make HTTP requests retry-safe — and why they matter.'
+sidebar:
+  order: 4
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+Two properties decide whether a request can be safely repeated. They are easy to mix up, so let's pin them down precisely.
+
+## Safe vs idempotent
+
+- **Safe** — the request has no observable effect on server state; it only reads. `GET`, `HEAD`, and `OPTIONS` are safe.
+- **Idempotent** — making the request *N* times leaves the server in the same state as making it once. `GET`, `HEAD`, `OPTIONS`, `PUT`, and `DELETE` are idempotent. `POST` and (in general) `PATCH` are not.
+
+Every safe method is idempotent, but not every idempotent method is safe — `DELETE` changes state yet is idempotent.
+
+export const matrixDiagram = `flowchart TD
+  M{Method} --> GET[GET / HEAD: safe + idempotent]
+  M --> PUTDEL[PUT / DELETE: idempotent, not safe]
+  M --> POST[POST: neither]
+  M --> PATCH[PATCH: usually neither]`;
+
+<Mermaid code={matrixDiagram} title="Where each method sits on the safe/idempotent grid" />
+
+## Why it matters: retries
+
+Networks drop responses. When a client (or proxy, or load balancer) does not hear back, it may retry. If the method is idempotent, retrying is harmless. If it is not — like a `POST` that charges a card — a blind retry could charge twice.
+
+export const retryCode = `// A PUT is idempotent: applying it twice == applying it once.
+const store = { 42: { id: 42, status: 'draft' } };
+
+function putStatus(id, status) {
+  store[id] = { ...store[id], status };
+  return store[id];
+}
+
+console.log(putStatus(42, 'published')); // first attempt
+console.log(putStatus(42, 'published')); // retry after a dropped response
+console.log('final state:', store[42]);   // same as one call`;
+
+<NodeRunner client:visible code={retryCode} />
+
+## Making POST safe to retry
+
+When you genuinely need a non-idempotent create to tolerate retries, use an **idempotency key**: the client sends a unique `Idempotency-Key` header, and the server remembers the result for that key so a repeat returns the original outcome instead of acting twice. We cover the mechanics in [Versioning & Caching](/rest-api-design-from-zero-to-hero/en/versioning-caching/conditional-and-idempotency-keys/).
+
+<Callout title="Design for the retry you cannot see">
+Assume every non-safe request might arrive more than once. Make writes idempotent where you can (prefer `PUT` with a client-chosen ID), and protect the ones you cannot with an idempotency key. Correctness under retries is a design choice, not luck.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'Which statement is true?',
+    options: [
+      'Every idempotent method is also safe',
+      'Every safe method is also idempotent',
+      'POST is idempotent',
+      'DELETE is safe',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'Why is retrying a non-idempotent POST risky?',
+    options: [
+      'It is slower',
+      'It may perform the action twice (e.g. charge twice)',
+      'It cannot be cached',
+      'It returns the wrong status code',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'What lets a non-idempotent create tolerate retries safely?',
+    options: ['A larger timeout', 'An Idempotency-Key the server remembers', 'Using GET instead', 'A 500 response'],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="methods-crud-idempotency/idempotency-and-safety" questions={quiz} />
+
+<ProgressTracker client:visible id="methods-crud-idempotency/idempotency-and-safety" />

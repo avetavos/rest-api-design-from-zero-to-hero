@@ -1,0 +1,97 @@
+---
+title: Bulk & Async Operations
+description: 'Batch changes and long-running work without breaking REST semantics.'
+sidebar:
+  order: 5
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+Real APIs sometimes need to change many resources at once, or kick off work that takes longer than a request should wait. Both stretch the simple one-request-one-resource model, so they need deliberate design.
+
+## Bulk operations
+
+To act on many items in one call, `POST` to a batch endpoint with a list, and return a **per-item result** so callers learn exactly what succeeded:
+
+```http
+POST /articles/batch HTTP/1.1
+Content-Type: application/json
+
+{ "items": [ { "title": "A" }, { "title": "" } ] }
+```
+
+The response reports each item's outcome rather than a single overall status — partial success is the norm for batches:
+
+export const batchCode = `function processBatch(items) {
+  return items.map((item, i) => {
+    if (!item.title) {
+      return { index: i, status: 422, error: 'title is required' };
+    }
+    return { index: i, status: 201, id: 1000 + i };
+  });
+}
+
+const results = processBatch([{ title: 'A' }, { title: '' }, { title: 'C' }]);
+console.log(JSON.stringify(results, null, 2));
+const ok = results.filter((r) => r.status < 400).length;
+console.log(ok + '/' + results.length + ' succeeded');`;
+
+<NodeRunner client:visible code={batchCode} />
+
+## Long-running (async) work
+
+When an operation cannot finish within a request (a big export, a video transcode), do not hold the connection open. Accept the work and return `202 Accepted` with a link to a **status resource** the client can poll:
+
+export const asyncDiagram = `sequenceDiagram
+  participant C as Client
+  participant S as API
+  C->>S: POST /exports
+  S-->>C: 202 Accepted + Location: /exports/job-1
+  C->>S: GET /exports/job-1
+  S-->>C: 200 OK { status: "running" }
+  C->>S: GET /exports/job-1
+  S-->>C: 200 OK { status: "done", result: "/files/x" }`;
+
+<Mermaid code={asyncDiagram} title="202 Accepted plus a pollable status resource" />
+
+The job itself becomes a resource: `POST /exports` creates it, `GET /exports/{id}` reports progress, and the final response links to the produced result.
+
+<Callout title="Make the work a resource">
+Both patterns lean on the same idea: when a single request cannot express the operation, model the operation as a resource. A batch returns a result per item; an async job becomes something you create and then poll. You stay RESTful by turning the verb into a noun.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'What should a bulk endpoint return for a mixed batch?',
+    options: [
+      'A single 200 or 500 for the whole batch',
+      'A per-item result so callers see what succeeded and what failed',
+      'Only the first error',
+      'Nothing — 204 No Content',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'Which status fits accepting long-running work to process later?',
+    options: ['200 OK', '201 Created', '202 Accepted', '204 No Content'],
+    answer: 2,
+  },
+  {
+    q: 'How does a client track async work after a 202?',
+    options: [
+      'It keeps the connection open until done',
+      'It polls a status resource linked via Location',
+      'It re-sends the original request',
+      'It waits for an email',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="methods-crud-idempotency/bulk-and-async" questions={quiz} />
+
+<ProgressTracker client:visible id="methods-crud-idempotency/bulk-and-async" />
