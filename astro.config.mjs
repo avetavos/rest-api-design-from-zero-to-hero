@@ -9,12 +9,12 @@ export default defineConfig({
   // GitHub Pages project site. Update `site` to your GitHub username and `base`
   // to your repo name if they differ.
   site: 'https://avetavos.github.io',
-  base: '/nodejs-deep-dive',
+  base: '/rest-api-design-from-zero-to-hero',
   output: 'static',
   integrations: [starlight({
-      title: 'Node.js Deep Dive',
+      title: 'REST API Design — From Zero to Hero',
       head: [
-        { tag: 'script', attrs: { type: 'module', src: '/nodejs-deep-dive/enhance.js' } },
+        { tag: 'script', attrs: { type: 'module', src: '/rest-api-design-from-zero-to-hero/enhance.js' } },
       ],
       defaultLocale: 'en',
       locales: {
@@ -22,15 +22,16 @@ export default defineConfig({
         th: { label: 'ไทย', lang: 'th' },
       },
       customCss: ['./src/styles/custom.css'],
-      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/avetavos/nodejs-deep-dive' }],
+      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/avetavos/rest-api-design-from-zero-to-hero' }],
       sidebar: [
-        { label: 'JavaScript Essentials', items: [{ autogenerate: { directory: 'js-essentials' } }] },
-        { label: 'Event Loop & Async', items: [{ autogenerate: { directory: 'event-loop-async' } }] },
-        { label: 'Core APIs', items: [{ autogenerate: { directory: 'core-apis' } }] },
-        { label: 'Streams & I/O', items: [{ autogenerate: { directory: 'streams' } }] },
-        { label: 'HTTP & Networking', items: [{ autogenerate: { directory: 'http-networking' } }] },
-        { label: 'Modules & npm', items: [{ autogenerate: { directory: 'modules-npm' } }] },
-        { label: 'Testing & Tooling', items: [{ autogenerate: { directory: 'testing-tooling' } }] },
+        { label: 'HTTP & REST Foundations', items: [{ autogenerate: { directory: 'http-and-rest' } }] },
+        { label: 'Resource & URI Design', items: [{ autogenerate: { directory: 'resource-and-uri-design' } }] },
+        { label: 'Methods, CRUD & Idempotency', items: [{ autogenerate: { directory: 'methods-crud-idempotency' } }] },
+        { label: 'Status Codes & Errors', items: [{ autogenerate: { directory: 'status-and-errors' } }] },
+        { label: 'Querying Collections', items: [{ autogenerate: { directory: 'collections-querying' } }] },
+        { label: 'Versioning & Caching', items: [{ autogenerate: { directory: 'versioning-caching' } }] },
+        { label: 'Security', items: [{ autogenerate: { directory: 'security' } }] },
+        { label: 'Docs, Testing & Building', items: [{ autogenerate: { directory: 'docs-testing-building' } }] },
       ],
       }), preact()],
 });

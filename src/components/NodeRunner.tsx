@@ -17,7 +17,7 @@ export default function NodeRunner({ code, node = false }: { code: string; node?
   async function openSb() {
     try {
       const sdk = await loadSdk();
-      sdk.openProject(buildNodeProject(src), { openFile: 'index.js', newWindow: true });
+      sdk.openProject(buildNodeProject(src), { openFile: 'src/index.ts', newWindow: true });
     } catch {
       navigator.clipboard.writeText(src);
       window.open('https://stackblitz.com/fork/node', '_blank', 'noopener');

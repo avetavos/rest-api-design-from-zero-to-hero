@@ -5,6 +5,10 @@ export type StackBlitzProject = {
   files: Record<string, string>;
 };
 
+// Convention: lesson `code` defines routes on a pre-declared Hono `app`
+// (e.g. `app.get('/users', (c) => c.json([...]))`). The builder wraps it in a
+// runnable @hono/node-server entry so "Open in StackBlitz" boots a real API.
+
 export function buildJsSrcdoc(code: string): string {
   const safe = code.replace(/<\/script/gi, '<\\/script');
   return (
@@ -22,16 +26,36 @@ export function buildJsSrcdoc(code: string): string {
 }
 
 export function buildNodeProject(code: string): StackBlitzProject {
+  const indexTs =
+    "import { Hono } from 'hono';\n" +
+    "import { serve } from '@hono/node-server';\n\n" +
+    'const app = new Hono();\n\n' +
+    '// --- lesson code: defines routes on `app` ---\n' +
+    code + '\n' +
+    '// --- end lesson code ---\n\n' +
+    'serve({ fetch: app.fetch, port: 3000 }, (info) => {\n' +
+    '  console.log(`API listening on http://localhost:${info.port}`);\n' +
+    '});\n\n' +
+    'export default app;\n';
   return {
-    title: 'Node.js example',
-    description: 'Node.js Deep Dive — runnable example',
+    title: 'REST API example (Hono)',
+    description: 'REST API Design — runnable Hono API',
     template: 'node',
     files: {
       'package.json': JSON.stringify(
-        { name: 'node-example', type: 'module', scripts: { start: 'node index.js' } },
+        {
+          name: 'rest-api-example',
+          type: 'module',
+          scripts: { start: 'tsx watch src/index.ts' },
+          dependencies: { hono: '^4.6.0', '@hono/node-server': '^1.13.0' },
+          devDependencies: { tsx: '^4.19.0', typescript: '^5.6.0' },
+        },
         null, 2,
       ),
-      'index.js': code,
+      'src/index.ts': indexTs,
+      'README.md':
+        '# REST API example (Hono)\n\n' +
+        'Run `npm install` then `npm start`. The lesson code defines routes on the `app` Hono instance in `src/index.ts`.\n',
     },
   };
 }
