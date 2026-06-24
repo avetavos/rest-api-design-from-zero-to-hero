@@ -1,0 +1,114 @@
+---
+title: Building with Hono
+description: 'A cohesive TypeScript implementation that ties the course together.'
+sidebar:
+  order: 4
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+Time to assemble the pieces. A clean implementation separates routing, validation, and business logic, and wires cross-cutting concerns (auth, errors, CORS) as middleware.
+
+## A sensible structure
+
+```ts
+src/
+  index.ts        // create the app, mount middleware + routes, start the server
+  middleware/     // auth, error handler, CORS, rate limiting
+  routes/         // one module per resource (articles, users, ...)
+  services/       // business logic, independent of HTTP
+  schemas/        // request/response validation (e.g. zod)
+```
+
+Handlers stay thin: validate input, call a service, shape the response. Services know nothing about HTTP, so they are easy to unit-test.
+
+## A small resource, end to end
+
+This Hono app brings together validation, a consistent error shape, and proper status codes for an `articles` resource. Open it in StackBlitz to run it:
+
+export const honoCode = `const articles = [{ id: 1, title: 'First', body: 'Hello' }];
+
+class ApiError extends Error {
+  constructor(status, title) { super(title); this.status = status; this.title = title; }
+}
+
+function validate(input) {
+  const errors = [];
+  if (typeof input?.title !== 'string' || input.title.length === 0) {
+    errors.push({ field: 'title', message: 'title is required' });
+  }
+  return errors;
+}
+
+app.get('/articles', (c) => {
+  const limit = Number(c.req.query('limit') ?? '20');
+  return c.json({ data: articles.slice(0, limit), meta: { total: articles.length } });
+});
+
+app.get('/articles/:id', (c) => {
+  const found = articles.find((a) => a.id === Number(c.req.param('id')));
+  if (!found) throw new ApiError(404, 'Article not found');
+  return c.json(found);
+});
+
+app.post('/articles', async (c) => {
+  const input = await c.req.json().catch(() => null);
+  if (input === null) throw new ApiError(400, 'Invalid JSON');
+  const errors = validate(input);
+  if (errors.length) {
+    return c.json({ title: 'Validation failed', status: 422, errors }, 422,
+      { 'Content-Type': 'application/problem+json' });
+  }
+  const created = { id: articles.length + 1, title: input.title, body: input.body ?? '' };
+  articles.push(created);
+  return c.json(created, 201, { Location: '/articles/' + created.id });
+});
+
+app.onError((err, c) => {
+  const status = err.status ?? 500;
+  return c.json({ title: err.title ?? 'Internal Server Error', status }, status,
+    { 'Content-Type': 'application/problem+json' });
+});`;
+
+<NodeRunner stackblitz client:visible code={honoCode} />
+
+Notice how every idea from the course shows up: a paginated collection envelope, `201 Created` with `Location`, `422` validation with field errors, `404` via a thrown typed error, and one central `onError` producing `problem+json`.
+
+<Callout title="Thin handlers, real layers">
+Keep HTTP concerns (parsing, status, headers) in handlers and middleware; keep business rules in services that never import the web framework. That separation is what makes an API testable, lets you swap frameworks, and keeps each file small enough to reason about.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'Why keep services free of HTTP concerns?',
+    options: [
+      'To make them slower',
+      'So business logic is easy to unit-test and not tied to the web framework',
+      'Because Hono requires it',
+      'To avoid writing routes',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'What belongs in a thin handler?',
+    options: [
+      'All business rules and database queries inline',
+      'Validate input, call a service, shape the response',
+      'Only logging',
+      'The OpenAPI spec',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'Where is the single consistent error shape produced in this app?',
+    options: ['In every handler separately', 'In the central onError hook', 'In the client', 'In the database'],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="docs-testing-building/building-with-hono" questions={quiz} />
+
+<ProgressTracker client:visible id="docs-testing-building/building-with-hono" />

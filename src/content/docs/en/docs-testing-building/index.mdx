@@ -1,0 +1,64 @@
+---
+title: Docs, Testing & Building
+description: 'Turning an API design into a documented, tested, running TypeScript service.'
+sidebar:
+  order: 1
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+A good design only matters once it ships. This final module connects the dots: describe the API with a spec, prove it works with tests, and implement it cleanly in TypeScript.
+
+## From design to running service
+
+export const flowDiagram = `flowchart LR
+  D[Design: resources, methods, errors] --> S[Spec: OpenAPI]
+  S --> I[Implement: TypeScript + Hono]
+  I --> T[Test: unit / integration / contract]
+  T --> Doc[Docs from the spec]
+  Doc --> D`;
+
+<Mermaid code={flowDiagram} title="Spec, implementation, and tests reinforce each other" />
+
+The spec is the hinge: it documents the contract for consumers, generates client code and docs, and gives your tests something to check the implementation against.
+
+## What this module covers
+
+- **OpenAPI** — describing the API as a machine-readable contract.
+- **Testing APIs** — unit, integration, and contract tests.
+- **Building with Hono** — a cohesive TypeScript implementation.
+- **Best-practices recap** — a checklist over everything you have learned.
+
+<Callout title="The spec is the contract">
+Whether you write the OpenAPI document first (spec-first) or generate it from code (code-first), treat it as the single source of truth for what the API promises. Consumers, docs, mock servers, and contract tests all flow from it — a drifting or absent spec is how integrations quietly break.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'What role does the OpenAPI spec play across docs, tests, and clients?',
+    options: [
+      'It replaces the implementation',
+      'It is the single source of truth for the contract that the others derive from',
+      'It is only for generating docs',
+      'It is optional decoration',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'Why does a design only matter once it ships?',
+    options: [
+      'Designs are unimportant',
+      'The value is realized when a documented, tested implementation runs',
+      'Shipping removes the need for design',
+      'Tests replace design',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="docs-testing-building/index" questions={quiz} />
+
+<ProgressTracker client:visible id="docs-testing-building/index" />

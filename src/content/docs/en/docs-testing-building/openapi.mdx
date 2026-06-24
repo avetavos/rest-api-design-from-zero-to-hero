@@ -1,0 +1,101 @@
+---
+title: OpenAPI
+description: 'Describing your API as a machine-readable contract with OpenAPI.'
+sidebar:
+  order: 2
+---
+
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+OpenAPI (formerly Swagger) is a standard, machine-readable way to describe a REST API: its paths, operations, parameters, request/response schemas, and status codes. A single document drives docs, client generation, mock servers, and tests.
+
+## A minimal description
+
+Here is one endpoint described in OpenAPI 3.1 (YAML):
+
+```yaml
+openapi: 3.1.0
+info:
+  title: Blog API
+  version: 1.0.0
+paths:
+  /articles/{id}:
+    get:
+      summary: Get an article by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The article
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+        '404':
+          description: Not found
+components:
+  schemas:
+    Article:
+      type: object
+      required: [id, title]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        body: { type: string }
+```
+
+Each operation lists its parameters and every response it can return, each tied to a schema. The `components/schemas` section defines reusable shapes referenced with `$ref`.
+
+## Spec-first vs code-first
+
+- **Spec-first** — write the OpenAPI document, then implement against it. The contract is agreed before code exists; great for teams and external consumers.
+- **Code-first** — annotate your handlers/schemas and generate the spec from them. Less drift between code and spec, since one produces the other.
+
+Either way, tooling turns the spec into value: **Swagger UI** / Redoc render interactive docs, generators produce typed clients, and validators check requests against it.
+
+<Callout title="Let the spec do the repetitive work">
+A maintained OpenAPI document pays for itself: interactive docs, generated typed clients, mock servers for front-end teams, and request validation all come from the same file. Pick spec-first or code-first by team workflow, but do not hand-write and hand-maintain three separate descriptions of the same API.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'What does an OpenAPI document describe?',
+    options: [
+      'Only the database schema',
+      'Paths, operations, parameters, schemas, and responses — the API contract',
+      'Server hardware',
+      'Only authentication',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'What distinguishes spec-first from code-first?',
+    options: [
+      'Spec-first writes the OpenAPI document before implementing; code-first generates it from annotated code',
+      'They are the same',
+      'Code-first has no spec',
+      'Spec-first skips testing',
+    ],
+    answer: 0,
+  },
+  {
+    q: 'Which is a direct benefit of a maintained OpenAPI spec?',
+    options: [
+      'Faster database queries',
+      'Generated clients, interactive docs, and request validation from one source',
+      'Automatic authentication',
+      'Smaller response bodies',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="docs-testing-building/openapi" questions={quiz} />
+
+<ProgressTracker client:visible id="docs-testing-building/openapi" />

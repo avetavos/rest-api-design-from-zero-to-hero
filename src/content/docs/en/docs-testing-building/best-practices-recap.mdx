@@ -1,0 +1,68 @@
+---
+title: Best Practices Recap
+description: 'A consolidated checklist of everything this course covered.'
+sidebar:
+  order: 5
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+You now have the full toolkit. Here is the whole course as one checklist you can apply to any API you design or review.
+
+## The map
+
+export const recapDiagram = `flowchart TD
+  Start[Design a REST API] --> R[Resources & URIs]
+  Start --> M[Methods & idempotency]
+  Start --> E[Status & errors]
+  Start --> Q[Querying collections]
+  Start --> VC[Versioning & caching]
+  Start --> Sec[Security]
+  Start --> Ship[Docs, tests, build]`;
+
+<Mermaid code={recapDiagram} title="Seven areas that make up a well-designed API" />
+
+## The checklist
+
+**Resources & URIs** — model nouns, not actions; plural collections (`/articles`); lowercase-hyphenated paths; IDs in the path; nest only for ownership, otherwise link. See [Resource & URI Design](/rest-api-design-from-zero-to-hero/en/resource-and-uri-design/).
+
+**Methods & idempotency** — map CRUD to GET/POST/PUT/PATCH/DELETE; never mutate on GET; make writes idempotent where you can; protect non-idempotent creates with idempotency keys. See [Methods, CRUD & Idempotency](/rest-api-design-from-zero-to-hero/en/methods-crud-idempotency/).
+
+**Status & errors** — pick the precise status code; never return `200` for a failure; use one consistent `problem+json` error shape; return all validation errors at once. See [Status Codes & Errors](/rest-api-design-from-zero-to-hero/en/status-and-errors/).
+
+**Querying collections** — always paginate (prefer cursor for large/changing data); allowlist filter/sort fields; offer sparse fieldsets and a consistent envelope. See [Querying Collections](/rest-api-design-from-zero-to-hero/en/collections-querying/).
+
+**Versioning & caching** — favor additive, non-breaking changes; version coarsely when you must; set `Cache-Control` and `ETag`s; use conditional requests for concurrency. See [Versioning & Caching](/rest-api-design-from-zero-to-hero/en/versioning-caching/).
+
+**Security** — HTTPS only; never put secrets in URLs; distinguish `401`/`403`; verify tokens (do not just decode); tight CORS allowlist; rate-limit and validate all input. See [Security](/rest-api-design-from-zero-to-hero/en/security/).
+
+**Ship it** — describe the API with OpenAPI; test unit/integration/contract layers; keep handlers thin and services HTTP-free. See [OpenAPI](/rest-api-design-from-zero-to-hero/en/docs-testing-building/openapi/).
+
+<Callout title="Consistency beats cleverness">
+The best APIs are not the cleverest — they are the most predictable. Apply these conventions uniformly and a developer who has used one of your endpoints can guess the rest. That predictability, more than any single feature, is what makes an API a pleasure to build against.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'What single quality most makes an API pleasant to use?',
+    options: ['Cleverness', 'Predictable consistency across endpoints', 'The newest framework', 'Minimal documentation'],
+    answer: 1,
+  },
+  {
+    q: 'Which is a course-wide rule you should never break?',
+    options: [
+      'Always use cursor pagination',
+      'Never return 200 for a failure',
+      'Always nest sub-resources deeply',
+      'Always put the version in a header',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="docs-testing-building/best-practices-recap" questions={quiz} />
+
+<ProgressTracker client:visible id="docs-testing-building/best-practices-recap" />

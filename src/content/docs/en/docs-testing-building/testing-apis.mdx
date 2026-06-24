@@ -1,0 +1,82 @@
+---
+title: Testing APIs
+description: 'Unit, integration, and contract tests for a REST API.'
+sidebar:
+  order: 3
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+Tests are what let you change an API with confidence. Three layers, each catching a different class of bug, give good coverage without redundant effort.
+
+## The layers
+
+export const pyramidDiagram = `flowchart TD
+  U[Unit: handlers, validation, pure logic - many, fast] --> I[Integration: real routes end-to-end - fewer]
+  I --> C[Contract: responses match the OpenAPI spec - focused]`;
+
+<Mermaid code={pyramidDiagram} title="Many fast unit tests, fewer integration tests, focused contract checks" />
+
+- **Unit tests** — exercise pure pieces: a validator, a pagination helper, an error mapper. Fast and numerous.
+- **Integration tests** — send real requests through the actual router and assert status, headers, and body. These catch wiring bugs unit tests miss.
+- **Contract tests** — assert that responses conform to the OpenAPI schema, so the implementation and the published contract never drift.
+
+## An integration-style assertion
+
+Frameworks like Hono expose `app.request(...)`, so you can call routes in-process without a network:
+
+export const testCode = `// Simulating an assertion an integration test would make.
+function assert(name, cond) { console.log((cond ? 'PASS' : 'FAIL') + ': ' + name); }
+
+// Pretend this is the response from app.request('/articles/0')
+const response = { status: 404, body: { title: 'Not found', status: 404 } };
+
+assert('missing article returns 404', response.status === 404);
+assert('error body echoes status', response.body.status === 404);
+assert('error body has a title', typeof response.body.title === 'string');`;
+
+<NodeRunner client:visible code={testCode} />
+
+## What to assert
+
+For each endpoint, test the happy path *and* the failure paths: the right status code, the response shape, the error body for invalid input (does it match your `problem+json`?), auth required where expected, and pagination metadata on collections.
+
+<Callout title="Test the failures, not just the happy path">
+Most production incidents live in the error and edge paths — the `404`, the `422`, the expired token, the empty page. Assert those explicitly. Contract tests against your OpenAPI spec are especially high-value: they fail the moment your implementation drifts from what you have promised consumers.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'Which test layer sends real requests through the actual router?',
+    options: ['Unit tests', 'Integration tests', 'Contract tests', 'Load tests'],
+    answer: 1,
+  },
+  {
+    q: 'What do contract tests specifically guard against?',
+    options: [
+      'Slow responses',
+      'The implementation drifting from the published OpenAPI contract',
+      'Database downtime',
+      'Large payloads',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'Why explicitly test failure paths?',
+    options: [
+      'They are easier to write',
+      'Many incidents live in error/edge paths (404, 422, expired token, empty page)',
+      'HTTP requires it',
+      'To increase the test count only',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="docs-testing-building/testing-apis" questions={quiz} />
+
+<ProgressTracker client:visible id="docs-testing-building/testing-apis" />
