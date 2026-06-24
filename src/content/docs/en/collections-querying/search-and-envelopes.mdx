@@ -1,0 +1,89 @@
+---
+title: Search & Envelopes
+description: 'Full-text search and a consistent wrapper for every collection response.'
+sidebar:
+  order: 5
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+Two finishing touches make collection endpoints pleasant to use: a search parameter for free-text queries, and a single envelope shape every collection shares.
+
+## Search vs structured filters
+
+A `?q=` parameter is for fuzzy, free-text search across a resource ("anything matching *graphql*"):
+
+```http
+GET /articles?q=graphql
+```
+
+Structured filters (`?status=published`) answer precise questions; search answers vague ones. They compose — `?q=graphql&status=published` searches within a filtered set. Keep them distinct: `q` is ranked, fuzzy, and may be backed by a search engine; filters are exact predicates.
+
+## A consistent envelope
+
+Every collection response should share the same wrapper, so clients write the paging/handling code once:
+
+export const envelopeCode = `function envelope(data, { page, limit, total, basePath }) {
+  return {
+    data,
+    meta: { page, limit, total },
+    links: {
+      self: basePath + '?page=' + page,
+      next: page * limit < total ? basePath + '?page=' + (page + 1) : null,
+      prev: page > 1 ? basePath + '?page=' + (page - 1) : null,
+    },
+  };
+}
+
+const rows = [{ id: 1 }, { id: 2 }];
+console.log(JSON.stringify(envelope(rows, { page: 1, limit: 2, total: 7, basePath: '/articles' }), null, 2));`;
+
+<NodeRunner client:visible code={envelopeCode} />
+
+## The cost of total counts
+
+Returning `total` is convenient but, on large tables, counting every matching row can be as expensive as the query itself. Options: cache the count, return an approximate count, or omit it entirely (cursor pagination often does — it offers `next` without a grand total).
+
+<Callout title="One envelope, everywhere">
+Pick a collection envelope — `data` + `meta` + `links` is a solid default — and use it for every list endpoint, including search results. Clients then learn your pagination once and reuse it across the whole API. And remember exact `total` counts are not free; drop them when they hurt.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'How does `?q=` differ from a structured filter like `?status=published`?',
+    options: [
+      'They are identical',
+      '`q` is fuzzy/ranked free-text search; filters are exact predicates',
+      '`q` only works on numbers',
+      'Filters cannot be combined with q',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'Why can returning a `total` count be expensive?',
+    options: [
+      'JSON cannot hold large numbers',
+      'Counting every matching row on a large table can cost as much as the query',
+      'It requires authentication',
+      'It breaks pagination',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'What is the benefit of one shared collection envelope?',
+    options: [
+      'Smaller responses',
+      'Clients learn pagination once and reuse it across every list endpoint',
+      'It removes the need for status codes',
+      'It enables GET mutations',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="collections-querying/search-and-envelopes" questions={quiz} />
+
+<ProgressTracker client:visible id="collections-querying/search-and-envelopes" />

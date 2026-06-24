@@ -1,0 +1,87 @@
+---
+title: Field Selection
+description: 'Letting clients ask for only the fields they need — and expand related ones.'
+sidebar:
+  order: 4
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+One reason teams reach for GraphQL is over-fetching: an endpoint returns 30 fields when the client needs 3. REST can offer the same control with two simple query parameters.
+
+## Sparse fieldsets
+
+Let the client list the fields it wants with `?fields=`:
+
+```http
+GET /articles?fields=id,title
+```
+
+The server returns only those keys. This shrinks payloads for mobile clients and list views, and documents intent. Always include the resource's identifier even if not requested, so responses stay addressable.
+
+## Expanding related resources
+
+By default, link to related resources rather than embedding them. When a client wants them inline, let it opt in with `?expand=`:
+
+```http
+GET /articles/42?expand=author
+```
+
+Without `expand`, `author` is a reference (`{ "id": 7, "href": "/users/7" }`); with it, the author object is embedded. This keeps the default response small while avoiding an extra round trip when the client genuinely needs the related data.
+
+## Projecting fields in code
+
+export const projectCode = `function project(obj, fields) {
+  if (!fields) return obj;
+  const wanted = new Set(['id', ...fields.split(',')]); // always keep id
+  return Object.fromEntries(Object.entries(obj).filter(([k]) => wanted.has(k)));
+}
+
+const article = { id: 42, title: 'Hello', body: 'long...', views: 1200, authorId: 7 };
+console.log(project(article, 'title,views'));`;
+
+<NodeRunner client:visible code={projectCode} />
+
+<Callout title="Small default, opt-in detail">
+Design the default response to be lean and link out to related resources. Then give clients `fields` to trim further and `expand` to pull related data inline when they need it. You get GraphQL-like flexibility without giving up REST's caching and simplicity.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'What does `?fields=id,title` request?',
+    options: [
+      'Only the id and title fields in the response',
+      'Sort by id then title',
+      'Filter where id equals title',
+      'Two separate resources',
+    ],
+    answer: 0,
+  },
+  {
+    q: 'What is the purpose of an `?expand=author` parameter?',
+    options: [
+      'Delete the author',
+      'Embed the related author inline instead of just linking to it',
+      'Sort by author',
+      'Paginate authors',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'Why always include the identifier even if not in `fields`?',
+    options: [
+      'To make the payload bigger',
+      'So the returned object stays addressable/identifiable',
+      'HTTP requires it',
+      'To enable sorting',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="collections-querying/field-selection" questions={quiz} />
+
+<ProgressTracker client:visible id="collections-querying/field-selection" />

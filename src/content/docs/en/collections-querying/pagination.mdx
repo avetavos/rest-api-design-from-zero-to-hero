@@ -1,0 +1,95 @@
+---
+title: Pagination
+description: 'Offset vs cursor pagination, and the response envelope that goes with them.'
+sidebar:
+  order: 2
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+Pagination returns a collection in slices. There are two common strategies, and the right choice depends on how big and how dynamic your data is.
+
+## Offset pagination
+
+The client asks for a page by position: `?page=3&limit=20` (or `?offset=40&limit=20`). Simple, allows jumping to any page, and shows total counts easily.
+
+```http
+GET /articles?page=2&limit=20
+```
+
+Its weakness: **deep offsets are slow** (the database must skip all preceding rows), and **inserts shift the window** — if a row is added while you page, you can see duplicates or skip items.
+
+## Cursor pagination
+
+The client passes an opaque **cursor** marking where the last page ended: `?limit=20&cursor=eyJpZCI6MTQwfQ`. The server returns the next slice plus the cursor for the page after.
+
+export const cursorDiagram = `flowchart LR
+  A[GET /articles?limit=20] --> B[20 items + nextCursor]
+  B --> C[GET /articles?limit=20&cursor=...]
+  C --> D[next 20 + nextCursor]`;
+
+<Mermaid code={cursorDiagram} title="Each page hands back the cursor for the one after it" />
+
+Cursors are stable under inserts and fast at any depth, but you cannot jump to an arbitrary page and exact totals are harder. They are the better default for large or frequently-changing collections (feeds, logs, search).
+
+## Slicing and the envelope
+
+A page should be wrapped in an envelope with `data` plus paging metadata and links:
+
+export const pageCode = `function paginate(items, page, limit) {
+  const start = (page - 1) * limit;
+  const slice = items.slice(start, start + limit);
+  return {
+    data: slice,
+    meta: { page, limit, total: items.length, totalPages: Math.ceil(items.length / limit) },
+    links: {
+      self: '/articles?page=' + page + '&limit=' + limit,
+      next: start + limit < items.length ? '/articles?page=' + (page + 1) + '&limit=' + limit : null,
+    },
+  };
+}
+
+const all = Array.from({ length: 53 }, (_, i) => ({ id: i + 1 }));
+console.log(JSON.stringify(paginate(all, 2, 20), null, 2));`;
+
+<NodeRunner client:visible code={pageCode} />
+
+<Callout title="Default to cursor for large, changing data">
+Offset pagination is fine for small, stable lists and admin tables where jumping to page 50 matters. For feeds, logs, and anything that grows while users scroll, prefer cursor pagination: it stays correct under inserts and fast no matter how deep you go.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'What is the main weakness of offset pagination on large, changing data?',
+    options: [
+      'It cannot return JSON',
+      'Deep offsets are slow and inserts can cause skips/duplicates',
+      'It requires authentication',
+      'It cannot show the first page',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'What does a cursor represent?',
+    options: [
+      'A page number',
+      'An opaque marker of where the previous page ended',
+      'The total row count',
+      'A sort field',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'Which strategy is the better default for an infinite feed?',
+    options: ['Offset pagination', 'Cursor pagination', 'No pagination', 'Client-side only'],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="collections-querying/pagination" questions={quiz} />
+
+<ProgressTracker client:visible id="collections-querying/pagination" />

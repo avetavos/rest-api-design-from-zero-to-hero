@@ -1,0 +1,98 @@
+---
+title: Filtering & Sorting
+description: 'Selecting which rows come back and in what order.'
+sidebar:
+  order: 3
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+Filtering narrows a collection to the rows a client cares about; sorting decides their order. Both are query parameters on the collection, and a little convention keeps them readable.
+
+## Filtering
+
+The simplest, most discoverable form is one query parameter per field:
+
+```http
+GET /articles?status=published&author=42
+```
+
+For ranges and operators, a common convention is a bracketed or suffixed operator:
+
+```http
+GET /articles?createdAt[gte]=2026-01-01&views[gt]=1000
+```
+
+Keep the operator vocabulary small and documented (`gte`, `lte`, `gt`, `lt`, `ne`, `in`). Whatever you pick, apply it the same way on every collection.
+
+## Sorting
+
+Accept a `sort` parameter listing fields, with a leading `-` for descending:
+
+```http
+GET /articles?sort=-createdAt,title
+```
+
+That reads as "newest first, then by title ascending". Define which fields are sortable (sorting on an unindexed column can be expensive) and reject the rest with `400`.
+
+## Applying both in code
+
+export const queryCode = `const articles = [
+  { id: 1, status: 'published', views: 1200, title: 'B' },
+  { id: 2, status: 'draft', views: 50, title: 'A' },
+  { id: 3, status: 'published', views: 300, title: 'C' },
+];
+
+function query(items, { status, sort }) {
+  let out = items;
+  if (status) out = out.filter((a) => a.status === status);
+  if (sort) {
+    const desc = sort.startsWith('-');
+    const key = desc ? sort.slice(1) : sort;
+    out = [...out].sort((a, b) => (a[key] > b[key] ? 1 : -1) * (desc ? -1 : 1));
+  }
+  return out;
+}
+
+console.log(query(articles, { status: 'published', sort: '-views' }));`;
+
+<NodeRunner client:visible code={queryCode} />
+
+<Callout title="Allowlist what you filter and sort on">
+Never feed raw query params straight into a database query — that invites injection and lets clients sort on slow, unindexed columns. Validate each filter/sort field against an explicit allowlist, and return `400` for anything unrecognized. Flexibility for clients, control for you.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'What does `?sort=-createdAt,title` mean?',
+    options: [
+      'Sort by createdAt ascending, then title descending',
+      'Sort by createdAt descending, then title ascending',
+      'Remove the createdAt and title fields',
+      'Filter where createdAt equals title',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'Why allowlist filterable and sortable fields?',
+    options: [
+      'To make responses larger',
+      'To prevent injection and avoid expensive sorts on unindexed columns',
+      'Because HTTP requires it',
+      'To enable caching',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'Where do filter and sort parameters belong?',
+    options: ['The path', 'The query string', 'The request body', 'A cookie'],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="collections-querying/filtering-and-sorting" questions={quiz} />
+
+<ProgressTracker client:visible id="collections-querying/filtering-and-sorting" />

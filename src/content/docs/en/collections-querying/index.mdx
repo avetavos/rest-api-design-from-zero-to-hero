@@ -1,0 +1,58 @@
+---
+title: Querying Collections
+description: 'Pagination, filtering, sorting, and field selection for collection endpoints.'
+sidebar:
+  order: 1
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+A collection endpoint like `GET /articles` can return ten rows or ten million. Returning them all is never the answer. Four query capabilities turn a raw list into something clients can use efficiently.
+
+## The four levers
+
+export const queryDiagram = `flowchart LR
+  C[GET /articles] --> P[Pagination: how many, which slice]
+  C --> F[Filtering: which rows]
+  C --> S[Sorting: what order]
+  C --> Fl[Field selection: which fields]`;
+
+<Mermaid code={queryDiagram} title="All four are expressed with query parameters on the collection" />
+
+All four live in the **query string**, because they describe *which view of the collection* you want — not *which resource*. Identity stays in the path; the query shapes the result.
+
+## What this module covers
+
+- **Pagination** — offset vs cursor, and the response envelope.
+- **Filtering & sorting** — selecting and ordering rows.
+- **Field selection** — sparse fieldsets and expanding relations.
+- **Search & envelopes** — full-text search and a consistent wrapper.
+
+<Callout title="Always paginate collections by default">
+Never return an unbounded list. Apply a sane default page size even when the client asks for nothing, and cap the maximum. An endpoint that returns everything works fine in development and falls over the day the table grows.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'Where do pagination, filtering, and sorting parameters belong?',
+    options: ['In the path', 'In the query string', 'In the request body', 'In a custom header only'],
+    answer: 1,
+  },
+  {
+    q: 'What should an unfiltered GET on a large collection do by default?',
+    options: [
+      'Return every row',
+      'Apply a default (capped) page size',
+      'Return a 400 error',
+      'Return only the count',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="collections-querying/index" questions={quiz} />
+
+<ProgressTracker client:visible id="collections-querying/index" />
