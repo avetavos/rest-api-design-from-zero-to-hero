@@ -1,0 +1,64 @@
+---
+title: Versioning & Caching
+description: 'Evolving an API without breaking clients, and making it fast with HTTP caching.'
+sidebar:
+  order: 1
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+Two forces shape a long-lived API: it must **change** without breaking the clients already using it, and it should be **fast**, ideally by not doing work it has already done. Versioning addresses the first; HTTP caching addresses the second.
+
+## The two concerns
+
+export const overviewDiagram = `flowchart TD
+  API --> V[Versioning: evolve safely]
+  API --> Cn[Content negotiation: pick a representation]
+  API --> Ca[Caching: avoid repeating work]
+  V --> V1[URI / header / media-type]
+  Ca --> Ca1[Cache-Control + ETag + conditional requests]`;
+
+<Mermaid code={overviewDiagram} title="Evolving the contract and serving it efficiently" />
+
+These are related: caching depends on stable representations, and versioning decides what those representations look like over time.
+
+## What this module covers
+
+- **Versioning strategies** — URI, header, and media-type versioning.
+- **Content negotiation** — choosing a representation with `Accept`.
+- **Caching & ETags** — `Cache-Control`, validators, and `304 Not Modified`.
+- **Conditional requests & idempotency keys** — safe writes and retries.
+
+<Callout title="The cheapest version is no new version">
+Most changes can be additive — new optional fields, new endpoints — which existing clients simply ignore. Reserve a new API version for genuinely breaking changes. Every version you ship is one you must maintain, so raise the bar before creating one.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'Which kind of change usually does NOT require a new API version?',
+    options: [
+      'Removing a field',
+      'Adding a new optional field',
+      'Renaming an endpoint',
+      'Changing a field type',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'HTTP caching primarily helps an API by:',
+    options: [
+      'Encrypting responses',
+      'Avoiding repeated work for unchanged resources',
+      'Validating input',
+      'Versioning the API',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="versioning-caching/index" questions={quiz} />
+
+<ProgressTracker client:visible id="versioning-caching/index" />

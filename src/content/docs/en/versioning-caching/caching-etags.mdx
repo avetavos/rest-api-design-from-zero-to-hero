@@ -1,0 +1,96 @@
+---
+title: Caching & ETags
+description: 'Cache-Control, validators, and 304 Not Modified to avoid repeated work.'
+sidebar:
+  order: 4
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+HTTP has a powerful caching model built in. Using it well means a client (or a CDN) can avoid re-downloading data that has not changed — often the single biggest performance win an API gets.
+
+## Cache-Control: how long is this fresh?
+
+`Cache-Control` tells caches whether and how long a response may be reused:
+
+```http
+Cache-Control: public, max-age=60        # any cache may reuse for 60s
+Cache-Control: private, max-age=0        # only the client, must revalidate
+Cache-Control: no-store                  # never cache (sensitive data)
+```
+
+While a response is *fresh*, the client reuses it with no request at all. Once stale, it revalidates.
+
+## ETag + If-None-Match: did it change?
+
+An `ETag` is a validator — a fingerprint of the current representation. On the next request the client sends it back in `If-None-Match`; if it still matches, the server returns `304 Not Modified` with no body:
+
+export const flowDiagram = `sequenceDiagram
+  participant C as Client
+  participant S as Server
+  C->>S: GET /articles/42
+  S-->>C: 200 OK + ETag: "v7"
+  Note over C: later...
+  C->>S: GET /articles/42 (If-None-Match: "v7")
+  S-->>C: 304 Not Modified (no body)`;
+
+<Mermaid code={flowDiagram} title="A matching ETag turns a full response into a tiny 304" />
+
+`Last-Modified` + `If-Modified-Since` is the timestamp-based equivalent. ETags are more precise (they catch any change, not just second-level time changes).
+
+## Computing an ETag
+
+export const etagCode = `function etagFor(resource) {
+  const json = JSON.stringify(resource);
+  let hash = 0;
+  for (let i = 0; i < json.length; i++) hash = (hash * 31 + json.charCodeAt(i)) | 0;
+  return '"' + (hash >>> 0).toString(16) + '"';
+}
+
+const article = { id: 42, title: 'Hello', version: 7 };
+const tag = etagFor(article);
+console.log('ETag:', tag);
+
+// Conditional request: client sends back the tag it has.
+function handle(ifNoneMatch) {
+  return ifNoneMatch === tag ? 304 : 200;
+}
+console.log('with stale tag:', handle('"old"'));   // 200
+console.log('with current tag:', handle(tag));      // 304`;
+
+<NodeRunner client:visible code={etagCode} />
+
+<Callout title="Set Cache-Control on every response">
+Even `Cache-Control: no-store` is a decision worth stating explicitly — it tells caches what to do instead of leaving it ambiguous. Add `ETag`s to representations that are expensive to compute or transfer, and conditional requests turn most "is it still current?" checks into a cheap `304`.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'What does a 304 Not Modified response contain?',
+    options: [
+      'The full updated resource',
+      'No body — the client reuses its cached copy',
+      'An error message',
+      'A redirect URL',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'Which header carries the validator a client sends back to revalidate?',
+    options: ['If-None-Match (with the ETag)', 'Cache-Control', 'Accept', 'Authorization'],
+    answer: 0,
+  },
+  {
+    q: 'Which Cache-Control directive means "never store this response"?',
+    options: ['max-age=0', 'public', 'no-store', 'private'],
+    answer: 2,
+  },
+];
+
+<Quiz client:visible id="versioning-caching/caching-etags" questions={quiz} />
+
+<ProgressTracker client:visible id="versioning-caching/caching-etags" />

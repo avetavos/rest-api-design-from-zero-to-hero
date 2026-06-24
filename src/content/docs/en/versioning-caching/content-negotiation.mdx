@@ -1,0 +1,75 @@
+---
+title: Content Negotiation
+description: 'Letting clients ask for the representation they want with Accept.'
+sidebar:
+  order: 3
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+A single resource can have several representations — JSON, CSV, different languages. Content negotiation lets the client state a preference and the server pick the best match, all without changing the URI.
+
+## How it works
+
+The client sends `Accept` (which media types it wants) and optionally `Accept-Language`; the server replies with the chosen representation and a matching `Content-Type`:
+
+```http
+GET /reports/42 HTTP/1.1
+Accept: text/csv, application/json;q=0.8
+Accept-Language: th, en;q=0.5
+```
+
+The `q` values are quality weights — here the client prefers CSV, then JSON. The server should honor the best type it supports and echo it in `Content-Type`.
+
+## When it cannot comply
+
+- If the server cannot produce any accepted type, respond `406 Not Acceptable`.
+- If a request **body** arrives in a type the server cannot parse, respond `415 Unsupported Media Type`.
+
+## Negotiating in a running API
+
+export const honoCode = `const report = { id: 42, total: 99 };
+
+app.get('/reports/:id', (c) => {
+  const accept = c.req.header('Accept') ?? 'application/json';
+  if (accept.includes('text/csv')) {
+    return c.body('id,total\\n' + report.id + ',' + report.total, 200, {
+      'Content-Type': 'text/csv',
+    });
+  }
+  if (accept.includes('application/json') || accept.includes('*/*')) {
+    return c.json(report);
+  }
+  return c.json({ title: 'Not Acceptable', status: 406 }, 406);
+});`;
+
+<NodeRunner stackblitz client:visible code={honoCode} />
+
+<Callout title="One resource, many representations">
+Content negotiation keeps the URI stable while letting clients choose format and language — a CSV export and a JSON view of the same report share one address. Always reflect the chosen type back in `Content-Type`, and return `406` rather than silently sending a format the client said it could not accept.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'Which header does a client use to request a representation format?',
+    options: ['Content-Type', 'Accept', 'Location', 'Authorization'],
+    answer: 1,
+  },
+  {
+    q: 'The server supports none of the types in Accept. Which status?',
+    options: ['400 Bad Request', '406 Not Acceptable', '415 Unsupported Media Type', '404 Not Found'],
+    answer: 1,
+  },
+  {
+    q: 'A request body arrives in a media type the server cannot parse. Which status?',
+    options: ['406 Not Acceptable', '415 Unsupported Media Type', '422 Unprocessable Entity', '409 Conflict'],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="versioning-caching/content-negotiation" questions={quiz} />
+
+<ProgressTracker client:visible id="versioning-caching/content-negotiation" />

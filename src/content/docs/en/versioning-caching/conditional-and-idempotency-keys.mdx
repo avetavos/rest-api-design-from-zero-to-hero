@@ -1,0 +1,92 @@
+---
+title: Conditional Requests & Idempotency Keys
+description: 'Safe concurrent writes with If-Match, and safe POST retries with idempotency keys.'
+sidebar:
+  order: 5
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+The same validators that speed up reads also make writes safer. Two patterns handle the hard cases: concurrent edits and retried creates.
+
+## Optimistic concurrency with If-Match
+
+When two clients edit the same resource, the second can unknowingly overwrite the first — the "lost update" problem. Conditional writes prevent it: the client sends the `ETag` it last saw in `If-Match`, and the server applies the change only if the resource still matches. If it has changed, the server returns `412 Precondition Failed`:
+
+export const flowDiagram = `sequenceDiagram
+  participant A as Client A
+  participant S as Server
+  A->>S: PUT /articles/42 (If-Match: "v7")
+  alt still "v7"
+    S-->>A: 200 OK (now "v8")
+  else changed to "v8"
+    S-->>A: 412 Precondition Failed
+  end`;
+
+<Mermaid code={flowDiagram} title="If-Match rejects a write built on a stale version" />
+
+The client then re-fetches, reapplies its change on the current version, and retries — no silent overwrite.
+
+## Idempotency keys for POST
+
+Recall that `POST` is not idempotent, so a retried create can duplicate. An **idempotency key** fixes this: the client generates a unique key and sends it with the request; the server stores the result against that key and returns the *same* result for any repeat.
+
+export const idempCode = `const seen = new Map(); // idempotency-key -> result
+
+function createOrder(key, payload) {
+  if (seen.has(key)) {
+    return { replayed: true, ...seen.get(key) }; // return the original outcome
+  }
+  const result = { id: 'order_' + (seen.size + 1), total: payload.total };
+  seen.set(key, result);
+  return { replayed: false, ...result };
+}
+
+const key = 'idem-abc-123';
+console.log(createOrder(key, { total: 50 })); // first: creates
+console.log(createOrder(key, { total: 50 })); // retry: replays, no duplicate
+console.log('orders created:', seen.size);     // 1`;
+
+<NodeRunner client:visible code={idempCode} />
+
+A common convention is an `Idempotency-Key` request header; the server keeps the mapping for a window (say 24 hours) so retries within that window are safe.
+
+<Callout title="Validators protect writes, not just reads">
+`If-Match` turns a blind overwrite into a checked update — pair every editable resource's `ETag` with conditional writes to avoid lost updates. And give create endpoints an `Idempotency-Key` so a dropped response never becomes a duplicate charge or order. Both make your API correct under the messy reality of retries and concurrency.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'What problem does an If-Match conditional write prevent?',
+    options: [
+      'Slow reads',
+      'The lost-update problem (silently overwriting a concurrent edit)',
+      'Over-fetching',
+      'Caching',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'When a precondition fails because the resource changed, which status?',
+    options: ['409 Conflict', '412 Precondition Failed', '304 Not Modified', '400 Bad Request'],
+    answer: 1,
+  },
+  {
+    q: 'How does an idempotency key make a retried POST safe?',
+    options: [
+      'It speeds up the request',
+      'The server returns the original result for a repeated key instead of acting again',
+      'It converts POST to GET',
+      'It caches the response in the browser',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="versioning-caching/conditional-and-idempotency-keys" questions={quiz} />
+
+<ProgressTracker client:visible id="versioning-caching/conditional-and-idempotency-keys" />
