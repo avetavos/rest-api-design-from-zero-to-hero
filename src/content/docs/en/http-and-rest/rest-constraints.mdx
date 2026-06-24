@@ -1,0 +1,67 @@
+---
+title: The REST Constraints
+description: 'The six constraints that define REST and what each one means for your API.'
+sidebar:
+  order: 4
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+REST is defined by a set of architectural **constraints**. An API that follows them gets scalability, evolvability, and cacheability almost for free. You do not need every constraint perfectly, but knowing them tells you which corners you are cutting.
+
+## The six constraints
+
+export const constraintsDiagram = `flowchart TD
+  REST --> CS[Client–Server]
+  REST --> ST[Stateless]
+  REST --> CA[Cacheable]
+  REST --> UI[Uniform Interface]
+  REST --> LS[Layered System]
+  REST --> COD[Code on Demand optional]`;
+
+<Mermaid code={constraintsDiagram} title="Six constraints; code-on-demand is the only optional one" />
+
+- **Client–Server** — separate the UI/consumer from data storage; they evolve independently.
+- **Stateless** — each request carries everything the server needs; no per-client session is stored between calls. This is what lets you add servers behind a load balancer freely.
+- **Cacheable** — responses must say whether they can be cached (and for how long), so clients and intermediaries can reuse them.
+- **Uniform Interface** — resources are identified by URIs and manipulated through a standard set of methods and representations. This is the constraint that makes an API feel "RESTful".
+- **Layered System** — a client cannot tell whether it talks to the origin server or an intermediary (proxy, gateway, cache).
+- **Code on Demand** *(optional)* — servers may send executable code to extend the client; rarely used for APIs.
+
+## Why statelessness pays off
+
+Because the server keeps no session, any server can handle any request. That makes horizontal scaling and retries simple — but it means the client must send its identity (a token) and any needed context on **every** request.
+
+<Callout title="Uniform interface + stateless = the heart of REST">
+If you remember only two constraints, remember these. A uniform interface (URIs + standard methods + self-describing messages) is what makes your API predictable; statelessness is what makes it scale. Most "is this RESTful?" debates come down to these two.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'Which constraint lets you put any request on any server behind a load balancer?',
+    options: ['Cacheable', 'Stateless', 'Code on Demand', 'Layered System'],
+    answer: 1,
+  },
+  {
+    q: 'Which REST constraint is optional?',
+    options: ['Uniform Interface', 'Client–Server', 'Code on Demand', 'Stateless'],
+    answer: 2,
+  },
+  {
+    q: 'What does the "uniform interface" constraint give an API?',
+    options: [
+      'Encryption by default',
+      'A predictable, standard way to identify and manipulate resources',
+      'Automatic pagination',
+      'Guaranteed low latency',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="http-and-rest/rest-constraints" questions={quiz} />
+
+<ProgressTracker client:visible id="http-and-rest/rest-constraints" />

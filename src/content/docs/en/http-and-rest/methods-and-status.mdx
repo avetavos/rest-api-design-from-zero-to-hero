@@ -1,0 +1,104 @@
+---
+title: Methods & Status Codes
+description: 'HTTP methods, safe vs idempotent, and the status-code families you actually use.'
+sidebar:
+  order: 3
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+Two small vocabularies do most of the work in a REST API: the handful of HTTP **methods** that express intent, and the **status codes** that report outcomes. Learn these well and most design decisions get easier.
+
+## The methods
+
+| Method | Meaning | Safe | Idempotent |
+| --- | --- | --- | --- |
+| `GET` | Read a resource | yes | yes |
+| `HEAD` | Read headers only | yes | yes |
+| `POST` | Create / submit | no | no |
+| `PUT` | Replace a resource | no | yes |
+| `PATCH` | Partially update | no | no |
+| `DELETE` | Remove a resource | no | yes |
+| `OPTIONS` | Describe what is allowed | yes | yes |
+
+**Safe** means the call has no observable side effects (it only reads). **Idempotent** means making the same call many times has the same effect as making it once. These two properties drive a lot of correctness: clients and proxies may freely retry safe/idempotent requests, but must be careful retrying a `POST`.
+
+## The status-code families
+
+export const statusDiagram = `flowchart TD
+  R[Response status] --> I[1xx Informational]
+  R --> S[2xx Success]
+  R --> RD[3xx Redirection]
+  R --> C[4xx Client error]
+  R --> SE[5xx Server error]
+  S --> S2[200 OK / 201 Created / 204 No Content]
+  C --> C2[400 / 401 / 403 / 404 / 409 / 422]
+  SE --> SE2[500 / 503]`;
+
+<Mermaid code={statusDiagram} title="Five families; in practice you reach for a small subset" />
+
+The ones you use constantly: `200 OK`, `201 Created`, `204 No Content`, `400 Bad Request`, `401 Unauthorized`, `403 Forbidden`, `404 Not Found`, `409 Conflict`, `422 Unprocessable Entity`, `500 Internal Server Error`. The golden rule: a `2xx` means the request succeeded, a `4xx` means the **client** must change something, and a `5xx` means the **server** failed.
+
+## Methods and statuses in a real API
+
+This Hono app exposes three routes that return different methods and statuses. Open it in StackBlitz to run a real server and hit the endpoints:
+
+export const honoCode = `// A tiny read-only resource with sensible statuses.
+const articles = [{ id: 1, title: 'Hello' }];
+
+app.get('/articles', (c) => c.json(articles)); // 200 OK
+
+app.get('/articles/:id', (c) => {
+  const found = articles.find((a) => a.id === Number(c.req.param('id')));
+  if (!found) return c.json({ error: 'Not found' }, 404);
+  return c.json(found); // 200 OK
+});
+
+app.post('/articles', async (c) => {
+  const body = await c.req.json();
+  const created = { id: articles.length + 1, ...body };
+  articles.push(created);
+  return c.json(created, 201); // 201 Created
+});`;
+
+<NodeRunner stackblitz client:visible code={honoCode} />
+
+<Callout title="Pick the status, then the body">
+Decide the status code first — it is the part of the response clients branch on. A `201 Created` with an empty body is fine; a `200 OK` wrapping a hidden error is not. Never return `200` for a failure.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'Which property means "calling it many times has the same effect as once"?',
+    options: ['Safe', 'Idempotent', 'Cacheable', 'Stateless'],
+    answer: 1,
+  },
+  {
+    q: 'A 4xx status code indicates what?',
+    options: [
+      'The server crashed',
+      'The client must change the request',
+      'The resource moved',
+      'The request is still processing',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'Which method is NOT idempotent?',
+    options: ['GET', 'PUT', 'DELETE', 'POST'],
+    answer: 3,
+  },
+  {
+    q: 'What status best fits a successful resource creation?',
+    options: ['200 OK', '201 Created', '202 Accepted', '204 No Content'],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="http-and-rest/methods-and-status" questions={quiz} />
+
+<ProgressTracker client:visible id="http-and-rest/methods-and-status" />

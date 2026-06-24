@@ -1,5 +1,72 @@
 ---
 title: HTTP & REST Foundations
-description: The HTTP request/response cycle and the constraints that make an API RESTful.
+description: 'The HTTP request/response cycle and the constraints that make an API RESTful.'
+sidebar:
+  order: 1
 ---
-Coming soon.
+
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+A REST API is, at its core, a set of resources you interact with over HTTP. Before we design one, it pays to be precise about two things: how an HTTP message actually flows between a client and a server, and what the word "RESTful" really commits you to.
+
+## The request/response cycle
+
+Every interaction is a client sending a **request** and a server returning a **response**. The request names a method and a path; the server does some work and replies with a status code and (usually) a body.
+
+export const cycleDiagram = `sequenceDiagram
+  participant C as Client
+  participant S as API Server
+  C->>S: GET /articles/42
+  S->>S: look up resource
+  S-->>C: 200 OK + JSON body`;
+
+<Mermaid code={cycleDiagram} title="One request, one response — the server holds no client state between them" />
+
+That stateless round trip is the unit of everything that follows. A well-designed API makes each request self-describing: the method says what you want to do, the path says to what, and the status code says how it went.
+
+## What this course covers
+
+This course builds REST API design from the ground up, with TypeScript examples you can run:
+
+- **HTTP & REST Foundations** — messages, methods, status codes, and the REST constraints (you are here).
+- **Resource & URI Design** — modeling resources and naming their URIs.
+- **Methods, CRUD & Idempotency** — mapping operations to methods safely.
+- **Status Codes & Errors** — choosing codes and designing error bodies.
+- **Querying Collections** — pagination, filtering, sorting, field selection.
+- **Versioning & Caching** — evolving an API and making it fast.
+- **Security** — authentication, authorization, CORS, and rate limiting.
+- **Docs, Testing & Building** — OpenAPI, tests, and a working implementation.
+
+<Callout title="What 'RESTful' really means">
+REST is not a protocol or a library — it is a set of constraints on how you use HTTP. The two that matter most in practice: every request is **stateless** (the server keeps no per-client session between calls), and the API presents a **uniform interface** (resources identified by URIs, manipulated with standard methods).
+</Callout>
+
+export const quiz = [
+  {
+    q: 'In a stateless API, where is per-client session state kept between requests?',
+    options: [
+      'On the server, tied to the connection',
+      'It is not kept on the server — each request carries what it needs',
+      'In the HTTP method',
+      'In the status code',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'What three things make a single HTTP request self-describing?',
+    options: [
+      'Method, target resource (path), and result (status code)',
+      'Cookies, sessions, and tokens',
+      'HTML, CSS, and JavaScript',
+      'Host, port, and protocol only',
+    ],
+    answer: 0,
+  },
+];
+
+<Quiz client:visible id="http-and-rest/index" questions={quiz} />
+
+<ProgressTracker client:visible id="http-and-rest/index" />

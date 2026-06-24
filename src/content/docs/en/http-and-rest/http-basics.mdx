@@ -1,0 +1,105 @@
+---
+title: Anatomy of an HTTP Message
+description: 'The parts of an HTTP request and response — methods, paths, headers, status, and body.'
+sidebar:
+  order: 2
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+Designing an API well starts with seeing exactly what goes over the wire. An HTTP exchange is just text: a request from the client and a response from the server, each with the same three parts.
+
+## The request
+
+A request has a **start line** (method + target + HTTP version), a set of **headers**, and an optional **body**:
+
+```http
+POST /articles HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+Authorization: Bearer eyJhbGci...
+Accept: application/json
+
+{ "title": "Designing APIs", "body": "..." }
+```
+
+The method (`POST`) says *what* to do; the target (`/articles`) says *to what*; the headers carry metadata (content type, auth, what the client accepts); the body carries the payload.
+
+## The response
+
+The response mirrors that shape: a **status line** (version + status code + reason), **headers**, and an optional **body**:
+
+```http
+HTTP/1.1 201 Created
+Content-Type: application/json
+Location: /articles/42
+
+{ "id": 42, "title": "Designing APIs" }
+```
+
+export const msgDiagram = `flowchart LR
+  subgraph Request
+    A[Start line: method + path] --> B[Headers] --> C[Body optional]
+  end
+  subgraph Response
+    D[Status line: code + reason] --> E[Headers] --> F[Body optional]
+  end
+  Request -->|over HTTP| Response`;
+
+<Mermaid code={msgDiagram} title="Request and response share the same three-part structure" />
+
+## Building a response in code
+
+Server frameworks hide most of this, but it helps to construct a response by hand once. This snippet builds the headers and JSON body for a "created" response and logs them:
+
+export const buildCode = `function buildCreated(resource) {
+  const body = JSON.stringify(resource);
+  const headers = {
+    'Content-Type': 'application/json',
+    'Content-Length': String(body.length),
+    'Location': '/articles/' + resource.id,
+  };
+  return { status: 201, headers, body };
+}
+
+const res = buildCreated({ id: 42, title: 'Designing APIs' });
+console.log('status:', res.status);
+console.log('headers:', res.headers);
+console.log('body:', res.body);`;
+
+<NodeRunner client:visible code={buildCode} />
+
+<Callout title="Headers are part of the design">
+The body gets all the attention, but headers carry the contract: `Content-Type` tells the client how to parse the body, `Location` points to a newly created resource, and `Authorization`/`Accept` shape the exchange. Treat them as a first-class part of your API design, not an afterthought.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'Which part of an HTTP request says WHAT operation the client wants?',
+    options: ['The body', 'The method', 'The Content-Type header', 'The status line'],
+    answer: 1,
+  },
+  {
+    q: 'After creating a resource, which response header conventionally points to it?',
+    options: ['Content-Type', 'Accept', 'Location', 'Host'],
+    answer: 2,
+  },
+  {
+    q: 'What does the Content-Type header on a response tell the client?',
+    options: [
+      'How to authenticate',
+      'How to parse the response body',
+      'Which method to use next',
+      'The server software name',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="http-and-rest/http-basics" questions={quiz} />
+
+<ProgressTracker client:visible id="http-and-rest/http-basics" />

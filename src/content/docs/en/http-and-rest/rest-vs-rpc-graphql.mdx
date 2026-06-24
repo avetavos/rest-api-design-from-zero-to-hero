@@ -1,0 +1,64 @@
+---
+title: REST vs RPC vs GraphQL
+description: 'Three API styles, what each optimizes for, and when to choose which.'
+sidebar:
+  order: 5
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+REST is one way to build an API, not the only way. Knowing the alternatives sharpens your sense of when REST is the right tool.
+
+## Three styles
+
+- **REST** organizes the API around **resources** (nouns) you act on with standard HTTP methods. Strengths: caching for free, a uniform interface, great fit for CRUD-style domains and public APIs. Weakness: clients sometimes over-fetch (get more fields than they need) or under-fetch (need several round trips).
+- **RPC** organizes the API around **procedures** (verbs) — you call named operations like `createUser` or `sendEmail`, often over HTTP POST or gRPC. Strengths: a natural fit for action-oriented APIs and internal service-to-service calls. Weakness: less uniform, weaker HTTP caching, the surface grows with every new verb.
+- **GraphQL** exposes a single endpoint and a **query language**: the client asks for exactly the fields it wants. Strengths: no over/under-fetching, one round trip for complex screens. Weakness: HTTP caching is harder, and the server must guard against expensive queries.
+
+export const stylesDiagram = `flowchart TD
+  Need{What does the client need?} --> CRUD[Resource CRUD, public API, caching]
+  Need --> Action[Action-oriented, internal services]
+  Need --> Flexible[Flexible field selection, many clients]
+  CRUD --> REST
+  Action --> RPC
+  Flexible --> GraphQL`;
+
+<Mermaid code={stylesDiagram} title="Match the style to what the client actually needs" />
+
+## Choosing
+
+Reach for **REST** when your domain is naturally resource-shaped, you want HTTP caching and a broadly understood public contract, and CRUD-plus-a-few-actions covers the use cases — which is most web and mobile back ends. Reach for **RPC/gRPC** for high-throughput internal service calls. Reach for **GraphQL** when many different clients need different slices of a rich, interconnected data graph.
+
+<Callout title="They are not mutually exclusive">
+Plenty of systems use REST at the edge for a stable public contract and gRPC between internal services. Pick per boundary, not per company. The rest of this course is about doing the REST part well.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'Which problem is GraphQL specifically designed to solve?',
+    options: [
+      'Encryption in transit',
+      'Over-fetching and under-fetching of fields',
+      'Rate limiting',
+      'Database indexing',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'REST organizes an API primarily around what?',
+    options: ['Procedures (verbs)', 'Resources (nouns)', 'Database tables', 'Events'],
+    answer: 1,
+  },
+  {
+    q: 'Which style most naturally gets HTTP caching "for free"?',
+    options: ['REST', 'GraphQL over a single POST endpoint', 'gRPC', 'WebSockets'],
+    answer: 0,
+  },
+];
+
+<Quiz client:visible id="http-and-rest/rest-vs-rpc-graphql" questions={quiz} />
+
+<ProgressTracker client:visible id="http-and-rest/rest-vs-rpc-graphql" />
