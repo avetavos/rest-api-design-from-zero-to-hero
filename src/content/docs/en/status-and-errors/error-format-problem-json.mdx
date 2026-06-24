@@ -1,0 +1,96 @@
+---
+title: Error Format — problem+json
+description: 'One consistent, standard error body for the whole API (RFC 9457).'
+sidebar:
+  order: 3
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+The status code says *which kind* of error; the body should say *what specifically* went wrong, in a shape that is identical across every endpoint. Inventing a new error shape per endpoint is a tax clients pay forever.
+
+## RFC 9457 Problem Details
+
+There is a standard for exactly this: **Problem Details for HTTP APIs** (RFC 9457), served as `application/problem+json`. Its members:
+
+- `type` — a URI identifying the problem kind (a stable, documentable key).
+- `title` — a short, human-readable summary (stable per `type`).
+- `status` — the HTTP status code, repeated in the body.
+- `detail` — a human-readable explanation specific to this occurrence.
+- `instance` — a URI for this particular occurrence (often the request path).
+- plus any **extension members** you need (e.g. an `errors` array).
+
+```json
+{
+  "type": "https://api.example.com/problems/out-of-stock",
+  "title": "Item is out of stock",
+  "status": 409,
+  "detail": "Only 2 units of SKU-123 remain; you requested 5.",
+  "instance": "/orders/8821",
+  "available": 2
+}
+```
+
+## Producing one in code
+
+export const problemCode = `function problem(opts) {
+  return {
+    status: opts.status,
+    headers: { 'Content-Type': 'application/problem+json' },
+    body: {
+      type: opts.type ?? 'about:blank',
+      title: opts.title,
+      status: opts.status,
+      detail: opts.detail,
+      instance: opts.instance,
+      ...(opts.extra ?? {}),
+    },
+  };
+}
+
+const res = problem({
+  status: 409,
+  type: 'https://api.example.com/problems/out-of-stock',
+  title: 'Item is out of stock',
+  detail: 'Only 2 units remain; you requested 5.',
+  instance: '/orders/8821',
+  extra: { available: 2 },
+});
+console.log(res.headers['Content-Type']);
+console.log(JSON.stringify(res.body, null, 2));`;
+
+<NodeRunner client:visible code={problemCode} />
+
+<Callout title="Use about:blank when there is nothing to add">
+If a problem needs no special type, RFC 9457 says set `type` to `"about:blank"` and let `title` mirror the status reason. Reserve custom `type` URIs for problems clients should detect and handle programmatically — those URIs become a documented, stable part of your contract.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'What media type does RFC 9457 use for error bodies?',
+    options: ['application/json', 'application/problem+json', 'text/plain', 'application/error'],
+    answer: 1,
+  },
+  {
+    q: 'What is the purpose of the `type` member?',
+    options: [
+      'The HTTP method',
+      'A stable URI identifying the kind of problem (for programmatic handling)',
+      'The server hostname',
+      'The response timestamp',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'When a problem needs no special category, `type` should be:',
+    options: ['omitted entirely', '"about:blank"', 'the request body', 'a random UUID'],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="status-and-errors/error-format-problem-json" questions={quiz} />
+
+<ProgressTracker client:visible id="status-and-errors/error-format-problem-json" />

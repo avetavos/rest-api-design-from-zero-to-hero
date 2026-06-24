@@ -1,0 +1,101 @@
+---
+title: Validation Errors
+description: 'Reporting invalid input clearly, field by field.'
+sidebar:
+  order: 4
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+Validation errors are the most common errors an API returns, and the ones clients most want to render nicely. A good validation response tells the user exactly which fields are wrong and why — all of them at once, not one per round trip.
+
+## Status: 422 (or 400)
+
+When the request parsed correctly but the values fail your rules, return `422 Unprocessable Entity`. Some teams use `400` for all client errors; either is defensible, but be consistent. Reserve `400` for requests you could not even parse.
+
+## A field-level error body
+
+Extend Problem Details with an `errors` array, one entry per offending field:
+
+```json
+{
+  "type": "https://api.example.com/problems/validation",
+  "title": "Validation failed",
+  "status": 422,
+  "detail": "The request has 2 invalid fields.",
+  "errors": [
+    { "field": "email", "message": "must be a valid email address" },
+    { "field": "age", "message": "must be 18 or greater" }
+  ]
+}
+```
+
+## Collect all errors, then respond
+
+Validate every field and gather all failures before responding — do not bail on the first. This mirrors how a typical schema validator works:
+
+export const validateCode = `function validateUser(input) {
+  const errors = [];
+  if (typeof input.email !== 'string' || !input.email.includes('@')) {
+    errors.push({ field: 'email', message: 'must be a valid email address' });
+  }
+  if (typeof input.age !== 'number' || input.age < 18) {
+    errors.push({ field: 'age', message: 'must be 18 or greater' });
+  }
+  return errors;
+}
+
+const errors = validateUser({ email: 'nope', age: 16 });
+if (errors.length > 0) {
+  const body = {
+    type: 'https://api.example.com/problems/validation',
+    title: 'Validation failed',
+    status: 422,
+    detail: 'The request has ' + errors.length + ' invalid fields.',
+    errors,
+  };
+  console.log(JSON.stringify(body, null, 2));
+}`;
+
+<NodeRunner client:visible code={validateCode} />
+
+In TypeScript projects a schema library (such as zod) gives you this for free: parse the input against a schema, and on failure map the issues to your `errors` array.
+
+<Callout title="Return every error at once">
+Validating one field at a time forces the user through a frustrating submit-fix-submit loop. Run all your checks, collect every failure into the `errors` array, and return them together. Stable, machine-readable `field` keys let clients highlight the exact inputs.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'Input parses fine but two fields break business rules. Best status?',
+    options: ['200 OK', '422 Unprocessable Entity', '404 Not Found', '500 Internal Server Error'],
+    answer: 1,
+  },
+  {
+    q: 'Why return all validation errors at once instead of the first?',
+    options: [
+      'It is faster for the server',
+      'It avoids a frustrating submit-fix-submit loop for the user',
+      'HTTP requires it',
+      'It reduces the status code',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'What makes a validation error body easy for clients to render?',
+    options: [
+      'A single free-text string',
+      'Stable machine-readable field keys plus messages',
+      'An HTML page',
+      'Only the status code',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="status-and-errors/validation-errors" questions={quiz} />
+
+<ProgressTracker client:visible id="status-and-errors/validation-errors" />

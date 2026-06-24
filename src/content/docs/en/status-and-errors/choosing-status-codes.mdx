@@ -1,0 +1,77 @@
+---
+title: Choosing Status Codes
+description: 'Picking the right code, including the close calls clients trip over.'
+sidebar:
+  order: 2
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+A handful of status codes cover almost every case. The skill is in the close calls — the pairs that are easy to confuse.
+
+## The ones you actually use
+
+- `200 OK` — success with a body.
+- `201 Created` — a resource was created; include a `Location` header.
+- `204 No Content` — success, nothing to return (e.g. a `DELETE`).
+- `400 Bad Request` — the request is malformed (bad JSON, missing required parts).
+- `401 Unauthorized` — no/invalid credentials; the client must authenticate.
+- `403 Forbidden` — authenticated, but not allowed.
+- `404 Not Found` — no such resource.
+- `409 Conflict` — the request conflicts with current state (duplicate, version clash).
+- `422 Unprocessable Entity` — syntactically valid but semantically invalid (failed validation).
+- `429 Too Many Requests` — rate limited.
+- `500 Internal Server Error` / `503 Service Unavailable` — the server failed.
+
+## The close calls
+
+- **200 vs 201 vs 204** — returning a body → `200`; created a resource → `201`; nothing to say → `204`.
+- **400 vs 422** — can the server even parse the request? Unparseable → `400`; parsed fine but the values are invalid → `422`.
+- **401 vs 403** — do we know who you are? Not authenticated → `401`; authenticated but not permitted → `403`.
+- **404 vs 409** — the resource does not exist → `404`; it exists but your request conflicts with its state → `409`.
+
+## Codes in a running API
+
+export const honoCode = `app.get('/items/:id', (c) => {
+  const id = c.req.param('id');
+  if (id === '0') return c.json({ error: 'Not found' }, 404);
+  return c.json({ id, name: 'Widget' }, 200);
+});
+
+app.post('/items', async (c) => {
+  const body = await c.req.json().catch(() => null);
+  if (body === null) return c.json({ error: 'Invalid JSON' }, 400);      // unparseable
+  if (!body.name) return c.json({ error: 'name is required' }, 422);     // invalid value
+  return c.json({ id: '1', name: body.name }, 201, { Location: '/items/1' });
+});`;
+
+<NodeRunner stackblitz client:visible code={honoCode} />
+
+<Callout title="When unsure, prefer the more specific code">
+A generic `400` is rarely wrong, but a precise code teaches the client what to do: `401` says "log in", `403` says "stop asking", `422` says "fix these fields", `409` says "your view is stale". Specificity in the status line is a feature.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'The request body is valid JSON but a required field is missing. Best code?',
+    options: ['400 Bad Request', '422 Unprocessable Entity', '404 Not Found', '500 Internal Server Error'],
+    answer: 1,
+  },
+  {
+    q: 'The caller is authenticated but lacks permission. Which code?',
+    options: ['401 Unauthorized', '403 Forbidden', '404 Not Found', '409 Conflict'],
+    answer: 1,
+  },
+  {
+    q: 'A create request duplicates a resource that already exists. Which code fits?',
+    options: ['200 OK', '201 Created', '409 Conflict', '204 No Content'],
+    answer: 2,
+  },
+];
+
+<Quiz client:visible id="status-and-errors/choosing-status-codes" questions={quiz} />
+
+<ProgressTracker client:visible id="status-and-errors/choosing-status-codes" />

@@ -1,0 +1,108 @@
+---
+title: Error Handling in TypeScript
+description: 'Turning thrown errors into consistent problem+json responses with Hono.'
+sidebar:
+  order: 5
+---
+
+import NodeRunner from '../../../../components/NodeRunner.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+Scattering error responses through every handler guarantees inconsistency. Instead, throw typed errors in your handlers and translate them to `problem+json` in one place.
+
+## A typed error + a central handler
+
+export const flowDiagram = `flowchart LR
+  H[Handler throws ApiError] --> M[Error middleware]
+  M --> P[Map to problem+json]
+  P --> R[Response with correct status]`;
+
+<Mermaid code={flowDiagram} title="Handlers throw; one place maps errors to responses" />
+
+Define an error type that carries the status and problem fields, then a single handler that converts it. Anything unexpected becomes a `500` — and you never leak a stack trace to the client.
+
+export const honoCode = `class ApiError extends Error {
+  constructor(status, title, detail) {
+    super(title);
+    this.status = status;
+    this.title = title;
+    this.detail = detail;
+  }
+}
+
+app.get('/articles/:id', (c) => {
+  if (c.req.param('id') === '0') {
+    throw new ApiError(404, 'Article not found', 'No article with id 0');
+  }
+  return c.json({ id: c.req.param('id'), title: 'Hello' });
+});
+
+// Central error handler: everything funnels through here.
+app.onError((err, c) => {
+  if (err instanceof ApiError) {
+    return c.json(
+      { type: 'about:blank', title: err.title, status: err.status, detail: err.detail },
+      err.status,
+      { 'Content-Type': 'application/problem+json' },
+    );
+  }
+  // Unexpected: log server-side, return a safe 500.
+  console.error(err);
+  return c.json(
+    { type: 'about:blank', title: 'Internal Server Error', status: 500 },
+    500,
+    { 'Content-Type': 'application/problem+json' },
+  );
+});`;
+
+<NodeRunner stackblitz client:visible code={honoCode} />
+
+## Why centralize
+
+- **Consistency** — every error leaves through the same shape.
+- **Safety** — unexpected errors become a generic `500`; internals never leak.
+- **Less code** — handlers throw a line; they do not each build a response.
+
+<Callout title="Throw typed errors, translate once">
+Let handlers express failure by throwing a typed error (`throw new ApiError(404, ...)`), and put all the formatting in one `onError` hook. You get uniform `problem+json` everywhere, a guaranteed safe fallback for the unexpected, and handlers that stay focused on the happy path.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'What is the main benefit of a central error handler?',
+    options: [
+      'Faster responses',
+      'Every error leaves through one consistent shape, with a safe fallback',
+      'It removes the need for status codes',
+      'It enables caching',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'How should an unexpected (unanticipated) error be returned to the client?',
+    options: [
+      'With the full stack trace',
+      'As a generic 500 problem+json, with details logged server-side only',
+      'As a 200 with an error field',
+      'By crashing the server',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'In this pattern, how do handlers signal failure?',
+    options: [
+      'They build a full response each time',
+      'They throw a typed error that the central handler translates',
+      'They return null',
+      'They call process.exit',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="status-and-errors/error-handling-in-ts" questions={quiz} />
+
+<ProgressTracker client:visible id="status-and-errors/error-handling-in-ts" />

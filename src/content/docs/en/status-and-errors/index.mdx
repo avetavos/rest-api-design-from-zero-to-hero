@@ -1,0 +1,64 @@
+---
+title: Status Codes & Errors
+description: 'Choosing the right status code and designing error bodies clients can rely on.'
+sidebar:
+  order: 1
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+import Callout from '../../../../components/Callout.astro';
+import Quiz from '../../../../components/Quiz.tsx';
+import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+
+How an API reports outcomes is part of its contract. Two things make that contract trustworthy: the **status code** (the part clients branch on) and a **consistent error body** (the part humans and code read to recover).
+
+## Success, client error, or server fault?
+
+export const decisionDiagram = `flowchart TD
+  Q{Did the request succeed?} -->|Yes| S[2xx]
+  Q -->|No, caller's fault| C[4xx: fix the request]
+  Q -->|No, our fault| E[5xx: retry may help]
+  C --> C1[400 / 401 / 403 / 404 / 409 / 422]
+  E --> E1[500 / 503]`;
+
+<Mermaid code={decisionDiagram} title="First decide the family, then the specific code" />
+
+The single most important rule: never wrap a failure in a `200`. A response that says `200 OK` but carries `{ "error": "..." }` defeats every client, cache, and monitoring tool that trusts the status line.
+
+## What this module covers
+
+- **Choosing status codes** — the common ones and how to pick between close calls.
+- **Error format (problem+json)** — one consistent shape for every error.
+- **Validation errors** — reporting bad input field by field.
+- **Error handling in TypeScript** — turning thrown errors into clean responses.
+
+<Callout title="The status code is the API's answer">
+Clients branch on the status code first and read the body second. Get the code right — `2xx`/`4xx`/`5xx` — and even a client that ignores your body will behave correctly. Get it wrong and no amount of detail in the body will save them.
+</Callout>
+
+export const quiz = [
+  {
+    q: 'A 5xx status code signals what?',
+    options: [
+      'The client must change the request',
+      'The server failed; a retry may succeed',
+      'The resource moved',
+      'Success with no content',
+    ],
+    answer: 1,
+  },
+  {
+    q: 'Why is returning 200 with an error body a problem?',
+    options: [
+      'It is slower',
+      'Clients, caches, and monitoring trust the status line and will treat it as success',
+      'JSON cannot hold errors',
+      'It is not valid HTTP',
+    ],
+    answer: 1,
+  },
+];
+
+<Quiz client:visible id="status-and-errors/index" questions={quiz} />
+
+<ProgressTracker client:visible id="status-and-errors/index" />
