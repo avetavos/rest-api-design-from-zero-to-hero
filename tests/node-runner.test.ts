@@ -14,10 +14,11 @@ describe('buildJsSrcdoc', () => {
 });
 
 describe('buildNodeProject', () => {
-  it('puts the snippet at index.js with a node template', () => {
-    const p = buildNodeProject("console.log(1)");
-    expect(p.files['index.js']).toBe('console.log(1)');
+  it('wraps the lesson code in a runnable Hono server with a node template', () => {
+    const p = buildNodeProject("app.get('/ping', (c) => c.text('pong'))");
+    expect(p.files['src/index.ts']).toContain("app.get('/ping', (c) => c.text('pong'))");
+    expect(p.files['src/index.ts']).toContain("import { Hono } from 'hono'");
     expect(p.template).toBe('node');
-    expect(p.files['package.json']).toContain('"type": "module"');
+    expect(p.files['package.json']).toContain('hono');
   });
 });
