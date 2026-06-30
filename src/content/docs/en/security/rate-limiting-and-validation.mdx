@@ -42,7 +42,7 @@ Every value from a client is untrusted until validated. The main risks:
 - **Injection** — never build SQL/commands by string concatenation; use parameterized queries.
 - **Mass assignment** — do not blindly spread a request body onto a model; accept only an allowlist of fields, or a user could set `isAdmin: true`.
 - **Oversized payloads** — cap request body size and array lengths to avoid resource exhaustion.
-- **Type and range** — validate types, lengths, and ranges with a schema, and reject with `422` (see [Validation Errors](/rest-api-design-from-zero-to-hero/en/status-and-errors/validation-errors/)).
+- **Type and range** — validate types, lengths, and ranges with a schema, and reject with `422` (see [Validation Errors](/rest-api/en/status-and-errors/validation-errors/)).
 
 <Callout title="Allowlist input, throttle abuse">
 Accept only the fields and shapes you expect — an allowlist beats a blocklist every time, and it stops mass-assignment attacks cold. Pair that with per-client rate limits and body-size caps so a single caller can neither corrupt your data nor exhaust your capacity.

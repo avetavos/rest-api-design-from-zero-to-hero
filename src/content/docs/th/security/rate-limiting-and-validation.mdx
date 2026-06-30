@@ -42,7 +42,7 @@ console.log(take(0));                    // 4th: 429 with retryAfter`;
 - **Injection** — อย่าสร้าง SQL/command ด้วยการต่อ string เด็ดขาด ให้ใช้ parameterized query
 - **Mass assignment** — อย่าเอา request body ไป spread ทับลงบน model แบบไม่ดูตาม้าตาเรือ ให้รับเฉพาะ field ที่อยู่ใน allowlist เท่านั้น มิฉะนั้น user อาจตั้งค่า `isAdmin: true` ได้
 - **Oversized payloads** — จำกัดขนาด request body และความยาวของ array เพื่อหลีกเลี่ยงการทำให้ resource หมดเกลี้ยง
-- **Type and range** — validate ชนิดข้อมูล, ความยาว และช่วงค่าด้วย schema และปฏิเสธด้วย `422` (ดู [Validation Errors](/rest-api-design-from-zero-to-hero/th/status-and-errors/validation-errors/))
+- **Type and range** — validate ชนิดข้อมูล, ความยาว และช่วงค่าด้วย schema และปฏิเสธด้วย `422` (ดู [Validation Errors](/rest-api/th/status-and-errors/validation-errors/))
 
 <Callout title="allowlist สำหรับ input, throttle สำหรับการใช้งานในทางที่ผิด">
 รับเฉพาะ field และรูปแบบที่คุณคาดหวังไว้เท่านั้น — allowlist เหนือกว่า blocklist ทุกครั้ง และมันหยุดการโจมตีแบบ mass-assignment ได้อย่างเด็ดขาด จับคู่สิ่งนั้นเข้ากับ rate limit ต่อ client และการจำกัดขนาด body เพื่อให้ผู้เรียกใช้คนเดียวไม่สามารถทั้งทำลายข้อมูลของคุณหรือทำให้ขีดความสามารถของคุณหมดลงได้

@@ -48,7 +48,7 @@ console.log('final state:', store[42]);   // same as one call`;
 
 ## ทำให้ POST retry ได้อย่างปลอดภัย
 
-เมื่อคุณจำเป็นจริง ๆ ที่จะให้การสร้างที่ไม่ idempotent ทนต่อการ retry ได้ ให้ใช้ **idempotency key**: client ส่ง header `Idempotency-Key` ที่ไม่ซ้ำกันมา และ server จดจำผลลัพธ์ของ key นั้นไว้ เพื่อให้การส่งซ้ำคืนผลลัพธ์เดิมกลับไปแทนที่จะทำงานสองครั้ง เราจะลงรายละเอียดกลไกของมันใน [Versioning & Caching](/rest-api-design-from-zero-to-hero/th/versioning-caching/conditional-and-idempotency-keys/)
+เมื่อคุณจำเป็นจริง ๆ ที่จะให้การสร้างที่ไม่ idempotent ทนต่อการ retry ได้ ให้ใช้ **idempotency key**: client ส่ง header `Idempotency-Key` ที่ไม่ซ้ำกันมา และ server จดจำผลลัพธ์ของ key นั้นไว้ เพื่อให้การส่งซ้ำคืนผลลัพธ์เดิมกลับไปแทนที่จะทำงานสองครั้ง เราจะลงรายละเอียดกลไกของมันใน [Versioning & Caching](/rest-api/th/versioning-caching/conditional-and-idempotency-keys/)
 
 <Callout title="ออกแบบเผื่อการ retry ที่คุณมองไม่เห็น">
 จงสมมติว่าทุกคำขอที่ไม่ safe อาจมาถึงมากกว่าหนึ่งครั้ง ทำให้การเขียน (write) เป็น idempotent ในจุดที่คุณทำได้ (เลือก `PUT` ด้วย ID ที่ client เป็นผู้กำหนด) และปกป้องจุดที่คุณทำไม่ได้ด้วย idempotency key ความถูกต้องภายใต้การ retry คือการเลือกออกแบบ ไม่ใช่โชค
