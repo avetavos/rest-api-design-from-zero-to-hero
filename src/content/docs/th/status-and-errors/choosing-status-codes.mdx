@@ -50,6 +50,39 @@ app.post('/items', async (c) => {
 
 <NodeRunner stackblitz client:visible code={honoCode} />
 
+| Status Range | ความหมาย | ตัวอย่าง |
+|---|---|---|
+| 2xx | สำเร็จ | 200 OK, 201 Created, 204 No Content |
+| 3xx | Redirect | 301 Moved, 304 Not Modified |
+| 4xx | Client error | 400 Bad Request, 401, 403, 404, 409, 422, 429 |
+| 5xx | Server error | 500 Internal, 503 Service Unavailable |
+
+## Common Mistakes
+
+**Return 200 พร้อม Error ใน Body**
+อาการ:
+- `HTTP 200 OK` พร้อม `{ "success": false, "error": "Not found" }`
+- monitoring ที่ดู HTTP status คิดว่า request สำเร็จ
+- alert และ SLA measurement ผิดพลาด
+- ใช้ status code ที่ถูกต้อง: 404 ไม่ใช่ 200
+
+**ใช้ 500 สำหรับ Client Error**
+อาการ:
+- validation ผิด → server throw exception → return 500
+- client ไม่รู้ว่า request ของตัวเองผิด หรือ server มีปัญหา
+- ต้อง catch validation error ก่อน → return 400 หรือ 422
+
+> 💡 Real World Example
+>
+> **GitHub API:**
+> - 422 Unprocessable Entity สำหรับ validation error — field ผิด rule
+> - 409 Conflict สำหรับ duplicate resource
+> - 403 Forbidden สำหรับ action ที่ไม่มีสิทธิ์ (ต่างจาก 401 ที่ยังไม่ authenticate)
+>
+> **Stripe API:**
+> - status code ครบ: 400 invalid request, 401 auth failed, 402 payment failed, 429 rate limit
+> - HTTP status code map ตรงกับ error type เสมอ
+
 <Callout title="เมื่อไม่แน่ใจ ให้เลือก code ที่เจาะจงกว่า">
 `400` แบบกว้างๆ มักไม่ผิด แต่ code ที่แม่นยำสอน client ว่าต้องทำอะไร: `401` บอกว่า "ล็อกอินสิ", `403` บอกว่า "เลิกถามได้แล้ว", `422` บอกว่า "แก้ field พวกนี้", `409` บอกว่า "มุมมองของคุณล้าสมัยแล้ว" ความเจาะจงใน status line คือฟีเจอร์อย่างหนึ่ง
 </Callout>

@@ -38,7 +38,7 @@ GET /articles?sort=-createdAt,title
 
 นั่นอ่านได้ว่า "ใหม่สุดก่อน แล้วค่อยเรียงตาม title จากน้อยไปมาก" จงกำหนดว่าฟิลด์ไหนบ้างที่ sort ได้ (การ sort บนคอลัมน์ที่ไม่มี index อาจมีต้นทุนสูง) และปฏิเสธฟิลด์ที่เหลือด้วย `400`
 
-## การนำทั้งสองมาใช้ในโค้ด
+## การนำทั้งสองมาใช้ใน code
 
 export const queryCode = `const articles = [
   { id: 1, status: 'published', views: 1200, title: 'B' },
@@ -60,6 +60,37 @@ function query(items, { status, sort }) {
 console.log(query(articles, { status: 'published', sort: '-views' }));`;
 
 <NodeRunner client:visible code={queryCode} />
+
+| Benefits (Filtering & Sorting) | Trade-offs |
+|---|---|
+| client ดึงเฉพาะที่ต้องการ — ลด payload | query parameter มากทำ URL ยาวและอ่านยาก |
+| server-side filter ดีกว่า client-side filter ข้อมูลทั้งหมด | filter ที่ซับซ้อนต้องการ query language (OData, custom) |
+| sort ฝั่ง server ใช้ database index — เร็วกว่า sort ใน memory | ต้อง validate filter/sort parameter ป้องกัน SQL injection |
+| filter + sort รวมกันใน request เดียว | multi-field sort ทำ URL ซับซ้อน |
+
+## Common Mistakes
+
+**ไม่ Validate Filter Parameter**
+อาการ:
+- `GET /users?sort=; DROP TABLE users--`
+- inject SQL ผ่าน sort parameter
+- whitelist field ที่ filter/sort ได้: `if (!['name','email','createdAt'].includes(sort)) throw`
+
+**Filter ที่ Expensive โดยไม่มี Index**
+อาการ:
+- `GET /orders?status=pending` — query `WHERE status = 'pending'` บน table ล้าน record
+- ไม่มี index บน `status` column — full table scan ทุก request
+- สร้าง index บน field ที่ filter บ่อย หรือจำกัด filter ที่รองรับ
+
+> 💡 Real World Example
+>
+> **GitHub API:**
+> - `GET /repos/\{owner\}/\{repo\}/issues?state=open&labels=bug&sort=created&direction=desc`
+> - filter หลายมิติ, sort พร้อมกัน ใน request เดียว
+>
+> **Stripe API:**
+> - `GET /charges?created[gte]=1609459200&created[lte]=1640995199&limit=100`
+> - range filter ด้วย bracket notation — filter วันที่ระหว่าง 2 ช่วง
 
 <Callout title="ทำ allowlist ว่าจะ filter และ sort บนอะไรได้บ้าง">
 อย่าป้อน query param ดิบ ๆ เข้าไปใน query ของฐานข้อมูลตรง ๆ — นั่นเปิดช่องให้เกิด injection และทำให้ client sort บนคอลัมน์ที่ช้าและไม่มี index ได้ จงตรวจสอบแต่ละฟิลด์ของ filter/sort เทียบกับ allowlist ที่ชัดเจน และคืน `400` สำหรับอะไรก็ตามที่ไม่รู้จัก ยืดหยุ่นให้ client ควบคุมไว้ที่คุณ

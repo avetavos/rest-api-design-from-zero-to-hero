@@ -1,0 +1,98 @@
+---
+title: Glossary
+description: คำศัพท์ REST API ที่ใช้ตลอด course นี้ — รักษา terminology ภาษาอังกฤษตามที่ developer ใช้จริง
+sidebar:
+  order: 99
+---
+
+## Core REST Terms
+
+| English | Thai Style | ความหมาย |
+|---|---|---|
+| REST | REST | Representational State Transfer — แนวทางออกแบบ API ผ่าน HTTP ที่เน้น resource |
+| Resource | resource | สิ่งที่ API เปิดเผย เช่น user, order, product — มี URI เป็นของตัวเอง |
+| Endpoint | endpoint | URL + method รวมกัน เช่น `GET /users` |
+| URI | URI | Uniform Resource Identifier — ที่อยู่ของ resource |
+| URL | URL | URI ที่ระบุ location ได้จริง เช่น `https://api.example.com/users` |
+| Contract | contract | สัญญาระหว่าง API producer และ consumer — กำหนด request/response format |
+| HATEOAS | HATEOAS | Hypermedia As The Engine Of Application State — response มี link บอก action ต่อไป |
+| Idempotency | idempotency | ทำซ้ำกี่ครั้งก็ได้ผลลัพธ์เดิม — GET, PUT, DELETE เป็น idempotent |
+
+## HTTP Protocol
+
+| English | Thai Style | ความหมาย |
+|---|---|---|
+| Request | request | ข้อความจาก client ไปยัง server |
+| Response | response | ข้อความตอบกลับจาก server |
+| Header | header | metadata ของ request/response เช่น Content-Type, Authorization |
+| Body | body | เนื้อหาหลักของ request/response |
+| Payload | payload | ข้อมูลที่ส่งใน body |
+| Status Code | status code | ตัวเลข 3 หลักที่บอกผลลัพธ์ เช่น 200, 404, 500 |
+| Method | method | GET, POST, PUT, PATCH, DELETE, OPTIONS |
+| GET | GET | อ่านข้อมูล — idempotent, cacheable |
+| POST | POST | สร้าง resource ใหม่ — ไม่ idempotent |
+| PUT | PUT | แทนที่ resource ทั้งหมด — idempotent |
+| PATCH | PATCH | แก้ไขบางส่วน — อาจ idempotent |
+| DELETE | DELETE | ลบ resource — idempotent |
+
+## Status Codes
+
+| Code | Meaning | เมื่อใช้ |
+|---|---|---|
+| 200 OK | สำเร็จ | GET, PATCH, PUT สำเร็จ |
+| 201 Created | สร้างสำเร็จ | POST ที่สร้าง resource ใหม่ |
+| 204 No Content | สำเร็จ ไม่มี body | DELETE สำเร็จ |
+| 400 Bad Request | request ผิด | validation error, format ผิด |
+| 401 Unauthorized | ยังไม่ได้ authenticate | ไม่มี token หรือ token หมดอายุ |
+| 403 Forbidden | ไม่มีสิทธิ์ | authenticate แล้วแต่ไม่มีสิทธิ์ |
+| 404 Not Found | ไม่พบ resource | resource ไม่มีอยู่ |
+| 409 Conflict | เกิด conflict | duplicate, state ไม่ถูกต้อง |
+| 422 Unprocessable | ข้อมูลผิด semantic | field ถูก format แต่ logic ผิด |
+| 429 Too Many Requests | ถูก rate limit | เกิน quota |
+| 500 Internal Server Error | server error | bug ฝั่ง server |
+
+## Authentication & Authorization
+
+| English | Thai Style | ความหมาย |
+|---|---|---|
+| Authentication | authentication | พิสูจน์ว่า "คุณคือใคร" |
+| Authorization | authorization | ตรวจสอบว่า "คุณทำอะไรได้บ้าง" |
+| JWT | JWT | JSON Web Token — token ที่เข้ารหัสข้อมูล user |
+| Bearer Token | Bearer Token | token ใน header `Authorization: Bearer <token>` |
+| OAuth | OAuth | protocol มาตรฐานสำหรับ delegated authorization |
+| API Key | API Key | key ที่ใช้ระบุ client — ง่ายแต่ไม่ revocable ได้ดี |
+
+## Design Concepts
+
+| English | Thai Style | ความหมาย |
+|---|---|---|
+| Pagination | pagination | แบ่ง result เป็นหน้า — cursor หรือ offset |
+| Filtering | filtering | กรอง resource ตาม criteria |
+| Sorting | sorting | เรียง resource ตาม field |
+| Rate Limiting | rate limiting | จำกัด request ต่อ time window |
+| Caching | caching | เก็บ response ไว้ใช้ซ้ำ — ลด latency |
+| Versioning | versioning | จัดการ API evolution โดยไม่ทำให้ consumer พัง |
+| CORS | CORS | Cross-Origin Resource Sharing — ควบคุม cross-domain access |
+| Content Negotiation | content negotiation | client บอก server ว่าต้องการ format ใด |
+| ETag | ETag | fingerprint ของ resource — ใช้ conditional request |
+| Idempotency Key | idempotency key | key ที่ client ส่งเพื่อทำให้ POST เป็น idempotent |
+
+## REST vs Alternatives
+
+| Style | ข้อดี | ข้อเสีย |
+|---|---|---|
+| REST | มาตรฐาน, cacheable, เข้าใจง่าย | over/under-fetching ได้ |
+| GraphQL | flexible query, ดึงเฉพาะที่ต้องการ | caching ยากกว่า, complex setup |
+| gRPC | เร็ว, type-safe, streaming | human-readable น้อย, ต้องการ tooling |
+| RPC (JSON) | ง่าย, ตรงไปตรงมา | tight coupling, ไม่ standard |
+
+## เมื่อ **ไม่** ควรออกแบบเป็น REST
+
+- ต้องการ real-time bidirectional — ใช้ WebSocket แทน
+- Heavy binary streaming — gRPC เหมาะกว่า
+- Microservice internal call ที่ต้องการ performance สูง — gRPC หรือ message queue
+- Query ที่ซับซ้อนมาก ต้องการ flexible shape — GraphQL เหมาะกว่า
+
+import ProgressTracker from '../../../components/ProgressTracker.tsx';
+
+<ProgressTracker client:visible id="glossary" />

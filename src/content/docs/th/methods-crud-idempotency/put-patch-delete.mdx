@@ -67,6 +67,36 @@ app.delete('/articles/:id', (c) => {
 
 <NodeRunner stackblitz client:visible code={honoCode} />
 
+| Method | ส่ง Body? | Idempotent? | ใช้เมื่อ |
+|---|---|---|---|
+| PUT | ✅ ทั้ง resource | ✅ | แทนที่ resource ทั้งหมด |
+| PATCH | ✅ เฉพาะที่แก้ | อาจใช่ | แก้บาง field |
+| DELETE | บางครั้ง | ✅ | ลบ resource |
+
+## Common Mistakes
+
+**ใช้ PUT เพื่อ Partial Update**
+อาการ:
+- `PUT /users/\{id\}` ส่งแค่ `{ "name": "New Name" }` — field อื่น reset เป็น null
+- PUT ต้องส่ง resource ทั้งหมด — ขาด field = null/default
+- ใช้ PATCH สำหรับ partial update
+
+**DELETE ที่ไม่ Idempotent**
+อาการ:
+- `DELETE /users/\{id\}` ครั้งแรก return 200, ครั้งที่สอง return 500 (server error)
+- ควร return 404 หรือ 204 ในครั้งที่สอง ไม่ใช่ 500
+- DELETE ที่ resource ไม่มีแล้วควร return 404 หรือ 204 สม่ำเสมอ
+
+> 💡 Real World Example
+>
+> **GitHub API:**
+> - `PATCH /repos/\{owner\}/\{repo\}` — แก้บาง setting ของ repo
+> - `DELETE /repos/\{owner\}/\{repo\}` — ลบ repo (idempotent — 404 ครั้งที่สอง)
+>
+> **Stripe API:**
+> - PATCH สำหรับ update customer info
+> - ไม่มี true DELETE สำหรับ charge — ใช้ refund แทน (audit trail)
+
 <Callout title="PUT แทนที่ ส่วน PATCH รวม (merge)">
 ถ้า client ส่ง resource ที่สมบูรณ์มาและคาดหวังให้ฟิลด์ที่ละเว้นถูกล้างค่า นั่นคือ `PUT` ถ้า client ส่งเฉพาะสิ่งที่เปลี่ยนและคาดหวังให้สิ่งอื่นทั้งหมดคงไว้ นั่นคือ `PATCH` การเลือก semantics แบบ `PUT` แต่กลับ merge (หรือในทางกลับกัน) คือสาเหตุที่พบบ่อยของบั๊กแบบ "ทำไมฟิลด์ของฉันหายไป?"
 </Callout>

@@ -32,6 +32,36 @@ export const stylesDiagram = `flowchart TD
 
 เลือกใช้ **REST** เมื่อ domain ของคุณมีรูปร่างเป็น resource ตามธรรมชาติ คุณต้องการ HTTP caching และ public contract ที่คนเข้าใจกันอย่างกว้างขวาง และ CRUD บวกกับ action อีกไม่กี่อย่างก็ครอบคลุม use case ได้ — ซึ่งก็คือ back end ของเว็บและมือถือส่วนใหญ่ เลือกใช้ **RPC/gRPC** สำหรับการเรียก service ภายในที่มี throughput สูง เลือกใช้ **GraphQL** เมื่อ client ที่แตกต่างกันจำนวนมากต้องการข้อมูลคนละส่วนจาก data graph ที่อุดมและเชื่อมโยงกัน
 
+| Style | ข้อดี | ข้อเสีย | เหมาะกับ |
+|---|---|---|---|
+| REST | มาตรฐาน, cacheable, ง่าย debug | over/under-fetching | Public API, CRUD resource |
+| GraphQL | ดึงเฉพาะที่ต้องการ, flexible | caching ยาก, complex | หลาย client ต้องการ data ต่างกัน |
+| gRPC | เร็ว, type-safe, streaming | ไม่ human-readable, tooling มาก | Microservice internal, high performance |
+| JSON-RPC | เรียบง่าย | tight coupling, ไม่มี standard URL | Internal tool, simple integration |
+
+## Common Mistakes
+
+**เลือก GraphQL เพราะ Hype**
+อาการ:
+- API มี client เดียวที่ต้องการข้อมูลชุดเดียว
+- ใช้ GraphQL แต่ complexity เพิ่มโดยไม่ได้ benefit
+- REST เหมาะกว่าเมื่อ use case ตรงไปตรงมา
+
+**ใช้ REST สำหรับ Internal Microservice ที่ต้องการ Performance**
+อาการ:
+- service เรียกกัน 100 ครั้งต่อ request — HTTP overhead สะสม
+- gRPC หรือ message queue เหมาะกว่าสำหรับ internal high-frequency call
+
+> 💡 Real World Example
+>
+> **GitHub:**
+> - มีทั้ง REST API v3 และ GraphQL API v4
+> - REST สำหรับ simple operation, GraphQL สำหรับ complex query ที่ต้องการ data หลาย resource
+>
+> **Netflix:**
+> - ใช้ gRPC สำหรับ microservice internal call
+> - REST สำหรับ public-facing API ที่ partner และ third-party ใช้
+
 <Callout title="พวกมันไม่ได้แยกขาดจากกัน">
 ระบบจำนวนมากใช้ REST ที่ขอบเพื่อ public contract ที่เสถียร และใช้ gRPC ระหว่าง service ภายใน จงเลือกตามขอบเขต ไม่ใช่ตามบริษัท ส่วนที่เหลือของคอร์สนี้ว่าด้วยการทำส่วนของ REST ให้ดี
 </Callout>

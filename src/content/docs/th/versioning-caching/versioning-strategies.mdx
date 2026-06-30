@@ -40,6 +40,36 @@ Accept: application/vnd.example.article+json;version=2
 
 สำหรับทีมส่วนใหญ่ **URI versioning** ชนะในแง่ของความเป็นปฏิบัตินิยม: มันชัดเจน, เป็นมิตรกับ cache, และทดสอบได้ง่ายมาก ไม่ว่าคุณจะเลือกแบบไหน ให้ทำเวอร์ชัน **ทั้ง API** ในระดับหยาบ (`v1`, `v2`) ไม่ใช่ทำเวอร์ชันแต่ละ endpoint แยกกัน — เวอร์ชันรายต่อ endpoint จะทำให้ support matrix บานปลาย
 
+| Strategy | ข้อดี | ข้อเสีย | เหมาะกับ |
+|---|---|---|---|
+| URI versioning (`/v1/`) | ชัดเจน, cache ง่าย, test ง่าย | resource มีสอง URI | ส่วนใหญ่ — practical choice |
+| Header versioning (`API-Version: 2`) | URI สะอาด | มองไม่เห็นใน log, debug ยาก | Internal API ที่ control client |
+| Media-type (`Accept: ...;version=2`) | RESTful ที่สุด | ซับซ้อน, tooling support น้อย | Rarely used in practice |
+
+## Common Mistakes
+
+**Version เฉพาะ Endpoint แทน API ทั้งหมด**
+อาการ:
+- `/v1/users` แต่ `/v2/orders` ใน API เดียวกัน
+- client ต้อง track version ของแต่ละ endpoint แยกกัน
+- version ทั้ง API พร้อมกัน: `/v1/users` และ `/v1/orders` → `/v2/users` และ `/v2/orders`
+
+**ไม่ Deprecate อย่าง Graceful**
+อาการ:
+- ปิด `/v1/` โดยไม่แจ้งล่วงหน้า — client พังทันที
+- ไม่มี migration guide หรือ timeline ชัดเจน
+- ใช้ `Deprecation` และ `Sunset` header: `Sunset: Sat, 31 Dec 2024 23:59:59 GMT`
+
+> 💡 Real World Example
+>
+> **Stripe API:**
+> - versioning ผ่าน `Stripe-Version` header — ไม่เปลี่ยน URI
+> - account ถูก lock ที่ version ที่สร้าง — ไม่ break เมื่อ Stripe release version ใหม่
+>
+> **GitHub API:**
+> - URI versioning: `/v3/` (REST), `/graphql` (GraphQL v4)
+> - deprecation notice ล่วงหน้า 12 เดือน พร้อม `Deprecation` header
+
 <Callout title="ทำเวอร์ชันให้น้อย, deprecate อย่างใจดี">
 ถือว่า major version ใหม่เป็นทางเลือกสุดท้าย, และเมื่อคุณจำเป็นต้องปล่อยมัน ให้เวอร์ชันเก่ายังทำงานต่อไปพร้อมกับ timeline การ deprecation ที่ชัดเจน และ header `Deprecation`/`Sunset` การทำให้ client พังโดยไม่เตือนล่วงหน้าคือวิธีที่ API จะสูญเสียความน่าเชื่อถือ
 </Callout>

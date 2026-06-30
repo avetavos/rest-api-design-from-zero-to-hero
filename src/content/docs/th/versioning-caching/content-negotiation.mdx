@@ -48,6 +48,38 @@ app.get('/reports/:id', (c) => {
 
 <NodeRunner stackblitz client:visible code={honoCode} />
 
+| Benefits (Content Negotiation) | Trade-offs |
+|---|---|
+| API เดียว รองรับหลาย format (JSON, XML, CSV) | server ต้อง implement serializer หลายตัว |
+| client บอก server ว่าต้องการ format อะไร | complexity เพิ่ม — content type routing logic |
+| versioning ผ่าน media type ที่ RESTful ที่สุด | tooling support สำหรับ custom media type น้อย |
+| compression ผ่าน `Accept-Encoding` ลด bandwidth | ต้องระวัง cache key ที่ต้องรวม Accept header |
+
+## Common Mistakes
+
+**ไม่ Return `Content-Type` ใน Response**
+อาการ:
+- server return JSON แต่ไม่ตั้ง `Content-Type: application/json`
+- client ไม่รู้วิธี parse body — บาง client ถือว่าเป็น plain text
+- ตั้ง `Content-Type` ทุก response ที่มี body เสมอ
+
+**Cache โดยไม่รวม `Accept` ใน Cache Key**
+อาการ:
+- CDN cache response ของ `GET /reports` ที่ขอ JSON
+- request ถัดไปขอ CSV — CDN return JSON เดิม
+- ตั้ง `Vary: Accept` header เพื่อให้ CDN รวม Accept ใน cache key
+
+> 💡 Real World Example
+>
+> **GitHub API:**
+> - `Accept: application/vnd.github+json` สำหรับ standard JSON
+> - `Accept: application/vnd.github.raw` สำหรับ raw file content
+> - format ต่างกันผ่าน Accept header โดยไม่ต้องเปลี่ยน URI
+>
+> **AWS API:**
+> - `Accept-Encoding: gzip` — response body compress อัตโนมัติ
+> - ลด bandwidth สำหรับ large JSON response เช่น list operation
+
 <Callout title="resource เดียว, หลาย representation">
 Content negotiation ทำให้ URI เสถียรในขณะที่ให้ client เลือกรูปแบบและภาษาได้ — การ export เป็น CSV และมุมมองแบบ JSON ของ report เดียวกันใช้ที่อยู่เดียวกัน จงสะท้อน type ที่เลือกกลับไปใน `Content-Type` เสมอ, และคืน `406` แทนที่จะส่งรูปแบบที่ client บอกว่ายอมรับไม่ได้ไปแบบเงียบ ๆ
 </Callout>

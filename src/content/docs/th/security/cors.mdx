@@ -54,6 +54,37 @@ app.get('/articles', (c) => c.json([{ id: 1 }]));`;
 
 จงหลีกเลี่ยงความผิดพลาดคลาสสิกของการสะท้อน origin ใดก็ได้ (`Access-Control-Allow-Origin: *`) **ควบคู่กับ** `Allow-Credentials: true` — การใช้ร่วมกันแบบนี้เป็นสิ่งต้องห้าม และที่สำคัญกว่านั้นคือมันจะเปิดเผย response ที่ผ่าน authenticated ให้กับเว็บไซต์ใดก็ได้
 
+| CORS Header | ความหมาย | ตัวอย่าง |
+|---|---|---|
+| `Access-Control-Allow-Origin` | origin ที่อนุญาต | `https://app.example.com` หรือ `*` |
+| `Access-Control-Allow-Methods` | HTTP method ที่อนุญาต | `GET, POST, PATCH, DELETE` |
+| `Access-Control-Allow-Headers` | header ที่ client ส่งได้ | `Content-Type, Authorization` |
+| `Access-Control-Max-Age` | cache preflight นานแค่ไหน | `86400` (1 วัน) |
+
+## Common Mistakes
+
+**`Access-Control-Allow-Origin: *` กับ Credentials**
+อาการ:
+- ตั้ง `Access-Control-Allow-Origin: *` แต่ต้องการส่ง cookie หรือ Authorization header
+- browser block request — `*` ไม่ work กับ credentials
+- ต้องระบุ origin จริง เช่น `https://app.example.com` เมื่อใช้ credentials
+
+**Preflight ทุก Request เพราะ Cache ไม่ได้**
+อาการ:
+- ไม่ตั้ง `Access-Control-Max-Age` — browser ส่ง OPTIONS preflight ทุกครั้ง
+- เพิ่ม latency ทุก request
+- ตั้ง `Access-Control-Max-Age: 86400` เพื่อ cache preflight 1 วัน
+
+> 💡 Real World Example
+>
+> **GitHub API:**
+> - CORS ที่อนุญาตเฉพาะ origin ที่ register ผ่าน OAuth App
+> - ไม่อนุญาต `*` สำหรับ authenticated endpoint
+>
+> **Stripe.js:**
+> - browser SDK เรียก Stripe API โดยตรง — CORS config อนุญาตเฉพาะ Stripe domain
+> - API Key ที่ใช้ใน browser เป็น publishable key เท่านั้น (ไม่มีสิทธิ์ charge)
+
 <Callout title="CORS ไม่ใช่ authentication">
 การผ่อนคลาย CORS ไม่ได้ทำให้ API ของคุณปลอดภัยน้อยลงต่อ client ที่ไม่ใช่เบราว์เซอร์ — curl, mobile app และ server ต่างเพิกเฉยต่อมันโดยสิ้นเชิง CORS เพียงตัดสินว่า web origin ใดบ้างที่เบราว์เซอร์จะยอมให้อ่าน response ของคุณ จงรักษา allowlist ของ origin ให้แคบไว้ และอย่าพึ่งพา CORS เป็นการควบคุมการเข้าถึงเด็ดขาด นั่นเป็นหน้าที่ของ authn/authz
 </Callout>

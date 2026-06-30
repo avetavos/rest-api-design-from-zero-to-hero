@@ -10,7 +10,7 @@ import Callout from '../../../../components/Callout.astro';
 import Quiz from '../../../../components/Quiz.tsx';
 import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
-สองคำที่ฟังคล้ายกันแต่ทำงานคนละหน้าที่ การแยกแยะมันให้ชัดเจนช่วยให้ทั้งโค้ดและ status code ของคุณกระจ่างขึ้น
+สองคำที่ฟังคล้ายกันแต่ทำงานคนละหน้าที่ การแยกแยะมันให้ชัดเจนช่วยให้ทั้ง code และ status code ของคุณกระจ่างขึ้น
 
 ## ความแตกต่าง
 
@@ -57,6 +57,40 @@ app.delete('/articles/:id', (c) => {
 });`;
 
 <NodeRunner stackblitz client:visible code={honoCode} />
+
+| Concept | คำถาม | ตัวอย่าง |
+|---|---|---|
+| Authentication | คุณคือใคร? | login, verify JWT token |
+| Authorization | คุณทำอะไรได้บ้าง? | check role, check permission |
+
+| Status Code | ความหมาย | เมื่อใช้ |
+|---|---|---|
+| 401 Unauthorized | ยังไม่ได้ authenticate | ไม่มี token, token หมดอายุ |
+| 403 Forbidden | authenticate แล้วแต่ไม่มีสิทธิ์ | role ไม่พอ, ไม่ใช่เจ้าของ resource |
+
+## Common Mistakes
+
+**Return 403 แทน 401 เมื่อไม่มี Token**
+อาการ:
+- request ไม่มี Authorization header → server return 403
+- client ไม่รู้ว่าต้อง login ก่อน — คิดว่าตัวเองไม่มีสิทธิ์
+- ไม่มี token หรือ token invalid → 401; authenticate แล้วแต่สิทธิ์ไม่พอ → 403
+
+**Authorization Check ที่ไม่ครบ**
+อาการ:
+- check permission ที่ route level แต่ไม่ check ที่ resource level
+- `GET /orders` block คนที่ไม่มีสิทธิ์ แต่ `GET /orders/\{id\}` ไม่ check ว่า order นั้นเป็นของ user หรือไม่
+- ต้อง check ทั้ง action permission และ resource ownership
+
+> 💡 Real World Example
+>
+> **GitHub API:**
+> - 401 เมื่อ token ไม่ valid หรือหมดอายุ
+> - 403 เมื่อ token valid แต่ไม่มีสิทธิ์ทำ operation นั้น (เช่น push ไปยัง repo ที่ไม่ใช่เจ้าของ)
+>
+> **AWS API:**
+> - authentication ผ่าน SigV4 — sign ทุก request
+> - authorization ผ่าน IAM policy — ระบุ action ที่ทำได้ต่อ resource ใด
 
 <Callout title="401 หมายถึง 'ล็อกอินสิ'; 403 หมายถึง 'เลิกถามได้แล้ว'">
 ถ้าผู้เรียกใช้ยังไม่ผ่าน authenticated ให้ส่งกลับ `401` เพื่อให้ client รู้ว่าต้องไปขอหรือ refresh credential แต่ถ้าผู้เรียกใช้ผ่าน authenticated แล้วแต่ไม่ได้รับอนุญาต ให้ส่งกลับ `403` — การ re-authenticate จะไม่เปลี่ยนคำตอบ การปนสองอย่างนี้เข้าด้วยกันจะทำให้ client วนลูป retry ที่ไร้ประโยชน์

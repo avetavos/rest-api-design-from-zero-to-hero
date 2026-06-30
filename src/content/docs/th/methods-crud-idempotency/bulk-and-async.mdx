@@ -58,7 +58,37 @@ export const asyncDiagram = `sequenceDiagram
 
 <Mermaid code={asyncDiagram} title="202 Accepted พร้อม status resource ที่ poll ได้" />
 
-ตัวงานเองกลายเป็น resource: `POST /exports` สร้างมันขึ้นมา, `GET /exports/{id}` รายงานความคืบหน้า และ response สุดท้ายลิงก์ไปยังผลลัพธ์ที่ผลิตออกมา
+ตัวงานเองกลายเป็น resource: `POST /exports` สร้างมันขึ้นมา, `GET /exports/\{id\}` รายงานความคืบหน้า และ response สุดท้ายลิงก์ไปยังผลลัพธ์ที่ผลิตออกมา
+
+| Pattern | ดี | ข้อควรระวัง |
+|---|---|---|
+| Bulk operation | ลด round trip — 1 request แทน N | response ที่ partial success ซับซ้อน |
+| Async job | ไม่ block client สำหรับงานนาน | client ต้องมี polling หรือ webhook logic |
+| 202 Accepted | บอก client ว่า processing | ต้อง track job status ด้วย |
+
+## Common Mistakes
+
+**Bulk API ที่ Fail-all หรือ Succeed-all**
+อาการ:
+- ส่ง 100 record ใน batch — record 1 error ทำให้ทั้ง batch fail
+- client ไม่รู้ว่า record ไหนสำเร็จ record ไหนไม่สำเร็จ
+- return partial result: `{ "succeeded": [...], "failed": [...] }`
+
+**Async Job ที่ไม่มี Status Endpoint**
+อาการ:
+- POST /reports — return 202 แต่ไม่มี endpoint ดู status
+- client ไม่รู้ว่า job เสร็จหรือยัง, fail หรือไม่
+- return `{ "jobId": "...", "statusUrl": "/jobs/\{id\}" }` เสมอ
+
+> 💡 Real World Example
+>
+> **GitHub API:**
+> - bulk operation ใน GraphQL API — รวม mutation หลายอย่างในครั้งเดียว
+> - async workflow ผ่าน Actions API — `POST /repos/\{owner\}/\{repo\}/actions/workflows/\{id\}/dispatches` return 204, ตาม status ผ่าน run endpoint
+>
+> **Stripe API:**
+> - bulk event ผ่าน webhook — Stripe ส่ง event batch มาที่ endpoint ของ consumer
+> - async payout — 202 Accepted, status ตาม GET /payouts/\{id\}
 
 <Callout title="ทำให้งานกลายเป็น resource">
 ทั้งสองแพตเทิร์นพึ่งพาแนวคิดเดียวกัน: เมื่อคำขอเดียวไม่สามารถสื่อ operation ได้ ให้จำลอง operation นั้นเป็น resource batch คืนผลลัพธ์รายตัว ส่วน async job กลายเป็นสิ่งที่คุณสร้างขึ้นแล้ว poll ตามทีหลัง คุณยังคงความเป็น RESTful ได้ด้วยการเปลี่ยนคำกริยา (verb) ให้เป็นคำนาม (noun)

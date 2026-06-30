@@ -44,6 +44,37 @@ console.log(take(0));                    // 4th: 429 with retryAfter`;
 - **Oversized payloads** — จำกัดขนาด request body และความยาวของ array เพื่อหลีกเลี่ยงการทำให้ resource หมดเกลี้ยง
 - **Type and range** — validate ชนิดข้อมูล, ความยาว และช่วงค่าด้วย schema และปฏิเสธด้วย `422` (ดู [Validation Errors](/rest-api/th/status-and-errors/validation-errors/))
 
+| Benefits (Rate Limiting) | Trade-offs |
+|---|---|
+| ป้องกัน abuse และ DDoS | legitimate spike traffic อาจ fail |
+| ป้องกัน credential stuffing และ brute force | ต้องออกแบบ limit ที่เหมาะสม — ไม่เข้มเกินหรือหย่อนเกิน |
+| ลด cost ของ downstream service เช่น LLM API | rate limit shared ใน distributed system ต้องใช้ Redis |
+| บอก client ผ่าน header ว่าเหลือ quota เท่าไร | user experience แย่ถ้า error ไม่อธิบาย |
+
+## Common Mistakes
+
+**Rate Limit โดยไม่บอก Client**
+อาการ:
+- 429 Too Many Requests โดยไม่มี header บอกว่าเหลือ quota เท่าไรและ reset เมื่อไร
+- client ไม่รู้ว่าต้องรอนานแค่ไหน — retry loop ทำให้แย่ลง
+- ส่ง `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` เสมอ
+
+**Input Validation ที่ไม่ Sanitize**
+อาการ:
+- รับ `name: "<script>alert(1)</script>"` แล้วเก็บและแสดงโดยไม่ sanitize
+- XSS เมื่อ API response ไปแสดงใน web app
+- validate type/format และ sanitize string input ก่อน store
+
+> 💡 Real World Example
+>
+> **GitHub API:**
+> - rate limit: 5000 requests/hour สำหรับ authenticated request
+> - header: `X-RateLimit-Limit: 5000`, `X-RateLimit-Remaining: 4999`, `X-RateLimit-Reset: 1609459200`
+>
+> **Stripe API:**
+> - rate limit ตาม endpoint: `/charges` มี limit ต่างจาก `/events`
+> - 429 พร้อม `Retry-After` header — client รู้ว่าต้องรอกี่วินาที
+
 <Callout title="allowlist สำหรับ input, throttle สำหรับการใช้งานในทางที่ผิด">
 รับเฉพาะ field และรูปแบบที่คุณคาดหวังไว้เท่านั้น — allowlist เหนือกว่า blocklist ทุกครั้ง และมันหยุดการโจมตีแบบ mass-assignment ได้อย่างเด็ดขาด จับคู่สิ่งนั้นเข้ากับ rate limit ต่อ client และการจำกัดขนาด body เพื่อให้ผู้เรียกใช้คนเดียวไม่สามารถทั้งทำลายข้อมูลของคุณหรือทำให้ขีดความสามารถของคุณหมดลงได้
 </Callout>

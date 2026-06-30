@@ -51,6 +51,35 @@ app.post('/articles', async (c) => {
 
 <NodeRunner stackblitz client:visible code={honoCode} />
 
+| Method | Safe? | Idempotent? | เหมาะกับ |
+|---|---|---|---|
+| GET | ✅ | ✅ | อ่านข้อมูล, search, filter |
+| POST | ❌ | ❌ | สร้าง resource, trigger action |
+
+## Common Mistakes
+
+**ใช้ GET เพื่อ Trigger Side Effect**
+อาการ:
+- `GET /users/\{id\}/activate` — activate user ผ่าน GET
+- bot, crawler, prefetch trigger action โดยไม่ตั้งใจ
+- action ที่มี side effect ต้องใช้ POST, PUT, PATCH, หรือ DELETE
+
+**ส่ง Sensitive Data ใน GET Query String**
+อาการ:
+- `GET /login?password=secret123`
+- password ติด URL, server log, browser history
+- ใช้ POST พร้อม body สำหรับ sensitive data
+
+> 💡 Real World Example
+>
+> **GitHub API:**
+> - `GET /repos/\{owner\}/\{repo\}` — อ่านข้อมูล repo (safe, idempotent)
+> - `POST /repos/\{owner\}/\{repo\}/issues` — สร้าง issue ใหม่ (ไม่ idempotent)
+>
+> **Stripe API:**
+> - `GET /charges/\{id\}` — ดู charge (cacheable)
+> - `POST /charges` — สร้าง charge ใหม่ (ต้องการ idempotency key)
+
 <Callout title="อย่าเปลี่ยนแปลงข้อมูลผ่าน GET">
 ความผิดพลาดเรื่อง REST ที่พบบ่อยที่สุดอย่างหนึ่งคือการทำการกระทำผ่าน `GET` (เพราะมันง่ายที่จะ trigger จาก browser) ทั้ง cache, link prefetcher และ crawler ต่างสมมติว่า `GET` ปลอดภัยและอาจเรียกมันซ้ำ ๆ การเปลี่ยนแปลง state ใด ๆ ควรอยู่บน `POST`, `PUT`, `PATCH` หรือ `DELETE`
 </Callout>

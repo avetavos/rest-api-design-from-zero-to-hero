@@ -45,6 +45,37 @@ assert('error body has a title', typeof response.body.title === 'string');`;
 
 สำหรับแต่ละ endpoint จงทดสอบทั้ง happy path *และ* failure path ทั้ง status code ที่ถูกต้อง, รูปร่างของ response, error body สำหรับ input ที่ไม่ถูกต้อง (มันตรงกับ `problem+json` ของคุณหรือไม่?), การบังคับ auth ในที่ที่ควรมี และ metadata ของ pagination บน collection
 
+| Test Type | ทดสอบอะไร | เหมาะกับ |
+|---|---|---|
+| Unit test | logic ใน function แยก | validation, business rule |
+| Integration test | endpoint จริง + database จริง | happy path, error path |
+| Contract test | request/response match OpenAPI spec | API evolution |
+| E2E test | user journey ทั้งหมด | critical flow เช่น checkout |
+
+## Common Mistakes
+
+**Test เฉพาะ Happy Path**
+อาการ:
+- test ที่ pass request ถูกต้อง — resource สร้าง, status 201
+- ไม่ test: validation error, auth failure, not found, conflict
+- test error path ทุก status code ที่ API document ไว้
+
+**Mock Database ใน Integration Test**
+อาการ:
+- integration test mock database — query จริงไม่ได้รัน
+- SQL ผิด, constraint ผิด — pass ใน test แต่ fail ใน production
+- ใช้ test database จริง (SQLite in-memory หรือ test container)
+
+> 💡 Real World Example
+>
+> **Stripe:**
+> - test mode API key — รัน test บน Stripe environment จริงโดยไม่ charge จริง
+> - webhook testing ผ่าน Stripe CLI: `stripe listen --forward-to localhost:3000/webhook`
+>
+> **GitHub:**
+> - API test ผ่าน sandbox environment
+> - contract test ด้วย OpenAPI spec — CI fail ถ้า response ไม่ match spec
+
 <Callout title="ทดสอบความล้มเหลว ไม่ใช่แค่ happy path">
 เหตุการณ์ขัดข้องใน production ส่วนใหญ่อยู่ใน error path และ edge path ทั้ง `404`, `422`, token ที่หมดอายุ, หน้าที่ว่างเปล่า จง assert สิ่งเหล่านี้อย่างชัดเจน contract test ที่ทดสอบเทียบกับ spec ของ OpenAPI ของคุณมีคุณค่าสูงเป็นพิเศษ มันจะล้มเหลวทันทีที่การสร้างจริงของคุณคลาดเคลื่อนไปจากสิ่งที่คุณสัญญาไว้กับผู้ใช้งาน
 </Callout>

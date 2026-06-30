@@ -35,6 +35,38 @@ type Comment = { id: string; body: string; articleId: string; authorId: string }
 
 ตั้งเป้าให้ resource ไม่หยาบเกินไป (ก้อน `/data` ยักษ์ก้อนเดียว) และไม่ละเอียดเกินไป (แยก resource หนึ่งตัวต่อหนึ่ง field) วิธีทดสอบที่ดี: resource ควรเป็นสิ่งที่ client ต้องการดึง สร้าง หรือเปลี่ยนแปลงในฐานะหน่วยเดียว
 
+| Benefits (Resource Modeling) | Trade-offs |
+|---|---|
+| API predictable — developer รู้ URI โดยเดาได้ | ต้องวิเคราะห์ domain ก่อน — ไม่รีบ implement ได้ทันที |
+| resource-based ทำให้ API evolve ง่ายกว่า verb-based | action บางอย่าง map เป็น resource ได้ยาก เช่น search, publish |
+| HTTP method บอก intent — ไม่ต้องอ่าน body | business logic ซับซ้อนอาจต้องการ sub-resource พิเศษ |
+| cacheable ได้ตาม HTTP standard | over-normalization ทำให้ต้อง call หลาย endpoint |
+
+## Common Mistakes
+
+**Verb-based Endpoint**
+อาการ:
+- `POST /getUser`, `POST /createOrder`, `POST /cancelOrder`
+- ทุก operation ใช้ POST — cache ไม่ได้, idempotency ไม่ชัด
+- แก้: `GET /users/\{id\}`, `POST /orders`, `POST /orders/\{id\}/cancellation`
+
+**Resource Granularity ผิด**
+อาการ:
+- resource เดียวเก็บทุกอย่าง: `GET /everything?type=user&id=1`
+- หรือแตก resource ละเอียดเกิน: `GET /users/\{id\}/name`, `GET /users/\{id\}/email`
+- resource ควรเป็นสิ่งที่ client ต้องการดึงหรือแก้ไขในฐานะหน่วยเดียว
+
+> 💡 Real World Example
+>
+> **GitHub API:**
+> - `/repos/\{owner\}/\{repo\}` — repository เป็น resource
+> - `/repos/\{owner\}/\{repo\}/issues` — issues เป็น sub-collection
+> - `/repos/\{owner\}/\{repo\}/issues/\{number\}` — issue หนึ่งชิ้น
+>
+> **Stripe API:**
+> - `/customers/\{id\}` — customer resource
+> - `/customers/\{id\}/payment_methods` — payment method เป็น sub-resource ของ customer
+
 <Callout title="จำลองเพื่อผู้บริโภค ไม่ใช่เพื่อ schema">
 resource คือคำศัพท์สาธารณะของ API ดังนั้นจงปั้นมันให้สอดคล้องกับวิธีที่ client คิด ไม่ใช่วิธีที่ตารางของคุณถูกวางไว้ การที่ resource หนึ่งตัวจะ join หลายตาราง หรือตารางหนึ่งตารางจะปรากฏออกมาเป็นสอง resource ก็ไม่เป็นไร จงแยก contract ออกจาก storage
 </Callout>

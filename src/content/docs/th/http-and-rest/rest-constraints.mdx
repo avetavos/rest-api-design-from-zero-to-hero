@@ -29,11 +29,43 @@ export const constraintsDiagram = `flowchart TD
 - **Cacheable** — response ต้องบอกว่ามันสามารถถูก cache ได้หรือไม่ (และนานเท่าไร) เพื่อให้ client และตัวกลางต่าง ๆ นำมันกลับมาใช้ซ้ำได้
 - **Uniform Interface** — resource ถูกระบุด้วย URI และจัดการผ่านชุด method และ representation มาตรฐาน นี่คือข้อจำกัดที่ทำให้ API รู้สึก "RESTful"
 - **Layered System** — client ไม่สามารถบอกได้ว่ามันกำลังคุยกับ origin server หรือกับตัวกลาง (proxy, gateway, cache)
-- **Code on Demand** *(ทางเลือก)* — server อาจส่งโค้ดที่รันได้ไปเพื่อขยายความสามารถของ client แต่แทบไม่ค่อยใช้กับ API
+- **Code on Demand** *(ทางเลือก)* — server อาจส่ง code ที่รันได้ไปเพื่อขยายความสามารถของ client แต่แทบไม่ค่อยใช้กับ API
 
 ## ทำไม statelessness ถึงคุ้มค่า
 
 เพราะ server ไม่เก็บ session ใด ๆ server ตัวใดก็สามารถจัดการ request ใดก็ได้ นั่นทำให้การ scale แนวนอนและการ retry เป็นเรื่องง่าย — แต่ก็หมายความว่า client ต้องส่ง identity ของตัวเอง (token) และ context ที่จำเป็นไปกับ **ทุก** request
+
+| REST Constraint | Benefits | Cost |
+|---|---|---|
+| Stateless | scale ง่าย — ทุก server handle ได้ | ต้องส่ง auth ทุก request |
+| Cacheable | ลด latency, server load | cache invalidation ซับซ้อน |
+| Uniform Interface | predictable — developer รู้วิธีใช้ทันที | less flexible สำหรับ operation พิเศษ |
+| Layered System | CDN, gateway, load balancer ได้โดยไม่เปลี่ยน client | เพิ่ม latency ต่อ hop |
+| Client-Server | frontend/backend พัฒนาอิสระ | ต้องตกลง contract ก่อน |
+
+## Common Mistakes
+
+**Session State ฝั่ง Server**
+อาการ:
+- server เก็บ shopping cart ใน memory session
+- เมื่อ scale เป็น 2 server, cart หายเมื่อ request ไปต่าง server
+- เก็บ state ใน client หรือ database แทน server memory
+
+**ละเมิด Uniform Interface ด้วย Endpoint พิเศษ**
+อาการ:
+- `POST /users/search` แทน `GET /users?q=john`
+- POST ที่ side effect ไม่ชัด — cache ไม่ได้, ไม่ idempotent
+- ใช้ GET + query parameter สำหรับ search/filter
+
+> 💡 Real World Example
+>
+> **AWS API:**
+> - stateless authentication — ทุก request มี signature ของตัวเอง (SigV4)
+> - ไม่มี session — ทุก request authenticate อิสระ
+>
+> **Stripe API:**
+> - Uniform Interface ครบ — resource-based URI, method แสดง intent
+> - ทำงานกับ CDN และ reverse proxy ได้โดยไม่เปลี่ยน client
 
 <Callout title="Uniform interface + stateless = หัวใจของ REST">
 ถ้าคุณจะจำข้อจำกัดเพียงสองข้อ จงจำสองข้อนี้ uniform interface (URI + method มาตรฐาน + ข้อความที่อธิบายตัวเองได้) คือสิ่งที่ทำให้ API ของคุณคาดเดาได้ ส่วน statelessness คือสิ่งที่ทำให้มัน scale ได้ ข้อถกเถียงส่วนใหญ่ที่ว่า "นี่เป็น RESTful ไหม?" ล้วนวนกลับมาที่สองข้อนี้

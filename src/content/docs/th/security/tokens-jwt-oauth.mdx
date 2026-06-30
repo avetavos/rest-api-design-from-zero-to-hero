@@ -60,6 +60,37 @@ export const oauthDiagram = `sequenceDiagram
 
 **Scope** จำกัดว่า token ทำอะไรได้บ้าง (`articles:read`, `articles:write`) API ของคุณจะตรวจ scope ของ token ในระหว่างขั้นตอน authorization ส่วน OpenID Connect (OIDC) เพิ่มชั้นของตัวตน (`id_token`) ทับลงบน OAuth2 อีกที
 
+| Token Type | ข้อดี | ข้อเสีย | เหมาะกับ |
+|---|---|---|---|
+| JWT (stateless) | ไม่ต้อง query database ทุก request | revoke ยาก ต้องรอ expire | API ที่ scale สูง, microservice |
+| Opaque Token (stateful) | revoke ได้ทันที | ต้อง lookup database ทุก request | Session ที่ต้องการ revoke บ่อย |
+| API Key | ง่าย, long-lived | ไม่มี expiry, revoke ยาก | Server-to-server, developer API |
+| OAuth Access Token | delegated auth, scope จำกัด | setup ซับซ้อน | Third-party integration |
+
+## Common Mistakes
+
+**เก็บ JWT ใน localStorage**
+อาการ:
+- `localStorage.setItem('token', jwt)` ใน browser
+- XSS attack ขโมย token ได้
+- เก็บใน `httpOnly cookie` แทน — JavaScript อ่านไม่ได้
+
+**JWT ที่ไม่ Expire**
+อาการ:
+- `jwt.sign(payload, secret)` โดยไม่ตั้ง `expiresIn`
+- token ที่ถูกขโมย valid ตลอดไป
+- ตั้ง `expiresIn: '1h'` และมี refresh token mechanism
+
+> 💡 Real World Example
+>
+> **GitHub API:**
+> - Personal Access Token (opaque) — revoke ได้ทันทีจาก settings
+> - GitHub Apps ใช้ JWT สำหรับ installation token ที่ expire ใน 1 ชั่วโมง
+>
+> **Stripe API:**
+> - API Key สำหรับ server-to-server — อย่าใช้ใน client-side code
+> - Restricted Key ที่จำกัด permission เฉพาะที่ต้องการ
+
 <Callout title="ต้อง verify อย่าแค่ decode">
 payload ของ JWT ใครก็อ่านได้ — การ decode มันไม่ได้พิสูจน์อะไรเลย จง verify signature เทียบกับกุญแจของ issuer เสมอ และ validate `exp`, `aud` และ `iss` ก่อนจะเชื่อ claim แม้แต่ตัวเดียว ให้ access token มีอายุสั้น และใช้ refresh token (หรือ re-auth) เพื่อต่ออายุมัน
 </Callout>

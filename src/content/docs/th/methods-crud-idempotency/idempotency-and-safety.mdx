@@ -50,6 +50,37 @@ console.log('final state:', store[42]);   // same as one call`;
 
 เมื่อคุณจำเป็นจริง ๆ ที่จะให้การสร้างที่ไม่ idempotent ทนต่อการ retry ได้ ให้ใช้ **idempotency key**: client ส่ง header `Idempotency-Key` ที่ไม่ซ้ำกันมา และ server จดจำผลลัพธ์ของ key นั้นไว้ เพื่อให้การส่งซ้ำคืนผลลัพธ์เดิมกลับไปแทนที่จะทำงานสองครั้ง เราจะลงรายละเอียดกลไกของมันใน [Versioning & Caching](/rest-api/th/versioning-caching/conditional-and-idempotency-keys/)
 
+| Property | ความหมาย | Methods |
+|---|---|---|
+| Safe | ไม่เปลี่ยน state ของ server | GET, HEAD, OPTIONS |
+| Idempotent | ทำซ้ำกี่ครั้งผลเดิม | GET, PUT, DELETE (+ safe methods) |
+| Neither | อาจเปลี่ยน state และผลต่างกัน | POST, PATCH |
+
+## Common Mistakes
+
+**POST ที่ไม่ Idempotent โดยไม่มี Guard**
+อาการ:
+- user กด submit form สองครั้ง — สร้าง order สองใบ
+- network retry ทำให้ charge บัตรสองครั้ง
+- ต้องการ idempotency key สำหรับ POST ที่ sensitive เช่น payment
+
+**PATCH ที่ไม่ Idempotent โดยตั้งใจ**
+อาการ:
+- `PATCH /accounts/\{id\}/balance` ด้วย `{ "increment": 100 }` — ทำซ้ำ = บวกซ้ำ
+- client retry ทำให้ balance เพิ่มผิด
+- ใช้ absolute value: `{ "balance": 1100 }` แทน increment
+
+> 💡 Real World Example
+>
+> **Stripe API:**
+> - `Idempotency-Key` header สำหรับ POST /charges
+> - ส่ง key เดิมซ้ำ — Stripe return response เดิม ไม่ charge ซ้ำ
+> - เก็บ key ใน client และ retry ได้อย่างปลอดภัย
+>
+> **AWS S3:**
+> - PUT object เป็น idempotent — upload ไฟล์เดิมซ้ำ = overwrite ไม่ใช่ duplicate
+> - ทำให้ retry ปลอดภัยสำหรับ large file upload
+
 <Callout title="ออกแบบเผื่อการ retry ที่คุณมองไม่เห็น">
 จงสมมติว่าทุกคำขอที่ไม่ safe อาจมาถึงมากกว่าหนึ่งครั้ง ทำให้การเขียน (write) เป็น idempotent ในจุดที่คุณทำได้ (เลือก `PUT` ด้วย ID ที่ client เป็นผู้กำหนด) และปกป้องจุดที่คุณทำไม่ได้ด้วย idempotency key ความถูกต้องภายใต้การ retry คือการเลือกออกแบบ ไม่ใช่โชค
 </Callout>

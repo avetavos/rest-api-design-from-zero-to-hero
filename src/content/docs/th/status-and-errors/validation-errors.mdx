@@ -64,6 +64,37 @@ if (errors.length > 0) {
 
 ในโปรเจกต์ TypeScript schema library (เช่น zod) ให้สิ่งนี้แก่คุณฟรี: parse input เทียบกับ schema และเมื่อล้มเหลวก็ map issue เหล่านั้นไปยัง array `errors` ของคุณ
 
+| Benefits (Validation Errors) | Trade-offs |
+|---|---|
+| client รู้ว่า field ไหนผิดและทำไม — UX ดีขึ้น | validation logic ซ้ำกันระหว่าง client และ server |
+| ป้องกัน invalid data เข้า database | verbose error response สำหรับ form ที่มีหลาย field |
+| 400/422 ที่ชัดเจนทำให้ retry logic ถูกต้อง | validation rule บาง rule ต้อง query database (email unique) |
+| machine-readable error ทำให้ client แสดง inline error ได้ | |
+
+## Common Mistakes
+
+**Return Error เดียวสำหรับหลาย Field ที่ผิด**
+อาการ:
+- form มี 5 field ผิด แต่ API return error ทีละ field
+- user แก้ field แรก submit ใหม่ → เห็น error ของ field ที่สอง → แก้ → submit ใหม่ ...
+- validate ทุก field พร้อมกันแล้ว return `errors` array ครบทีเดียว
+
+**Validation Error vs Business Rule Error ปนกัน**
+อาการ:
+- `400 Bad Request` สำหรับทั้ง "email format ผิด" และ "email นี้ถูก suspend"
+- client ไม่รู้ว่าควรแสดง field error หรือ general error
+- แยก: 422 สำหรับ validation, 409 หรือ custom code สำหรับ business rule
+
+> 💡 Real World Example
+>
+> **Stripe API:**
+> - `{ "error": { "type": "invalid_request_error", "param": "amount", "message": "Amount must be greater than 0" } }`
+> - `param` บอก field ที่ผิด — client แสดง inline error ที่ field นั้นได้
+>
+> **GitHub API:**
+> - `{ "errors": [{ "resource": "Issue", "field": "title", "code": "missing_field" }, { "resource": "Issue", "field": "body", "code": "missing_field" }] }`
+> - ส่ง validation error ทุก field พร้อมกัน ไม่ใช่ทีละ field
+
 <Callout title="ส่ง error ทุกตัวกลับในคราวเดียว">
 การ validate ทีละ field บังคับให้ผู้ใช้วนลูป submit-fix-submit ที่น่าหงุดหงิด รันการตรวจสอบทั้งหมดของคุณ รวบรวมความล้มเหลวทุกอย่างไว้ใน array `errors` แล้วส่งกลับพร้อมกัน key `field` ที่เสถียรและอ่านได้ด้วยเครื่องช่วยให้ client ไฮไลต์ input ที่ผิดได้ตรงจุด
 </Callout>

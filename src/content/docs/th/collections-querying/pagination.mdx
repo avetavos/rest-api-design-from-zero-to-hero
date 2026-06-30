@@ -25,7 +25,7 @@ GET /articles?page=2&limit=20
 
 ## Cursor pagination
 
-client ส่ง **cursor** แบบ opaque ที่บอกตำแหน่งที่หน้าก่อนหน้าจบลง: `?limit=20&cursor=eyJpZCI6MTQwfQ` เซิร์ฟเวอร์จะคืน slice ถัดไปพร้อม cursor สำหรับหน้าหลังจากนั้น
+client ส่ง **cursor** แบบ opaque ที่บอกตำแหน่งที่หน้าก่อนหน้าจบลง: `?limit=20&cursor=eyJpZCI6MTQwfQ` server จะคืน slice ถัดไปพร้อม cursor สำหรับหน้าหลังจากนั้น
 
 export const cursorDiagram = `flowchart LR
   A[GET /articles?limit=20] --> B[20 items + nextCursor]
@@ -57,6 +57,37 @@ const all = Array.from({ length: 53 }, (_, i) => ({ id: i + 1 }));
 console.log(JSON.stringify(paginate(all, 2, 20), null, 2));`;
 
 <NodeRunner client:visible code={pageCode} />
+
+| Pagination Style | ข้อดี | ข้อเสีย | เหมาะกับ |
+|---|---|---|---|
+| Offset (`?page=2&limit=20`) | ง่าย, random access | unstable เมื่อ data เปลี่ยน | Admin table, fixed dataset |
+| Cursor (`?after=cursor123`) | stable, performance ดีกับ large dataset | ไม่รู้ total, ข้ามหน้าไม่ได้ | Feed, infinite scroll |
+| Keyset (`?after_id=42`) | เร็ว, stable | ต้อง unique sortable key | Large sorted collection |
+
+## Common Mistakes
+
+**Offset Pagination สำหรับ Real-time Feed**
+อาการ:
+- feed ที่ข้อมูลเพิ่มบ่อย — หน้า 2 เลื่อนเป็นหน้า 3 เพราะข้อมูลใหม่เข้า
+- user เห็น item ซ้ำหรือ item หายระหว่าง paginate
+- ใช้ cursor pagination สำหรับ real-time data
+
+**ไม่มี Pagination Default**
+อาการ:
+- `GET /users` return ทุก record โดยไม่จำกัด
+- database และ memory ระเบิดเมื่อ user มีล้านคน
+- ตั้ง default limit (`limit=20`) และ max limit (`limit=100`) เสมอ
+
+> 💡 Real World Example
+>
+> **GitHub API:**
+> - cursor pagination ผ่าน `Link` header: `<https://api.github.com/repos?page=2>; rel="next"`
+> - default 30, max 100 items per page
+>
+> **Stripe API:**
+> - cursor pagination: `GET /charges?starting_after=ch_xxx&limit=20`
+> - `has_more: true` บอก client ว่ามีข้อมูลเพิ่ม
+> - cursor-based เพราะ charge เพิ่มตลอดเวลา
 
 <Callout title="ใช้ cursor เป็นค่าเริ่มต้นสำหรับข้อมูลใหญ่และเปลี่ยนแปลงบ่อย">
 Offset pagination ใช้ได้ดีกับ list ขนาดเล็กที่เสถียร และตาราง admin ที่การกระโดดไปหน้า 50 มีความสำคัญ ส่วน feed, log และอะไรก็ตามที่โตขึ้นในขณะที่ผู้ใช้กำลังเลื่อนดู ควรเลือก cursor pagination: มันยังคงถูกต้องเมื่อมีการ insert และเร็วไม่ว่าจะลึกแค่ไหน

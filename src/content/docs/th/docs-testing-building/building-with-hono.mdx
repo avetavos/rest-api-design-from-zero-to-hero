@@ -77,6 +77,37 @@ app.onError((err, c) => {
 
 สังเกตว่าทุกแนวคิดจากคอร์สนี้ปรากฏขึ้นอย่างไร ทั้ง envelope ของ collection ที่ทำ pagination, `201 Created` พร้อม `Location`, การ validate แบบ `422` พร้อม error ราย field, `404` ผ่าน error ที่มี type ที่ถูก throw ออกมา และ `onError` ตัวกลางเพียงหนึ่งเดียวที่ผลิต `problem+json`
 
+| Benefits (Hono) | Trade-offs |
+|---|---|
+| รันบน Edge runtime (Cloudflare Workers, Bun, Deno) — latency ต่ำ | ecosystem เล็กกว่า Express |
+| type-safe middleware ด้วย TypeScript | learning curve ถ้าคุ้นกับ Express |
+| built-in validation ด้วย Zod integration | community resource น้อยกว่า NestJS/Express |
+| เร็วกว่า Express — benchmark ดีกว่าใน most scenario | ยังไม่มี decorator-based MVC เหมือน NestJS |
+
+## Common Mistakes
+
+**ไม่มี Centralized Error Handler**
+อาการ:
+- แต่ละ route handler catch error ของตัวเอง
+- error format ไม่สม่ำเสมอ
+- ใช้ `app.onError((err, c) => { ... })` — handle ทุก uncaught error ในที่เดียว
+
+**Middleware Order ผิด**
+อาการ:
+- authentication middleware ลงทะเบียนหลัง route — route run ก่อน auth check
+- request ที่ไม่ authenticate เข้าถึง protected route ได้
+- ลงทะเบียน middleware ก่อน route เสมอ: `app.use(auth)` ก่อน `app.get('/protected', handler)`
+
+> 💡 Real World Example
+>
+> **Cloudflare Workers:**
+> - Hono เป็น framework ที่แนะนำสำหรับ Workers — รันบน V8 Isolate
+> - latency ต่ำมากเพราะรันที่ edge ใกล้ user
+>
+> **Vercel Edge Functions:**
+> - Hono รองรับ Vercel Edge runtime
+> - API ที่ต้องการ global low latency เหมาะกับ edge deployment
+
 <Callout title="handler ที่บาง ชั้นที่แท้จริง">
 เก็บเรื่องของ HTTP (การ parse, status, header) ไว้ใน handler และ middleware เก็บกฎทางธุรกิจไว้ใน service ที่ไม่เคย import เฟรมเวิร์กฝั่งเว็บเลย การแยกเช่นนี้คือสิ่งที่ทำให้ API ทดสอบได้ ให้คุณสลับเฟรมเวิร์กได้ และทำให้แต่ละไฟล์เล็กพอที่จะทำความเข้าใจได้
 </Callout>

@@ -64,7 +64,38 @@ app.onError((err, c) => {
 
 - **ความสม่ำเสมอ** — ทุก error ออกไปด้วยรูปทรงเดียวกัน
 - **ความปลอดภัย** — error ที่ไม่คาดคิดกลายเป็น `500` แบบทั่วไป; ส่วนภายในไม่รั่วไหล
-- **โค้ดน้อยลง** — handler แค่ throw หนึ่งบรรทัด; ไม่ต้องสร้าง response เองทุกตัว
+- **code น้อยลง** — handler แค่ throw หนึ่งบรรทัด; ไม่ต้องสร้าง response เองทุกตัว
+
+| Benefits (Centralized Error Handling) | Trade-offs |
+|---|---|
+| error format สม่ำเสมอทั้ง API — ไม่มี special case | setup middleware เพิ่มงาน upfront |
+| ป้องกัน internal error leak ไปถึง client | error middleware ที่ผิดทำให้ error ทั้งหมดพัง |
+| logging ครบถ้วนในที่เดียว — ง่ายต่อ monitoring | ต้องออกแบบ error class hierarchy ให้ดี |
+| retry logic ใน client ทำงานได้ถูกต้อง | custom error class ใน TypeScript ต้องระวัง transpilation |
+
+## Common Mistakes
+
+**try/catch ใน Controller ทุกตัว**
+อาการ:
+- ทุก route handler มี try/catch ของตัวเอง
+- error format แตกต่างกัน — บาง route ส่ง `{ error: "..." }`, บางส่ง `{ message: "..." }`
+- ใช้ error middleware กลาง: `app.onError((err, c) => { ... })`
+
+**ไม่ Log Error ก่อน Return**
+อาการ:
+- error handler ส่ง response โดยไม่ log
+- production มี 500 error แต่ไม่มี log ให้ debug
+- log error พร้อม request context (userId, path, method) ก่อนส่ง response
+
+> 💡 Real World Example
+>
+> **Hono (framework ที่ course ใช้):**
+> - `app.onError((err, c) => { ... })` — global error handler
+> - จัดการ error ทุกประเภทในที่เดียว
+>
+> **Express.js:**
+> - error middleware 4 parameters: `(err, req, res, next)`
+> - Airbnb ใช้ centralized error handler ที่ log ไปยัง monitoring system ก่อน return response
 
 <Callout title="โยน typed error แล้วแปลงที่เดียว">
 ให้ handler แสดงความล้มเหลวด้วยการ throw typed error (`throw new ApiError(404, ...)`) และนำการจัดรูปแบบทั้งหมดไปไว้ใน hook `onError` เดียว คุณจะได้ `problem+json` ที่เหมือนกันทุกที่ มี fallback ที่ปลอดภัยรับประกันสำหรับสิ่งที่ไม่คาดคิด และ handler ที่จดจ่ออยู่กับ happy path

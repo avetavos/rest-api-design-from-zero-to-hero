@@ -35,6 +35,37 @@ GET /articles/42.json
 GET /articles?articleId=42    # identity belongs in the path
 ```
 
+| URI Convention | ดี | ไม่ดี |
+|---|---|---|
+| Plural noun | `/users`, `/orders` | `/user`, `/getOrders` |
+| Lowercase + hyphen | `/blog-posts`, `/line-items` | `/blogPosts`, `/Blog_Posts` |
+| Hierarchy แสดง ownership | `/users/\{id\}/orders` | `/getUserOrders?userId=\{id\}` |
+| ไม่มี verb ใน URI | `/orders/\{id\}/cancellation` | `/cancelOrder/\{id\}` |
+
+## Common Mistakes
+
+**ผสม Naming Convention**
+อาการ:
+- `GET /userProfiles` และ `GET /order-items` ใน API เดียวกัน
+- developer ต้องจำว่า endpoint ไหนใช้ convention ไหน
+- กำหนด convention เดียวแล้วยึดตลอด — ส่วนมากใช้ plural lowercase
+
+**ใส่ Version ผิดที่**
+อาการ:
+- `/users/v2` — version อยู่ตรงกลาง URI
+- `/v1/users/v2/profile` — version ซ้อนกัน
+- version อยู่ต้น URI เสมอ: `/v1/users/\{id\}/profile`
+
+> 💡 Real World Example
+>
+> **GitHub API:**
+> - `/repos` (plural), `/issues`, `/pulls`, `/commits` — consistent plural
+> - `/repos/\{owner\}/\{repo\}/git/refs` — hierarchy ชัดเจน
+>
+> **Stripe API:**
+> - `/payment_intents`, `/payment_methods`, `/setup_intents`
+> - ใช้ snake_case สม่ำเสมอทั้ง API
+
 <Callout title="ความคาดเดาได้คือเป้าหมาย">
 กฎการตั้งชื่อทุกข้อรับใช้เป้าหมายเดียว: client ที่เคยเห็น `/articles/42/comments` สามารถเดา `/users/7/articles` ได้อย่างมั่นใจ ความสอดคล้องมีค่ามากกว่ากฎแต่ละข้อใด ๆ จงเลือกแนวปฏิบัติแล้วนำไปใช้ทุกที่
 </Callout>

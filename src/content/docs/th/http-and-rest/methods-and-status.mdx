@@ -67,6 +67,41 @@ app.post('/articles', async (c) => {
 
 <NodeRunner stackblitz client:visible code={honoCode} />
 
+| HTTP Method | Intent | Idempotent? |
+|---|---|---|
+| GET | อ่านข้อมูล | ✅ ใช่ |
+| POST | สร้าง resource ใหม่ | ❌ ไม่ใช่ |
+| PUT | แทนที่ resource ทั้งหมด | ✅ ใช่ |
+| PATCH | แก้ไขบางส่วน | อาจใช่ |
+| DELETE | ลบ resource | ✅ ใช่ |
+
+## Common Mistakes
+
+**ใช้ POST สำหรับทุก operation**
+อาการ:
+- `POST /getUser`, `POST /updateUser`, `POST /deleteUser`
+- ไม่มีวิธีรู้ว่า request ทำอะไรโดยไม่อ่าน body
+- ใช้ method ที่ตรงกับ intent: GET อ่าน, DELETE ลบ, PATCH แก้
+
+**Return 200 แม้เกิด Error**
+อาการ:
+- `{ "status": "error", "message": "Not found" }` พร้อม HTTP 200
+- monitoring tool คิดว่า request สำเร็จ — alert ไม่ทำงาน
+- ใช้ status code ที่ถูกต้อง: 404 เมื่อไม่พบ, 400 เมื่อ request ผิด
+
+> 💡 Real World Example
+>
+> **GitHub API:**
+> - GET /repos/\{owner\}/\{repo\} — อ่านข้อมูล repo
+> - DELETE /repos/\{owner\}/\{repo\} — ลบ repo
+> - PATCH /repos/\{owner\}/\{repo\} — แก้ไข repo settings
+> - method บอก intent ทันที โดยไม่ต้องอ่าน URL
+>
+> **Stripe API:**
+> - POST /charges — สร้าง charge ใหม่
+> - GET /charges/\{id\} — ดู charge
+> - status code ครบ: 200, 201, 400, 401, 402, 404, 429, 500
+
 <Callout title="เลือก status ก่อน แล้วค่อยเลือก body">
 ตัดสินใจเรื่อง status code ก่อน — มันคือส่วนของ response ที่ client ใช้แตกแขนงการทำงาน `201 Created` ที่มี body ว่างเปล่าก็ใช้ได้ แต่ `200 OK` ที่ห่อ error ซ่อนไว้นั้นใช้ไม่ได้ อย่าส่งคืน `200` สำหรับความล้มเหลวเด็ดขาด
 </Callout>

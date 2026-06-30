@@ -41,6 +41,41 @@ export const recapDiagram = `flowchart TD
 
 **Ship it** — อธิบาย API ด้วย OpenAPI; ทดสอบทั้งชั้น unit/integration/contract; ให้ handler บางและ service ปลอดจาก HTTP ดู [OpenAPI](/rest-api/th/docs-testing-building/openapi/)
 
+| Category | Best Practice | Anti-Pattern |
+|---|---|---|
+| Resource Design | noun-based URI, plural | `/getUser`, `/createOrder` |
+| HTTP Methods | method แสดง intent | POST สำหรับทุก operation |
+| Status Codes | 2xx/4xx/5xx ถูกต้อง | 200 พร้อม error body |
+| Error Format | machine-readable code | plain string message |
+| Pagination | default limit, cursor/offset | return ทุก record |
+| Authentication | Bearer token ใน header | token ใน query string |
+| Versioning | URI versioning `/v1/` | ไม่มี version เลย |
+| Caching | Cache-Control, ETag | ไม่มี caching header |
+
+## Common Mistakes
+
+**ไม่มี API Design Review ก่อน Implement**
+อาการ:
+- developer implement endpoint ก่อน ค่อยทำ documentation
+- consumer ใช้ API แล้วพบว่า design ไม่ consistent
+- ทำ API design review (OpenAPI spec หรือ design doc) ก่อน implement ทุกครั้ง
+
+**Breaking Change โดยไม่ Version**
+อาการ:
+- เปลี่ยน response field name: `userId` → `user_id` ใน `/v1/`
+- consumer ที่ใช้ `userId` พังทันที
+- additive change เท่านั้นใน version เดิม; breaking change ต้อง bump version
+
+> 💡 Real World Example
+>
+> **Stripe API:**
+> - ยึดถือ backward compatibility อย่างเคร่งครัด — API v1 ออก 2011, ยัง support ในปัจจุบัน
+> - ทุก breaking change มีเวอร์ชัน date ใหม่ และ account lock ที่ version เก่าโดยอัตโนมัติ
+>
+> **GitHub API:**
+> - deprecation notice ล่วงหน้า 12 เดือน
+> - `Deprecation` header บน response ที่ใกล้หมดอายุ — consumer รู้ก่อน endpoint ปิด
+
 <Callout title="ความสม่ำเสมอเหนือกว่าความฉลาด">
 API ที่ดีที่สุดไม่ใช่ API ที่ฉลาดที่สุด แต่เป็น API ที่คาดเดาได้มากที่สุด ใช้แนวปฏิบัติเหล่านี้อย่างสม่ำเสมอ แล้วนักพัฒนาที่เคยใช้ endpoint หนึ่งของคุณก็จะเดาที่เหลือได้ ความสามารถในการคาดเดาได้นั้น มากกว่าฟีเจอร์ใด ๆ เพียงอย่างเดียว คือสิ่งที่ทำให้ API เป็นเรื่องน่ายินดีที่จะพัฒนาเทียบเคียงด้วย
 </Callout>

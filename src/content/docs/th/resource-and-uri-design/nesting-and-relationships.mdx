@@ -55,6 +55,36 @@ console.log(JSON.stringify(articleResponse({ id: 42, title: 'Hi', authorId: 7 })
 
 <NodeRunner client:visible code={linkCode} />
 
+| Nesting Strategy | เหมาะกับ | ไม่เหมาะกับ |
+|---|---|---|
+| `/users/\{id\}/orders` (nested) | resource ที่ ownership ชัดเจน | resource ที่ exist อิสระ |
+| `/orders?userId=\{id\}` (flat + filter) | resource ที่ query จากหลาย context | ownership ที่ต้องการ enforce |
+| `/orders/\{id\}` (flat direct) | access resource โดยตรงด้วย ID | ต้องการ parent context |
+
+## Common Mistakes
+
+**Nesting ลึกเกิน**
+อาการ:
+- `/companies/\{id\}/departments/\{id\}/teams/\{id\}/members/\{id\}/tasks/\{id\}`
+- URI ยาวมาก ยากต่อการ maintain และ document
+- จำกัดที่ 2 ระดับ หรือ flatten เป็น `/tasks/\{id\}` แล้ว filter ด้วย query param
+
+**Relationship ที่ Many-to-Many แต่ทำ Nested**
+อาการ:
+- `/users/\{id\}/tags/\{id\}` — user มีหลาย tag, tag มีหลาย user
+- nested ทำให้ ownership ไม่ชัด — DELETE tag จาก user หรือ delete tag ทั้งหมด?
+- ใช้ junction resource: `POST /user-tags` ด้วย `{ userId, tagId }`
+
+> 💡 Real World Example
+>
+> **GitHub API:**
+> - `/repos/\{owner\}/\{repo\}/issues` — 2 ระดับ ชัดเจน
+> - `/repos/\{owner\}/\{repo\}/issues/\{number\}/comments` — 3 ระดับ max
+>
+> **Stripe API:**
+> - `/customers/\{id\}/payment_methods` — nested สำหรับ owned resource
+> - `/payment_methods/\{id\}` — access โดยตรงได้เมื่อรู้ ID
+
 <Callout title="nest เพื่อความเป็นเจ้าของ link สำหรับทุกอย่างที่เหลือ">
 จง nest sub-resource ก็ต่อเมื่อมันอาศัยอยู่ภายใน parent ของมันอย่างแท้จริง และคุณจะไม่อ้างถึงมันโดยปราศจาก parent นั้น ทันทีที่ resource มีตัวตนที่มั่นคงเป็นของตัวเอง ให้มอบ URI ระดับ top-level แก่มันแล้วอ้างอิงด้วย link path ที่ตื้นบวกกับ link จะแก่ตัวได้ดีกว่าการ nest ลึกมาก
 </Callout>

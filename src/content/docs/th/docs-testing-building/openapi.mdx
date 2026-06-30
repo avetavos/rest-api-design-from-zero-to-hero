@@ -54,10 +54,41 @@ components:
 
 ## spec-first กับ code-first
 
-- **Spec-first** — เขียนเอกสาร OpenAPI ก่อน แล้วจึงสร้างจริงให้ตรงตามนั้น contract ถูกตกลงกันก่อนที่จะมีโค้ด เหมาะมากสำหรับทีมและผู้ใช้งานภายนอก
-- **Code-first** — ใส่ annotation ให้ handler/schema ของคุณแล้วสร้าง spec ออกมาจากมัน ความคลาดเคลื่อนระหว่างโค้ดกับ spec น้อยลง เพราะฝ่ายหนึ่งผลิตอีกฝ่ายหนึ่งออกมา
+- **Spec-first** — เขียนเอกสาร OpenAPI ก่อน แล้วจึงสร้างจริงให้ตรงตามนั้น contract ถูกตกลงกันก่อนที่จะมี code เหมาะมากสำหรับทีมและผู้ใช้งานภายนอก
+- **Code-first** — ใส่ annotation ให้ handler/schema ของคุณแล้วสร้าง spec ออกมาจากมัน ความคลาดเคลื่อนระหว่าง code กับ spec น้อยลง เพราะฝ่ายหนึ่งผลิตอีกฝ่ายหนึ่งออกมา
 
 ไม่ว่าทางไหน เครื่องมือก็เปลี่ยน spec ให้เป็นคุณค่าได้ **Swagger UI** / Redoc แสดงเอกสารแบบโต้ตอบได้ ตัวสร้างผลิต client ที่มี type และตัว validator ตรวจสอบ request เทียบกับมัน
+
+| Benefits (OpenAPI) | Trade-offs |
+|---|---|
+| documentation generate จาก schema — ไม่ drift จาก code | setup OpenAPI spec ต้องการ discipline |
+| SDK generation อัตโนมัติ สำหรับหลายภาษา | spec ที่ verbose — YAML/JSON file ใหญ่ |
+| validation middleware จาก schema — request/response ถูกต้องเสมอ | code-first vs spec-first ต้องเลือก approach |
+| contract testing ระหว่าง producer และ consumer | spec เก่า ถ้า developer ไม่ update พร้อมกับ code |
+
+## Common Mistakes
+
+**OpenAPI Spec ที่ Drift จาก Implementation**
+อาการ:
+- เขียน spec ก่อน แล้ว implement ตาม — แต่ implementation เปลี่ยนโดยไม่ update spec
+- developer ใช้ spec ที่ผิดสร้าง client — bug ตอน integrate
+- generate spec จาก code (code-first) หรือ enforce spec validation ใน CI
+
+**ไม่มี Example ใน Spec**
+อาการ:
+- spec มีแค่ type definition ไม่มี example request/response
+- developer ไม่รู้ว่า field ควรส่งค่าอะไร — ต้องลองเอง
+- เพิ่ม `example` หรือ `examples` field ใน spec ทุก request/response body
+
+> 💡 Real World Example
+>
+> **Stripe API:**
+> - OpenAPI spec ที่ comprehensive — ทุก endpoint มี schema, example, error response
+> - ใช้ generate SDK สำหรับ 7+ ภาษา: Python, Ruby, Node.js, Go, Java, PHP, .NET
+>
+> **GitHub API:**
+> - OpenAPI spec เปิดสาธารณะ — community สร้าง SDK และ tool บน spec นั้น
+> - Octokit ทุกภาษา generate มาจาก spec เดียวกัน
 
 <Callout title="ปล่อยให้ spec ทำงานซ้ำ ๆ แทน">
 เอกสาร OpenAPI ที่ดูแลรักษาไว้ดีจะคุ้มค่าในตัวมันเอง ทั้งเอกสารแบบโต้ตอบ client ที่มี type ที่ถูกสร้างขึ้น mock server สำหรับทีม front-end และการ validate request ล้วนมาจากไฟล์เดียวกัน เลือก spec-first หรือ code-first ตาม workflow ของทีม แต่อย่าเขียนและดูแลคำอธิบายของ API เดียวกันด้วยมือถึงสามชุดแยกกัน
@@ -69,15 +100,15 @@ export const quiz = [
     options: [
       'เฉพาะ schema ของฐานข้อมูล',
       'path, operation, parameter, schema และ response — นั่นคือ contract ของ API',
-      'ฮาร์ดแวร์ของเซิร์ฟเวอร์',
-      'เฉพาะการยืนยันตัวตน',
+      'ฮาร์ดแวร์ของ server',
+      'เฉพาะ authentication',
     ],
     answer: 1,
   },
   {
     q: 'อะไรคือสิ่งที่แยก spec-first ออกจาก code-first?',
     options: [
-      'spec-first เขียนเอกสาร OpenAPI ก่อนสร้างจริง ส่วน code-first สร้างมันจากโค้ดที่ใส่ annotation',
+      'spec-first เขียนเอกสาร OpenAPI ก่อนสร้างจริง ส่วน code-first สร้างมันจาก code ที่ใส่ annotation',
       'ทั้งสองอย่างเหมือนกัน',
       'code-first ไม่มี spec',
       'spec-first ข้ามการทดสอบไป',
@@ -89,7 +120,7 @@ export const quiz = [
     options: [
       'การ query ฐานข้อมูลเร็วขึ้น',
       'client ที่ถูกสร้าง เอกสารแบบโต้ตอบ และการ validate request จากแหล่งเดียว',
-      'การยืนยันตัวตนอัตโนมัติ',
+      'authenticationอัตโนมัติ',
       'response body ที่เล็กลง',
     ],
     answer: 1,

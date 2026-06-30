@@ -20,7 +20,7 @@ import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 GET /articles?fields=id,title
 ```
 
-เซิร์ฟเวอร์จะคืนเฉพาะ key เหล่านั้น วิธีนี้ช่วยลดขนาด payload สำหรับ client บนมือถือและสำหรับ list view อีกทั้งยังบ่งบอกเจตนาด้วย จงใส่ identifier ของ resource มาด้วยเสมอแม้จะไม่ได้ร้องขอ เพื่อให้ response ยังคงระบุที่อยู่ (addressable) ได้
+server จะคืนเฉพาะ key เหล่านั้น วิธีนี้ช่วยลดขนาด payload สำหรับ client บนมือถือและสำหรับ list view อีกทั้งยังบ่งบอกเจตนาด้วย จงใส่ identifier ของ resource มาด้วยเสมอแม้จะไม่ได้ร้องขอ เพื่อให้ response ยังคงระบุที่อยู่ (addressable) ได้
 
 ## การ expand resource ที่เกี่ยวข้อง
 
@@ -32,7 +32,7 @@ GET /articles/42?expand=author
 
 หากไม่มี `expand` ตัว `author` จะเป็น reference (`{ "id": 7, "href": "/users/7" }`) แต่ถ้ามี ออบเจ็กต์ author จะถูกฝังเข้ามา วิธีนี้ทำให้ response เริ่มต้นมีขนาดเล็ก ขณะเดียวกันก็เลี่ยงการ round trip เพิ่มเมื่อ client ต้องการข้อมูลที่เกี่ยวข้องจริง ๆ
 
-## การ project ฟิลด์ในโค้ด
+## การ project ฟิลด์ใน code
 
 export const projectCode = `function project(obj, fields) {
   if (!fields) return obj;
@@ -44,6 +44,37 @@ const article = { id: 42, title: 'Hello', body: 'long...', views: 1200, authorId
 console.log(project(article, 'title,views'));`;
 
 <NodeRunner client:visible code={projectCode} />
+
+| Benefits (Field Selection) | Trade-offs |
+|---|---|
+| ลด payload — mobile network ประหยัด bandwidth | server ต้อง parse `fields` parameter และ filter response |
+| ลด over-fetching — ดึงเฉพาะที่ต้องการ | response shape ต่างกันตาม request — caching ซับซ้อน |
+| ลด serialization time บน server | documentation ยากกว่า — response ไม่ fixed |
+| client มีความยืดหยุ่นสูง | ถ้าต้องการ flexible มาก GraphQL อาจเหมาะกว่า |
+
+## Common Mistakes
+
+**Field Selection ที่ไม่ Consistent**
+อาการ:
+- `?fields=name,email` บาง endpoint, `?select=name,email` อีก endpoint
+- developer ต้องจำ parameter name ต่างกัน
+- ใช้ `fields` หรือ `select` สม่ำเสมอทั้ง API
+
+**ไม่มี Fallback เมื่อ Field ไม่มีอยู่**
+อาการ:
+- `?fields=name,nonExistentField` — server return 500 หรือ omit field โดยไม่แจ้ง
+- client ไม่รู้ว่า field ที่ขาดหายไปเพราะ null หรือเพราะ field ไม่มี
+- return 400 เมื่อ field ไม่มีอยู่ หรือ ignore gracefully และ document behavior
+
+> 💡 Real World Example
+>
+> **Google APIs:**
+> - `?fields=items(id,title,description)` — เลือก field ได้ถึงระดับ nested
+> - ลด response size สำหรับ mobile client ที่ bandwidth จำกัด
+>
+> **LinkedIn API:**
+> - projection parameter: `?projection=(id,localizedName,localizedHeadline)`
+> - ลด response จาก 50+ field เหลือ field ที่ต้องการจริง
 
 <Callout title="ค่าเริ่มต้นเล็ก รายละเอียดแบบเลือกเปิด">
 ออกแบบ response เริ่มต้นให้กระชับและ link ออกไปยัง resource ที่เกี่ยวข้อง จากนั้นให้ `fields` แก่ client เพื่อตัดให้เล็กลงอีก และให้ `expand` เพื่อดึงข้อมูลที่เกี่ยวข้องเข้ามาแบบ inline เมื่อต้องการ คุณจะได้ความยืดหยุ่นคล้าย GraphQL โดยไม่ต้องยอมเสีย caching และความเรียบง่ายของ REST

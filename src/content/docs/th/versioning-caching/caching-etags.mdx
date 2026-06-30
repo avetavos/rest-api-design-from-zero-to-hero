@@ -64,6 +64,37 @@ console.log('with current tag:', handle(tag));      // 304`;
 
 <NodeRunner client:visible code={etagCode} />
 
+| Cache Mechanism | ทำงานอย่างไร | เหมาะกับ |
+|---|---|---|
+| `Cache-Control: max-age=3600` | browser cache นาน 1 ชั่วโมง | static resource, slow-changing data |
+| ETag + `If-None-Match` | server return 304 ถ้า resource ไม่เปลี่ยน | resource ที่เปลี่ยนบ้าง |
+| `Last-Modified` + `If-Modified-Since` | ใช้ timestamp แทน hash | resource ที่รู้ modified time ชัดเจน |
+| `Cache-Control: no-store` | ไม่ cache เลย | sensitive data เช่น payment, user profile |
+
+## Common Mistakes
+
+**Cache Sensitive Data โดยไม่ตั้งใจ**
+อาการ:
+- `Cache-Control: max-age=3600` บน `/users/\{id\}/profile`
+- browser หรือ CDN cache profile ของ user A ให้ user B เห็น
+- ตั้ง `Cache-Control: no-store, private` สำหรับ authenticated resource
+
+**ETag ที่ไม่ Stable**
+อาการ:
+- ETag generate จาก timestamp — server ที่ต่างกัน generate ETag ต่างกันสำหรับ content เดียว
+- client ส่ง `If-None-Match` แต่ server return 200 ทุกครั้งแทน 304
+- generate ETag จาก hash ของ content แทน timestamp
+
+> 💡 Real World Example
+>
+> **GitHub API:**
+> - ETag บน resource ทุกตัว — conditional GET ลด bandwidth 90%+
+> - rate limit ไม่นับ request ที่ return 304
+>
+> **AWS S3:**
+> - ETag คือ MD5 hash ของ object content
+> - conditional GET ผ่าน `If-None-Match` ทำให้ sync ไฟล์จำนวนมากได้อย่างมีประสิทธิภาพ
+
 <Callout title="ตั้ง Cache-Control บนทุก response">
 แม้แต่ `Cache-Control: no-store` ก็เป็นการตัดสินใจที่ควรระบุออกมาอย่างชัดเจน — มันบอก cache ว่าควรทำอะไรแทนที่จะปล่อยให้คลุมเครือ เพิ่ม `ETag` ให้กับ representation ที่คำนวณหรือถ่ายโอนแล้วมีต้นทุนสูง, และ conditional requests จะเปลี่ยนการตรวจสอบแบบ "มันยังเป็นปัจจุบันอยู่ไหม?" ส่วนใหญ่ให้กลายเป็น `304` ที่ราคาถูก
 </Callout>

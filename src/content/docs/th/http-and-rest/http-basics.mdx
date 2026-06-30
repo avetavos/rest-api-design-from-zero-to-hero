@@ -52,7 +52,7 @@ export const msgDiagram = `flowchart LR
 
 <Mermaid code={msgDiagram} title="Request และ response มีโครงสร้างสามส่วนเหมือนกัน" />
 
-## การสร้าง response ในโค้ด
+## การสร้าง response ใน code
 
 framework ฝั่ง server ซ่อนรายละเอียดเหล่านี้ไว้เกือบทั้งหมด แต่การได้ลองสร้าง response ด้วยมือสักครั้งก็ช่วยได้มาก โค้ดส่วนนี้สร้าง header และ JSON body สำหรับ response แบบ "created" แล้ว log ออกมา:
 
@@ -72,6 +72,37 @@ console.log('headers:', res.headers);
 console.log('body:', res.body);`;
 
 <NodeRunner client:visible code={buildCode} />
+
+| Benefits (HTTP Structure) | Trade-offs |
+|---|---|
+| มาตรฐานสากล — ทุก client รู้วิธีอ่าน request/response | verbose กว่า binary protocol เช่น gRPC |
+| text-based — human-readable, ง่าย debug ด้วย curl | header overhead ทุก request — HTTP/2 แก้ด้วย header compression |
+| stateless — ทุก request มีข้อมูลครบในตัวเอง | ต้องส่ง auth header ทุกครั้ง ต่างจาก session-based |
+| cacheable — browser และ CDN cache ได้จาก header | caching config ผิดทำให้ client เห็นข้อมูลเก่า |
+
+## Common Mistakes
+
+**ใส่ข้อมูลสำคัญใน URL แทน Header**
+อาการ:
+- ส่ง token ใน query string: `GET /users?token=abc123`
+- token ติด URL ทำให้ log และ browser history เก็บไว้
+- ใช้ `Authorization: Bearer <token>` ใน header เสมอ
+
+**ไม่ Set Content-Type**
+อาการ:
+- ส่ง JSON body โดยไม่ใส่ `Content-Type: application/json`
+- server parse body ผิด หรือ reject request
+- ตั้ง Content-Type ทุกครั้งที่ request มี body
+
+> 💡 Real World Example
+>
+> **GitHub API:**
+> - ทุก request ต้องมี `Accept: application/vnd.github+json`
+> - บอก server ว่า client ต้องการ JSON response version ล่าสุด
+>
+> **Stripe API:**
+> - ใช้ `Idempotency-Key` header สำหรับ POST request ที่ sensitive
+> - ป้องกัน duplicate charge เมื่อ network retry
 
 <Callout title="Header เป็นส่วนหนึ่งของการออกแบบ">
 body มักได้รับความสนใจทั้งหมด แต่ header ต่างหากที่พกพา contract ไว้ `Content-Type` บอก client ว่าจะ parse body อย่างไร `Location` ชี้ไปยัง resource ที่เพิ่งถูกสร้างขึ้น และ `Authorization`/`Accept` กำหนดรูปแบบของการแลกเปลี่ยน จงปฏิบัติต่อมันในฐานะส่วนสำคัญลำดับแรกของการออกแบบ API ไม่ใช่เรื่องที่ค่อยมาคิดทีหลัง

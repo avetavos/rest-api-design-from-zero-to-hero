@@ -55,6 +55,35 @@ console.log('orders created:', seen.size);     // 1`;
 
 ธรรมเนียมปฏิบัติทั่วไปคือ request header ชื่อ `Idempotency-Key`; server จะเก็บการ mapping ไว้ช่วงเวลาหนึ่ง (เช่น 24 ชั่วโมง) เพื่อให้การ retry ภายในช่วงเวลานั้นปลอดภัย
 
+| Pattern | ป้องกันอะไร | ทำงานอย่างไร |
+|---|---|---|
+| Conditional PUT (`If-Match`) | lost update — สอง client แก้ resource เดียวกัน | ส่ง ETag, server reject ถ้า resource เปลี่ยนแล้ว |
+| Idempotency Key | duplicate operation — retry สร้าง resource ซ้ำ | client ส่ง unique key, server deduplicate |
+
+## Common Mistakes
+
+**ไม่มี Optimistic Locking บน Write Operation**
+อาการ:
+- user A และ user B เปิด edit form ของ record เดียวกัน
+- user A save ก่อน user B save ทับโดยไม่รู้
+- ใช้ `If-Match: <etag>` — server return 412 ถ้า ETag ไม่ match
+
+**Idempotency Key ที่ Client Generate ใหม่ทุกครั้ง**
+อาการ:
+- retry logic generate UUID ใหม่ทุก attempt
+- server ถือว่าเป็น request ใหม่ทุกครั้ง — ยังสร้างซ้ำ
+- generate idempotency key ครั้งเดียวต่อ operation แล้ว reuse เมื่อ retry
+
+> 💡 Real World Example
+>
+> **Stripe API:**
+> - `Idempotency-Key` header สำหรับ POST /charges, POST /payment_intents
+> - เก็บ key ใน client storage — retry ด้วย key เดิมได้อย่างปลอดภัย
+>
+> **GitHub API:**
+> - `If-Match` header สำหรับ update operation ที่ต้องการ optimistic locking
+> - 412 Precondition Failed เมื่อ resource เปลี่ยนระหว่างที่ client อ่านและ update
+
 <Callout title="validator ปกป้องการเขียน, ไม่ใช่แค่การอ่าน">
 `If-Match` เปลี่ยนการเขียนทับแบบมืดบอดให้กลายเป็นการอัปเดตที่มีการตรวจสอบ — จับคู่ `ETag` ของทุก resource ที่แก้ไขได้เข้ากับ conditional writes เพื่อหลีกเลี่ยง lost update และให้ endpoint สำหรับสร้างมี `Idempotency-Key` เพื่อให้ response ที่หล่นหายไปไม่กลายเป็นการเรียกเก็บเงินหรือคำสั่งซื้อที่ซ้ำกัน ทั้งสองอย่างทำให้ API ของคุณถูกต้องภายใต้ความเป็นจริงอันยุ่งเหยิงของการ retry และ concurrency
 </Callout>
