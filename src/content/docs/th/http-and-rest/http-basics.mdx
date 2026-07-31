@@ -73,14 +73,14 @@ console.log('body:', res.body);`;
 
 <NodeRunner client:visible code={buildCode} />
 
-| Benefits (HTTP Structure) | Trade-offs |
+| ข้อดี (HTTP Structure) | ข้อแลกเปลี่ยน |
 |---|---|
 | มาตรฐานสากล — ทุก client รู้วิธีอ่าน request/response | verbose กว่า binary protocol เช่น gRPC |
 | text-based — human-readable, ง่าย debug ด้วย curl | header overhead ทุก request — HTTP/2 แก้ด้วย header compression |
 | stateless — ทุก request มีข้อมูลครบในตัวเอง | ต้องส่ง auth header ทุกครั้ง ต่างจาก session-based |
 | cacheable — browser และ CDN cache ได้จาก header | caching config ผิดทำให้ client เห็นข้อมูลเก่า |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **ใส่ข้อมูลสำคัญใน URL แทน Header**
 อาการ:
@@ -94,7 +94,7 @@ console.log('body:', res.body);`;
 - server parse body ผิด หรือ reject request
 - ตั้ง Content-Type ทุกครั้งที่ request มี body
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **GitHub API:**
 > - ทุก request ต้องมี `Accept: application/vnd.github+json`
@@ -105,7 +105,7 @@ console.log('body:', res.body);`;
 > - ป้องกัน duplicate charge เมื่อ network retry
 
 <Callout title="Header เป็นส่วนหนึ่งของการออกแบบ">
-body มักได้รับความสนใจทั้งหมด แต่ header ต่างหากที่พกพา contract ไว้ `Content-Type` บอก client ว่าจะ parse body อย่างไร `Location` ชี้ไปยัง resource ที่เพิ่งถูกสร้างขึ้น และ `Authorization`/`Accept` กำหนดรูปแบบของการแลกเปลี่ยน จงปฏิบัติต่อมันในฐานะส่วนสำคัญลำดับแรกของการออกแบบ API ไม่ใช่เรื่องที่ค่อยมาคิดทีหลัง
+body มักได้รับความสนใจทั้งหมด แต่ header ต่างหากที่พกพา contract ไว้ `Content-Type` บอก client ว่าจะ parse body อย่างไร `Location` ชี้ไปยัง resource ที่เพิ่งถูกสร้างขึ้น และ `Authorization`/`Accept` กำหนดรูปแบบของการแลกเปลี่ยน ให้ถือว่า header เป็นส่วนสำคัญลำดับต้นของการออกแบบ API ไม่ใช่เรื่องที่ค่อยมาคิดทีหลัง
 </Callout>
 
 export const quiz = [
@@ -115,7 +115,7 @@ export const quiz = [
     answer: 1,
   },
   {
-    q: 'หลังจากสร้าง resource แล้ว response header ใดที่ตามธรรมเนียมจะชี้ไปยังมัน?',
+    q: 'หลังสร้าง resource เสร็จ ตามธรรมเนียมแล้ว response header ตัวไหนจะชี้ไปยัง resource นั้น?',
     options: ['Content-Type', 'Accept', 'Location', 'Host'],
     answer: 2,
   },

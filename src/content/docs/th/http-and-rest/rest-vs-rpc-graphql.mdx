@@ -39,7 +39,7 @@ export const stylesDiagram = `flowchart TD
 | gRPC | เร็ว, type-safe, streaming | ไม่ human-readable, tooling มาก | Microservice internal, high performance |
 | JSON-RPC | เรียบง่าย | tight coupling, ไม่มี standard URL | Internal tool, simple integration |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **เลือก GraphQL เพราะ Hype**
 อาการ:
@@ -52,7 +52,7 @@ export const stylesDiagram = `flowchart TD
 - service เรียกกัน 100 ครั้งต่อ request — HTTP overhead สะสม
 - gRPC หรือ message queue เหมาะกว่าสำหรับ internal high-frequency call
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **GitHub:**
 > - มีทั้ง REST API v3 และ GraphQL API v4
@@ -62,7 +62,7 @@ export const stylesDiagram = `flowchart TD
 > - ใช้ gRPC สำหรับ microservice internal call
 > - REST สำหรับ public-facing API ที่ partner และ third-party ใช้
 
-<Callout title="พวกมันไม่ได้แยกขาดจากกัน">
+<Callout title="ทั้งสามแบบใช้ร่วมกันได้">
 ระบบจำนวนมากใช้ REST ที่ขอบเพื่อ public contract ที่เสถียร และใช้ gRPC ระหว่าง service ภายใน จงเลือกตามขอบเขต ไม่ใช่ตามบริษัท ส่วนที่เหลือของคอร์สนี้ว่าด้วยการทำส่วนของ REST ให้ดี
 </Callout>
 

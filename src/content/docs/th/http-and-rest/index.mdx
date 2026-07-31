@@ -10,7 +10,7 @@ import Callout from '../../../../components/Callout.astro';
 import Quiz from '../../../../components/Quiz.tsx';
 import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
-โดยแก่นแท้แล้ว REST API คือชุดของ resource ที่เราโต้ตอบด้วยผ่าน HTTP ก่อนที่จะออกแบบมัน เราควรทำความเข้าใจสองเรื่องนี้ให้ชัดเจนเสียก่อน นั่นคือ ข้อความ HTTP ไหลเวียนระหว่าง client กับ server อย่างไรจริง ๆ และคำว่า "RESTful" นั้นผูกมัดเราไว้กับอะไรกันแน่
+โดยแก่นแท้แล้ว REST API คือชุดของ resource ที่เราโต้ตอบด้วยผ่าน HTTP ก่อนจะลงมือออกแบบ ควรทำความเข้าใจสองเรื่องนี้ให้ชัดก่อน นั่นคือ ข้อความ HTTP ไหลเวียนระหว่าง client กับ server อย่างไรจริง ๆ และคำว่า "RESTful" นั้นผูกมัดเราไว้กับอะไรกันแน่
 
 ## วงจร request/response
 
@@ -32,16 +32,16 @@ export const cycleDiagram = `sequenceDiagram
 คอร์สนี้สร้างการออกแบบ REST API ตั้งแต่พื้นฐาน พร้อมตัวอย่าง TypeScript ที่รันได้จริง:
 
 - **พื้นฐาน HTTP และ REST** — ข้อความ, method, status code และข้อจำกัดของ REST (คุณอยู่ที่นี่)
-- **การออกแบบ Resource และ URI** — การจำลอง resource และการตั้งชื่อ URI ของมัน
+- **การออกแบบ Resource และ URI** — จำลอง resource และตั้งชื่อ URI ให้กับ resource เหล่านั้น
 - **Method, CRUD และ Idempotency** — การจับคู่ operation เข้ากับ method อย่างปลอดภัย
 - **Status Code และ Error** — การเลือก code และการออกแบบ body ของ error
 - **การสืบค้น Collection** — pagination, filtering, sorting, การเลือก field
-- **Versioning และ Caching** — การพัฒนา API ให้เติบโตและทำให้มันเร็ว
+- **Versioning และ Caching** — พัฒนา API ให้เติบโตต่อได้และเร่งความเร็ว
 - **Security** — authentication, authorization, CORS และ rate limiting
 - **เอกสาร, การทดสอบ และการสร้าง** — OpenAPI, การทดสอบ และ implementation ที่ใช้งานได้จริง
 
 <Callout title="'RESTful' หมายความว่าอะไรกันแน่">
-REST ไม่ใช่ protocol หรือ library — แต่มันคือชุดของข้อจำกัดเกี่ยวกับวิธีที่คุณใช้ HTTP สองข้อที่สำคัญที่สุดในทางปฏิบัติคือ ทุก request ต้องเป็น **stateless** (server ไม่เก็บ session ของแต่ละ client ไว้ระหว่างการเรียก) และ API นำเสนอ **uniform interface** (resource ถูกระบุด้วย URI และจัดการด้วย method มาตรฐาน)
+REST ไม่ใช่ protocol และไม่ใช่ library แต่เป็นชุดข้อจำกัดว่าด้วยวิธีที่คุณใช้ HTTP สองข้อที่สำคัญที่สุดในทางปฏิบัติคือ ทุก request ต้องเป็น **stateless** (server ไม่เก็บ session ของแต่ละ client ไว้ระหว่างการเรียก) และ API นำเสนอ **uniform interface** (resource ถูกระบุด้วย URI และจัดการด้วย method มาตรฐาน)
 </Callout>
 
 export const quiz = [

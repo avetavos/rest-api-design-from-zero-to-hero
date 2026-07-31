@@ -25,7 +25,7 @@ import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 | `DELETE` | ลบ resource | no | yes |
 | `OPTIONS` | อธิบายว่าทำอะไรได้บ้าง | yes | yes |
 
-**Safe** หมายถึงการเรียกนั้นไม่มี side effect ที่สังเกตได้ (มันแค่อ่านเท่านั้น) **Idempotent** หมายถึงการเรียกซ้ำเดิมหลายครั้งให้ผลเหมือนกับการเรียกเพียงครั้งเดียว สองคุณสมบัตินี้ขับเคลื่อนความถูกต้องอยู่มาก client และ proxy สามารถ retry request ที่ safe/idempotent ได้อย่างอิสระ แต่ต้องระมัดระวังเมื่อจะ retry `POST`
+**Safe** หมายถึงการเรียกนั้นไม่มี side effect ที่สังเกตได้ คืออ่านอย่างเดียว ส่วน **idempotent** หมายถึงเรียกซ้ำหลายครั้งได้ผลเท่ากับเรียกครั้งเดียว สองคุณสมบัตินี้เป็นตัวกำหนดความถูกต้องอยู่มาก เพราะ client และ proxy จะ retry request ที่ safe/idempotent ได้อย่างอิสระ แต่ต้องระวังเป็นพิเศษเวลาจะ retry `POST`
 
 ## ตระกูลของ status code
 
@@ -45,7 +45,7 @@ export const statusDiagram = `flowchart TD
 
 ## Method และ status ใน API จริง
 
-แอป Hono นี้เปิดเผยสาม route ที่ส่งคืน method และ status ต่างกัน เปิดมันใน StackBlitz เพื่อรัน server จริงและยิงไปยัง endpoint:
+แอป Hono ตัวนี้เปิดสาม route ที่คืน method และ status ต่างกัน ลองเปิดใน StackBlitz เพื่อรัน server จริงแล้วยิงเข้า endpoint ดู:
 
 export const honoCode = `// A tiny read-only resource with sensible statuses.
 const articles = [{ id: 1, title: 'Hello' }];
@@ -75,7 +75,7 @@ app.post('/articles', async (c) => {
 | PATCH | แก้ไขบางส่วน | อาจใช่ |
 | DELETE | ลบ resource | ✅ ใช่ |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **ใช้ POST สำหรับทุก operation**
 อาการ:
@@ -89,7 +89,7 @@ app.post('/articles', async (c) => {
 - monitoring tool คิดว่า request สำเร็จ — alert ไม่ทำงาน
 - ใช้ status code ที่ถูกต้อง: 404 เมื่อไม่พบ, 400 เมื่อ request ผิด
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **GitHub API:**
 > - GET /repos/\{owner\}/\{repo\} — อ่านข้อมูล repo
@@ -103,7 +103,7 @@ app.post('/articles', async (c) => {
 > - status code ครบ: 200, 201, 400, 401, 402, 404, 429, 500
 
 <Callout title="เลือก status ก่อน แล้วค่อยเลือก body">
-ตัดสินใจเรื่อง status code ก่อน — มันคือส่วนของ response ที่ client ใช้แตกแขนงการทำงาน `201 Created` ที่มี body ว่างเปล่าก็ใช้ได้ แต่ `200 OK` ที่ห่อ error ซ่อนไว้นั้นใช้ไม่ได้ อย่าส่งคืน `200` สำหรับความล้มเหลวเด็ดขาด
+ตัดสินใจเรื่อง status code ก่อน เพราะเป็นส่วนของ response ที่ client ใช้แตกทางการทำงาน `201 Created` ที่มี body ว่างเปล่าก็ใช้ได้ แต่ `200 OK` ที่ห่อ error ซ่อนไว้นั้นใช้ไม่ได้ อย่าส่งคืน `200` สำหรับความล้มเหลวเด็ดขาด
 </Callout>
 
 export const quiz = [

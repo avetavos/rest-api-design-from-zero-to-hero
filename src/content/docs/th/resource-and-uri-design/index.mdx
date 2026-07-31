@@ -10,7 +10,7 @@ import Callout from '../../../../components/Callout.astro';
 import Quiz from '../../../../components/Quiz.tsx';
 import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
-ใน REST นั้น **resource** คือ abstraction หลัก resource คือสิ่งใดก็ตามที่มีค่าพอจะตั้งชื่อและอ้างอิงถึง ไม่ว่าจะเป็น user, article, order หรือ shopping cart การออกแบบ API ส่วนใหญ่ก็คือการตัดสินใจว่า resource ของคุณคืออะไร และ URI ของพวกมันอ่านออกมาเป็นอย่างไร
+ใน REST นั้น **resource** คือ abstraction หลัก resource คือสิ่งใดก็ตามที่มีค่าพอจะตั้งชื่อและอ้างอิงถึง ไม่ว่าจะเป็น user, article, order หรือ shopping cart การออกแบบ API ส่วนใหญ่ก็คือการตัดสินใจว่า resource ของคุณคืออะไร และ URI ของแต่ละตัวอ่านออกมาเป็นอย่างไร
 
 ## Resource และความสัมพันธ์ระหว่างกัน
 
@@ -40,7 +40,7 @@ export const domainDiagram = `classDiagram
 export const quiz = [
   {
     q: 'ใน REST อะไรคือ abstraction หลักที่คุณออกแบบโดยยึดเป็นศูนย์กลาง?',
-    options: ['Functions', 'Resources (คำนาม)', 'ตารางในฐานข้อมูล', 'Endpoint ที่ตั้งชื่อตามคำกริยา'],
+    options: ['Functions', 'Resources (คำนาม)', 'ตารางใน database', 'Endpoint ที่ตั้งชื่อตามคำกริยา'],
     answer: 1,
   },
   {

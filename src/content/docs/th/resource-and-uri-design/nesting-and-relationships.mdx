@@ -15,7 +15,7 @@ resource มีความสัมพันธ์ระหว่างกั�
 
 ## Sub-resources
 
-เมื่อ resource หนึ่งเป็นของอีก resource หนึ่งอย่างชัดเจน ให้ nest มันลงไปหนึ่งระดับ:
+เมื่อ resource หนึ่งเป็นของอีก resource หนึ่งอย่างชัดเจน ให้ nest ลงไปหนึ่งระดับ:
 
 ```http
 GET  /articles/42/comments        # comments of article 42
@@ -31,7 +31,7 @@ export const relDiagram = `flowchart LR
 
 ## ควร nest ลึกแค่ไหน
 
-หยุดที่หนึ่งระดับ หรือบางครั้งสองระดับ path อย่าง `/users/7/articles/42/comments/9/reactions/3` นั้นอ่านยากและผูก resource ที่ควรยืนอยู่ได้ด้วยตัวเองเข้าด้วยกัน เมื่อ sub-resource มีตัวตน (identity) ของตัวเองแล้ว ก็ให้ URI ระดับ top-level แก่มันด้วย แล้ว **link** ไปหามันแทนที่จะ nest ลึกลงไปอีก:
+หยุดที่หนึ่งระดับ หรือบางครั้งสองระดับ path อย่าง `/users/7/articles/42/comments/9/reactions/3` นั้นอ่านยากและผูก resource ที่ควรยืนอยู่ได้ด้วยตัวเองเข้าด้วยกัน พอ sub-resource มีตัวตน (identity) ของตัวเองแล้ว ก็ให้ URI ระดับ top-level ไปเลย แล้ว **link** ถึงกันแทนที่จะ nest ลึกลงไปอีก:
 
 ```http
 GET /comments/9          # the comment as a first-class resource
@@ -61,7 +61,7 @@ console.log(JSON.stringify(articleResponse({ id: 42, title: 'Hi', authorId: 7 })
 | `/orders?userId=\{id\}` (flat + filter) | resource ที่ query จากหลาย context | ownership ที่ต้องการ enforce |
 | `/orders/\{id\}` (flat direct) | access resource โดยตรงด้วย ID | ต้องการ parent context |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **Nesting ลึกเกิน**
 อาการ:
@@ -75,7 +75,7 @@ console.log(JSON.stringify(articleResponse({ id: 42, title: 'Hi', authorId: 7 })
 - nested ทำให้ ownership ไม่ชัด — DELETE tag จาก user หรือ delete tag ทั้งหมด?
 - ใช้ junction resource: `POST /user-tags` ด้วย `{ userId, tagId }`
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **GitHub API:**
 > - `/repos/\{owner\}/\{repo\}/issues` — 2 ระดับ ชัดเจน
@@ -86,7 +86,7 @@ console.log(JSON.stringify(articleResponse({ id: 42, title: 'Hi', authorId: 7 })
 > - `/payment_methods/\{id\}` — access โดยตรงได้เมื่อรู้ ID
 
 <Callout title="nest เพื่อความเป็นเจ้าของ link สำหรับทุกอย่างที่เหลือ">
-จง nest sub-resource ก็ต่อเมื่อมันอาศัยอยู่ภายใน parent ของมันอย่างแท้จริง และคุณจะไม่อ้างถึงมันโดยปราศจาก parent นั้น ทันทีที่ resource มีตัวตนที่มั่นคงเป็นของตัวเอง ให้มอบ URI ระดับ top-level แก่มันแล้วอ้างอิงด้วย link path ที่ตื้นบวกกับ link จะแก่ตัวได้ดีกว่าการ nest ลึกมาก
+ให้ nest sub-resource ก็ต่อเมื่ออยู่ภายใต้ parent อย่างแท้จริง และไม่มีทางถูกอ้างถึงโดยไม่มี parent นั้น ทันทีที่ resource มีตัวตนที่มั่นคงเป็นของตัวเอง ให้จัด URI ระดับ top-level ให้แล้วอ้างอิงด้วย link เมื่อเวลาผ่านไป path ตื้น ๆ บวก link จะแก่ตัวได้ดีกว่าการ nest ลึกมาก
 </Callout>
 
 export const quiz = [
@@ -98,10 +98,10 @@ export const quiz = [
   {
     q: 'เมื่อ sub-resource มีตัวตนที่มั่นคงเป็นของตัวเองแล้ว คุณควร:',
     options: [
-      'nest มันต่อไปทุกที่',
-      'มอบ URI ระดับ top-level แก่มันแล้ว link ไปหามัน',
-      'นำมันออกจาก API',
-      'ฝังข้อมูลทั้งหมดของมันลงในทุก parent',
+      'nest ต่อไปทุกที่',
+      'จัด URI ระดับ top-level ให้ แล้วอ้างอิงด้วย link',
+      'เอาออกจาก API ไปเลย',
+      'ฝังข้อมูลทั้งหมดลงในทุก parent',
     ],
     answer: 1,
   },

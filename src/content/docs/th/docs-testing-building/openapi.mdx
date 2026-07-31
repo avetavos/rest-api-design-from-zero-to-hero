@@ -50,23 +50,23 @@ components:
         body: { type: string }
 ```
 
-แต่ละ operation จะระบุ parameter ของมันและทุก response ที่มันสามารถคืนกลับได้ โดยแต่ละอย่างผูกกับ schema ส่วน `components/schemas` กำหนดรูปแบบที่นำกลับมาใช้ซ้ำได้ ซึ่งถูกอ้างอิงด้วย `$ref`
+แต่ละ operation จะประกาศ parameter ของตัวเองและทุก response ที่คืนได้ โดยผูกแต่ละตัวเข้ากับ schema ส่วน `components/schemas` เก็บรูปแบบที่ใช้ซ้ำได้ แล้วอ้างถึงด้วย `$ref`
 
 ## spec-first กับ code-first
 
-- **Spec-first** — เขียนเอกสาร OpenAPI ก่อน แล้วจึงสร้างจริงให้ตรงตามนั้น contract ถูกตกลงกันก่อนที่จะมี code เหมาะมากสำหรับทีมและผู้ใช้งานภายนอก
-- **Code-first** — ใส่ annotation ให้ handler/schema ของคุณแล้วสร้าง spec ออกมาจากมัน ความคลาดเคลื่อนระหว่าง code กับ spec น้อยลง เพราะฝ่ายหนึ่งผลิตอีกฝ่ายหนึ่งออกมา
+- **Spec-first** — เขียนเอกสาร OpenAPI ก่อน แล้วค่อยสร้างของจริงให้ตรงตามนั้น วิธีนี้ตกลง contract กันได้ตั้งแต่ยังไม่มี code จึงเหมาะมากกับทีมและ consumer ภายนอก
+- **Code-first** — ใส่ annotation ให้ handler/schema แล้ว generate spec ออกมาจาก code ตรง ๆ วิธีนี้ code กับ spec จะคลาดเคลื่อนกันน้อยกว่า เพราะฝ่ายหนึ่งผลิตอีกฝ่ายออกมา
 
-ไม่ว่าทางไหน เครื่องมือก็เปลี่ยน spec ให้เป็นคุณค่าได้ **Swagger UI** / Redoc แสดงเอกสารแบบโต้ตอบได้ ตัวสร้างผลิต client ที่มี type และตัว validator ตรวจสอบ request เทียบกับมัน
+ไม่ว่าจะเลือกทางไหน เครื่องมือก็ดึงคุณค่าจาก spec ออกมาได้ **Swagger UI** / Redoc ทำเป็นเอกสารแบบโต้ตอบ ตัว generator ปั้น client ที่มี type ให้ และ validator ก็เอา spec ไปตรวจ request ที่วิ่งเข้ามา
 
-| Benefits (OpenAPI) | Trade-offs |
+| ข้อดี (OpenAPI) | ข้อแลกเปลี่ยน |
 |---|---|
 | documentation generate จาก schema — ไม่ drift จาก code | setup OpenAPI spec ต้องการ discipline |
 | SDK generation อัตโนมัติ สำหรับหลายภาษา | spec ที่ verbose — YAML/JSON file ใหญ่ |
 | validation middleware จาก schema — request/response ถูกต้องเสมอ | code-first vs spec-first ต้องเลือก approach |
 | contract testing ระหว่าง producer และ consumer | spec เก่า ถ้า developer ไม่ update พร้อมกับ code |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **OpenAPI Spec ที่ Drift จาก Implementation**
 อาการ:
@@ -80,7 +80,7 @@ components:
 - developer ไม่รู้ว่า field ควรส่งค่าอะไร — ต้องลองเอง
 - เพิ่ม `example` หรือ `examples` field ใน spec ทุก request/response body
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **Stripe API:**
 > - OpenAPI spec ที่ comprehensive — ทุก endpoint มี schema, example, error response
@@ -91,14 +91,14 @@ components:
 > - Octokit ทุกภาษา generate มาจาก spec เดียวกัน
 
 <Callout title="ปล่อยให้ spec ทำงานซ้ำ ๆ แทน">
-เอกสาร OpenAPI ที่ดูแลรักษาไว้ดีจะคุ้มค่าในตัวมันเอง ทั้งเอกสารแบบโต้ตอบ client ที่มี type ที่ถูกสร้างขึ้น mock server สำหรับทีม front-end และการ validate request ล้วนมาจากไฟล์เดียวกัน เลือก spec-first หรือ code-first ตาม workflow ของทีม แต่อย่าเขียนและดูแลคำอธิบายของ API เดียวกันด้วยมือถึงสามชุดแยกกัน
+เอกสาร OpenAPI ที่ดูแลไว้ดีคุ้มค่าตัวเองอยู่แล้ว ทั้งเอกสารแบบโต้ตอบ client ที่ generate มาพร้อม type mock server ให้ทีม front-end และการ validate request ล้วนมาจากไฟล์เดียวกัน จะเลือก spec-first หรือ code-first ก็แล้วแต่ workflow ของทีม แต่อย่าไปนั่งเขียนคำอธิบายของ API ตัวเดียวกันด้วยมือถึงสามชุดแยกกัน
 </Callout>
 
 export const quiz = [
   {
     q: 'เอกสาร OpenAPI อธิบายอะไร?',
     options: [
-      'เฉพาะ schema ของฐานข้อมูล',
+      'เฉพาะ schema ของ database',
       'path, operation, parameter, schema และ response — นั่นคือ contract ของ API',
       'ฮาร์ดแวร์ของ server',
       'เฉพาะ authentication',
@@ -108,7 +108,7 @@ export const quiz = [
   {
     q: 'อะไรคือสิ่งที่แยก spec-first ออกจาก code-first?',
     options: [
-      'spec-first เขียนเอกสาร OpenAPI ก่อนสร้างจริง ส่วน code-first สร้างมันจาก code ที่ใส่ annotation',
+      'spec-first เขียนเอกสาร OpenAPI ก่อนสร้างจริง ส่วน code-first generate ออกมาจาก code ที่ใส่ annotation',
       'ทั้งสองอย่างเหมือนกัน',
       'code-first ไม่มี spec',
       'spec-first ข้ามการทดสอบไป',
@@ -118,9 +118,9 @@ export const quiz = [
   {
     q: 'ข้อใดคือประโยชน์โดยตรงของ spec ของ OpenAPI ที่ดูแลรักษาไว้ดี?',
     options: [
-      'การ query ฐานข้อมูลเร็วขึ้น',
+      'query database ได้เร็วขึ้น',
       'client ที่ถูกสร้าง เอกสารแบบโต้ตอบ และการ validate request จากแหล่งเดียว',
-      'authenticationอัตโนมัติ',
+      'ทำ authentication ให้อัตโนมัติ',
       'response body ที่เล็กลง',
     ],
     answer: 1,

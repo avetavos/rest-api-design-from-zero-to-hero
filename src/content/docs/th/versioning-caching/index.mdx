@@ -1,6 +1,6 @@
 ---
 title: Versioning และ Caching
-description: 'พัฒนา API ต่อเนื่องโดยไม่ทำให้ client พัง, และทำให้มันเร็วด้วย HTTP caching.'
+description: 'พัฒนา API ต่อเนื่องโดยไม่ทำให้ client พัง และเร่งความเร็วด้วย HTTP caching'
 sidebar:
   order: 1
 ---
@@ -10,7 +10,7 @@ import Callout from '../../../../components/Callout.astro';
 import Quiz from '../../../../components/Quiz.tsx';
 import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
-มีสองแรงที่กำหนดรูปร่างของ API ที่มีอายุยืนยาว: มันต้อง **เปลี่ยนแปลง** ได้โดยไม่ทำให้ client ที่ใช้งานอยู่แล้วพัง, และมันควรจะ **เร็ว** โดยในอุดมคติคือไม่ทำงานซ้ำในสิ่งที่เคยทำไปแล้ว Versioning จัดการเรื่องแรก; HTTP caching จัดการเรื่องที่สอง
+API ที่อยู่ได้นานถูกกำหนดรูปร่างด้วยสองแรง: ต้อง **เปลี่ยนแปลง** ได้โดยไม่ทำให้ client ที่ใช้งานอยู่พัง และต้อง **เร็ว** คือไม่ทำงานซ้ำในสิ่งที่เคยทำไปแล้ว เรื่องแรกเป็นหน้าที่ของ versioning ส่วนเรื่องที่สองเป็นหน้าที่ของ HTTP caching
 
 ## สองประเด็นสำคัญ
 
@@ -21,7 +21,7 @@ export const overviewDiagram = `flowchart TD
   V --> V1[URI / header / media-type]
   Ca --> Ca1[Cache-Control + ETag + conditional requests]`;
 
-<Mermaid code={overviewDiagram} title="พัฒนา contract และให้บริการมันอย่างมีประสิทธิภาพ" />
+<Mermaid code={overviewDiagram} title="พัฒนา contract และให้บริการอย่างมีประสิทธิภาพ" />
 
 ทั้งสองเรื่องนี้เกี่ยวข้องกัน: caching ขึ้นอยู่กับ representation ที่เสถียร, และ versioning เป็นตัวกำหนดว่า representation เหล่านั้นจะมีหน้าตาเป็นอย่างไรเมื่อเวลาผ่านไป
 
@@ -33,7 +33,7 @@ export const overviewDiagram = `flowchart TD
 - **Conditional requests และ idempotency keys** — การเขียนและการ retry ที่ปลอดภัย
 
 <Callout title="เวอร์ชันที่ถูกที่สุดคือการไม่ต้องมีเวอร์ชันใหม่">
-การเปลี่ยนแปลงส่วนใหญ่สามารถทำแบบเพิ่มเติม (additive) ได้ — field ใหม่ที่เป็น optional, endpoint ใหม่ — ซึ่ง client ที่มีอยู่เดิมก็แค่ละเลยมันไป เก็บ API เวอร์ชันใหม่ไว้สำหรับการเปลี่ยนแปลงที่เป็น breaking change จริง ๆ เท่านั้น ทุกเวอร์ชันที่คุณปล่อยออกไปคือเวอร์ชันที่คุณต้องดูแลรักษา ดังนั้นจงตั้งมาตรฐานให้สูงก่อนที่จะสร้างเวอร์ชันใหม่
+การเปลี่ยนแปลงส่วนใหญ่ทำแบบเพิ่มเข้าไป (additive) ได้ — เพิ่ม field ที่เป็น optional หรือเพิ่ม endpoint ใหม่ — client เดิมก็แค่มองข้ามไป เก็บการขึ้นเวอร์ชันใหม่ไว้ใช้กับ breaking change จริง ๆ เท่านั้น ทุกเวอร์ชันที่ปล่อยออกไปคือภาระที่คุณต้องดูแลต่อ ดังนั้นตั้งมาตรฐานให้สูงไว้ก่อนตัดสินใจขึ้นเวอร์ชัน
 </Callout>
 
 export const quiz = [

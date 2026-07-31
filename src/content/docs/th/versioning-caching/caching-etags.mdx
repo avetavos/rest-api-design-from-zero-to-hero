@@ -11,7 +11,7 @@ import Callout from '../../../../components/Callout.astro';
 import Quiz from '../../../../components/Quiz.tsx';
 import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
-HTTP มีโมเดล caching ที่ทรงพลังติดตัวมาอยู่แล้ว การใช้มันให้ดีหมายความว่า client (หรือ CDN) สามารถหลีกเลี่ยงการดาวน์โหลดข้อมูลที่ไม่ได้เปลี่ยนแปลงซ้ำได้ — ซึ่งมักจะเป็นชัยชนะด้านประสิทธิภาพชิ้นเดียวที่ใหญ่ที่สุดที่ API จะได้รับ
+HTTP มีโมเดล caching ที่ทรงพลังติดตัวมาอยู่แล้ว ถ้าใช้เป็น client (หรือ CDN) จะไม่ต้องดาวน์โหลดข้อมูลที่ไม่ได้เปลี่ยนซ้ำอีก และนี่มักเป็นการเพิ่ม performance ก้อนใหญ่ที่สุดที่ API หนึ่งตัวจะได้รับ
 
 ## Cache-Control: นี่จะ fresh นานแค่ไหน?
 
@@ -23,11 +23,11 @@ Cache-Control: private, max-age=0        # only the client, must revalidate
 Cache-Control: no-store                  # never cache (sensitive data)
 ```
 
-ในขณะที่ response ยัง *fresh* อยู่ client จะนำมันกลับมาใช้ซ้ำโดยไม่ต้องส่ง request เลย เมื่อมันกลายเป็น stale แล้ว มันจึงจะ revalidate
+ตราบใดที่ response ยัง *fresh* อยู่ client จะหยิบของเดิมมาใช้ซ้ำโดยไม่ส่ง request เลย ต่อเมื่อกลายเป็น stale แล้วจึงจะ revalidate
 
-## ETag + If-None-Match: มันเปลี่ยนหรือเปล่า?
+## ETag + If-None-Match: ข้อมูลเปลี่ยนหรือยัง?
 
-`ETag` คือ validator — ลายนิ้วมือของ representation ปัจจุบัน ใน request ถัดไป client จะส่งมันกลับมาใน `If-None-Match`; หากมันยังคงตรงกัน server จะคืน `304 Not Modified` โดยไม่มี body:
+`ETag` คือ validator — ลายนิ้วมือของ representation ปัจจุบัน ใน request ถัดไป client จะส่งค่านี้กลับมาใน `If-None-Match` ถ้ายังตรงกันอยู่ server จะคืน `304 Not Modified` โดยไม่มี body:
 
 export const flowDiagram = `sequenceDiagram
   participant C as Client
@@ -40,7 +40,7 @@ export const flowDiagram = `sequenceDiagram
 
 <Mermaid code={flowDiagram} title="ETag ที่ตรงกันเปลี่ยน response เต็มรูปแบบให้กลายเป็น 304 เล็ก ๆ" />
 
-`Last-Modified` + `If-Modified-Since` คือสิ่งเทียบเท่าที่อิงตาม timestamp ETag แม่นยำกว่า (มันจับการเปลี่ยนแปลงใด ๆ ได้ ไม่ใช่แค่การเปลี่ยนแปลงเวลาในระดับวินาที)
+`Last-Modified` + `If-Modified-Since` คือคู่เทียบเท่าที่อิง timestamp แต่ ETag แม่นยำกว่า เพราะจับการเปลี่ยนแปลงได้ทุกแบบ ไม่ใช่แค่ที่ละเอียดถึงระดับวินาที
 
 ## การคำนวณ ETag
 
@@ -71,7 +71,7 @@ console.log('with current tag:', handle(tag));      // 304`;
 | `Last-Modified` + `If-Modified-Since` | ใช้ timestamp แทน hash | resource ที่รู้ modified time ชัดเจน |
 | `Cache-Control: no-store` | ไม่ cache เลย | sensitive data เช่น payment, user profile |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **Cache Sensitive Data โดยไม่ตั้งใจ**
 อาการ:
@@ -85,7 +85,7 @@ console.log('with current tag:', handle(tag));      // 304`;
 - client ส่ง `If-None-Match` แต่ server return 200 ทุกครั้งแทน 304
 - generate ETag จาก hash ของ content แทน timestamp
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **GitHub API:**
 > - ETag บน resource ทุกตัว — conditional GET ลด bandwidth 90%+
@@ -96,7 +96,7 @@ console.log('with current tag:', handle(tag));      // 304`;
 > - conditional GET ผ่าน `If-None-Match` ทำให้ sync ไฟล์จำนวนมากได้อย่างมีประสิทธิภาพ
 
 <Callout title="ตั้ง Cache-Control บนทุก response">
-แม้แต่ `Cache-Control: no-store` ก็เป็นการตัดสินใจที่ควรระบุออกมาอย่างชัดเจน — มันบอก cache ว่าควรทำอะไรแทนที่จะปล่อยให้คลุมเครือ เพิ่ม `ETag` ให้กับ representation ที่คำนวณหรือถ่ายโอนแล้วมีต้นทุนสูง, และ conditional requests จะเปลี่ยนการตรวจสอบแบบ "มันยังเป็นปัจจุบันอยู่ไหม?" ส่วนใหญ่ให้กลายเป็น `304` ที่ราคาถูก
+แม้แต่ `Cache-Control: no-store` ก็เป็นการตัดสินใจที่ควรเขียนออกมาให้ชัด เพราะบอก cache ตรง ๆ ว่าต้องทำอะไร ดีกว่าปล่อยให้คลุมเครือ ให้ใส่ `ETag` กับ representation ที่คำนวณแพงหรือส่งข้อมูลหนัก จากนั้น conditional request จะเปลี่ยนการเช็ก "ข้อมูลยังเป็นปัจจุบันไหม" ส่วนใหญ่ให้กลายเป็น `304` ที่ราคาถูก
 </Callout>
 
 export const quiz = [

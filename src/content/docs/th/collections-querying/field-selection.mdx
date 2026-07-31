@@ -1,6 +1,6 @@
 ---
 title: Field Selection
-description: 'ให้ client ขอเฉพาะฟิลด์ที่ต้องการ — และ expand ฟิลด์ที่เกี่ยวข้อง'
+description: 'ให้ client ขอเฉพาะ field ที่ต้องการ — และ expand field ที่เกี่ยวข้อง'
 sidebar:
   order: 4
 ---
@@ -10,11 +10,11 @@ import Callout from '../../../../components/Callout.astro';
 import Quiz from '../../../../components/Quiz.tsx';
 import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
-เหตุผลหนึ่งที่ทีมหันไปใช้ GraphQL คือ over-fetching: endpoint คืนมา 30 ฟิลด์ทั้งที่ client ต้องการแค่ 3 REST สามารถให้การควบคุมแบบเดียวกันได้ด้วย query parameter ง่าย ๆ สองตัว
+เหตุผลหนึ่งที่ทีมหันไปใช้ GraphQL คือ over-fetching: endpoint คืนมา 30 field ทั้งที่ client ต้องการแค่ 3 ตัว ฝั่ง REST เองก็ให้การควบคุมแบบเดียวกันได้ ด้วย query parameter ง่าย ๆ สองตัว
 
 ## Sparse fieldsets
 
-ให้ client ระบุรายการฟิลด์ที่ต้องการด้วย `?fields=`:
+ให้ client ระบุรายการ field ที่ต้องการด้วย `?fields=`:
 
 ```http
 GET /articles?fields=id,title
@@ -24,15 +24,15 @@ server จะคืนเฉพาะ key เหล่านั้น วิธ�
 
 ## การ expand resource ที่เกี่ยวข้อง
 
-โดยปริยายแล้ว ให้ link ไปยัง resource ที่เกี่ยวข้องแทนการฝัง (embed) มันเข้าไป เมื่อ client ต้องการให้แสดงแบบ inline ก็ให้มันเลือกเปิดใช้ได้เองด้วย `?expand=`:
+ค่าเริ่มต้นควรเป็นการ link ไปยัง resource ที่เกี่ยวข้อง ไม่ใช่ฝัง (embed) เข้ามาทั้งก้อน ถ้า client อยากได้แบบ inline ก็เปิดใช้เองได้ด้วย `?expand=`:
 
 ```http
 GET /articles/42?expand=author
 ```
 
-หากไม่มี `expand` ตัว `author` จะเป็น reference (`{ "id": 7, "href": "/users/7" }`) แต่ถ้ามี ออบเจ็กต์ author จะถูกฝังเข้ามา วิธีนี้ทำให้ response เริ่มต้นมีขนาดเล็ก ขณะเดียวกันก็เลี่ยงการ round trip เพิ่มเมื่อ client ต้องการข้อมูลที่เกี่ยวข้องจริง ๆ
+ถ้าไม่ใส่ `expand` ตัว `author` จะเป็น reference (`{ "id": 7, "href": "/users/7" }`) แต่ถ้าใส่ ระบบจะฝัง object ของ author เข้ามาให้เลย วิธีนี้ทำให้ response เริ่มต้นมีขนาดเล็ก และยังตัด round trip เพิ่มออกไปได้เมื่อ client ต้องการข้อมูลที่เกี่ยวข้องจริง ๆ
 
-## การ project ฟิลด์ใน code
+## การ project field ใน code
 
 export const projectCode = `function project(obj, fields) {
   if (!fields) return obj;
@@ -45,14 +45,14 @@ console.log(project(article, 'title,views'));`;
 
 <NodeRunner client:visible code={projectCode} />
 
-| Benefits (Field Selection) | Trade-offs |
+| ข้อดี (Field Selection) | ข้อแลกเปลี่ยน |
 |---|---|
 | ลด payload — mobile network ประหยัด bandwidth | server ต้อง parse `fields` parameter และ filter response |
 | ลด over-fetching — ดึงเฉพาะที่ต้องการ | response shape ต่างกันตาม request — caching ซับซ้อน |
 | ลด serialization time บน server | documentation ยากกว่า — response ไม่ fixed |
 | client มีความยืดหยุ่นสูง | ถ้าต้องการ flexible มาก GraphQL อาจเหมาะกว่า |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **Field Selection ที่ไม่ Consistent**
 อาการ:
@@ -66,7 +66,7 @@ console.log(project(article, 'title,views'));`;
 - client ไม่รู้ว่า field ที่ขาดหายไปเพราะ null หรือเพราะ field ไม่มี
 - return 400 เมื่อ field ไม่มีอยู่ หรือ ignore gracefully และ document behavior
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **Google APIs:**
 > - `?fields=items(id,title,description)` — เลือก field ได้ถึงระดับ nested
@@ -84,7 +84,7 @@ export const quiz = [
   {
     q: '`?fields=id,title` เป็นการร้องขออะไร?',
     options: [
-      'เฉพาะฟิลด์ id และ title ใน response',
+      'เฉพาะ field id และ title ใน response',
       'เรียงตาม id แล้วตาม title',
       'filter เอาเฉพาะที่ id เท่ากับ title',
       'resource สองตัวแยกกัน',
@@ -92,7 +92,7 @@ export const quiz = [
     answer: 0,
   },
   {
-    q: 'พารามิเตอร์ `?expand=author` มีจุดประสงค์อะไร?',
+    q: 'parameter `?expand=author` มีไว้ทำอะไร?',
     options: [
       'ลบ author',
       'ฝัง author ที่เกี่ยวข้องแบบ inline แทนที่จะ link ไปเฉย ๆ',

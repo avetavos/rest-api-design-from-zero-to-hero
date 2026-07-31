@@ -43,7 +43,7 @@ assert('error body has a title', typeof response.body.title === 'string');`;
 
 ## ควร assert อะไรบ้าง
 
-สำหรับแต่ละ endpoint จงทดสอบทั้ง happy path *และ* failure path ทั้ง status code ที่ถูกต้อง, รูปร่างของ response, error body สำหรับ input ที่ไม่ถูกต้อง (มันตรงกับ `problem+json` ของคุณหรือไม่?), การบังคับ auth ในที่ที่ควรมี และ metadata ของ pagination บน collection
+แต่ละ endpoint ให้ทดสอบทั้ง happy path *และ* failure path ได้แก่ status code ที่ถูกต้อง รูปร่างของ response error body ของ input ที่ไม่ถูกต้อง (ตรงกับ `problem+json` ของคุณหรือเปล่า) การบังคับ auth ในจุดที่ควรมี และ metadata ของ pagination บน collection
 
 | Test Type | ทดสอบอะไร | เหมาะกับ |
 |---|---|---|
@@ -52,7 +52,7 @@ assert('error body has a title', typeof response.body.title === 'string');`;
 | Contract test | request/response match OpenAPI spec | API evolution |
 | E2E test | user journey ทั้งหมด | critical flow เช่น checkout |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **Test เฉพาะ Happy Path**
 อาการ:
@@ -66,7 +66,7 @@ assert('error body has a title', typeof response.body.title === 'string');`;
 - SQL ผิด, constraint ผิด — pass ใน test แต่ fail ใน production
 - ใช้ test database จริง (SQLite in-memory หรือ test container)
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **Stripe:**
 > - test mode API key — รัน test บน Stripe environment จริงโดยไม่ charge จริง
@@ -77,7 +77,7 @@ assert('error body has a title', typeof response.body.title === 'string');`;
 > - contract test ด้วย OpenAPI spec — CI fail ถ้า response ไม่ match spec
 
 <Callout title="ทดสอบความล้มเหลว ไม่ใช่แค่ happy path">
-เหตุการณ์ขัดข้องใน production ส่วนใหญ่อยู่ใน error path และ edge path ทั้ง `404`, `422`, token ที่หมดอายุ, หน้าที่ว่างเปล่า จง assert สิ่งเหล่านี้อย่างชัดเจน contract test ที่ทดสอบเทียบกับ spec ของ OpenAPI ของคุณมีคุณค่าสูงเป็นพิเศษ มันจะล้มเหลวทันทีที่การสร้างจริงของคุณคลาดเคลื่อนไปจากสิ่งที่คุณสัญญาไว้กับผู้ใช้งาน
+เหตุการณ์ขัดข้องใน production ส่วนใหญ่อยู่ใน error path และ edge path ทั้ง `404`, `422`, token ที่หมดอายุ, หน้าที่ว่างเปล่า ให้ assert เรื่องพวกนี้ออกมาตรง ๆ ส่วน contract test ที่ยิงเทียบกับ spec ของ OpenAPI ยิ่งคุ้มค่า เพราะจะพังทันทีที่ของจริงเริ่มคลาดเคลื่อนไปจากสิ่งที่คุณรับปากไว้กับคนที่มาใช้ API
 </Callout>
 
 export const quiz = [
@@ -91,7 +91,7 @@ export const quiz = [
     options: [
       'response ที่ช้า',
       'การที่การสร้างจริงคลาดเคลื่อนไปจาก contract ของ OpenAPI ที่เผยแพร่ไว้',
-      'ฐานข้อมูลล่ม',
+      'database ล่ม',
       'payload ที่ใหญ่',
     ],
     answer: 1,
@@ -99,7 +99,7 @@ export const quiz = [
   {
     q: 'ทำไมจึงต้องทดสอบ failure path อย่างชัดเจน?',
     options: [
-      'มันเขียนง่ายกว่า',
+      'เขียนง่ายกว่า',
       'เหตุการณ์ขัดข้องจำนวนมากอยู่ใน error/edge path (404, 422, token หมดอายุ, หน้าว่างเปล่า)',
       'HTTP บังคับให้ทำ',
       'เพื่อเพิ่มจำนวนการทดสอบเท่านั้น',

@@ -26,18 +26,18 @@ export const surfaceDiagram = `flowchart TD
 - **Transport** — ให้บริการผ่าน HTTPS เท่านั้น อย่ารับ credentials ผ่าน HTTP แบบ plain เด็ดขาด
 - **Authentication** — ระบุว่าผู้เรียกใช้คือใคร (API key, token)
 - **Authorization** — ตัดสินว่าผู้เรียกใช้คนนั้นทำอะไรได้บ้าง
-- **Input** — มองทุกไบต์ที่มาจาก client ว่าเชื่อถือไม่ได้ และต้อง validate มัน
+- **Input** — มองทุกไบต์ที่มาจาก client ว่าเชื่อถือไม่ได้ ต้อง validate ทุกครั้ง
 - **Abuse** — ปกป้อง API จากการถูกถล่มจนล้นหรือถูก scrape ข้อมูล
 
 ## โมดูลนี้ครอบคลุมอะไรบ้าง
 
 - **Authn vs authz** — ความแตกต่าง และ `401` กับ `403`
 - **Tokens, JWT & OAuth** — bearer token และการมอบสิทธิ์การเข้าถึง (delegated access)
-- **CORS** — เบราว์เซอร์ควบคุมการเรียกข้าม origin อย่างไร
+- **CORS** — browser ควบคุมการเรียกข้าม origin อย่างไร
 - **Rate limiting & validation** — การจำกัดอัตราการเรียก และการไม่เชื่ออะไรเลย
 
 <Callout title="อย่าใส่ความลับไว้ใน URL เด็ดขาด">
-API key, token และ password ต้องไม่ปรากฏใน path หรือ query string เด็ดขาด — URL จะถูกบันทึก log โดย server, proxy และประวัติของเบราว์เซอร์ อีกทั้งยังรั่วไหลผ่าน header `Referer` ได้ ส่วน credentials นั้นควรอยู่ใน header `Authorization` (หรือ secure cookie) และทุกอย่างต้องเดินทางผ่าน HTTPS
+API key, token และ password ต้องไม่โผล่ใน path หรือ query string เด็ดขาด เพราะทั้ง server, proxy และประวัติของ browser ต่างเก็บ URL ไว้ใน log อีกทั้งยังรั่วออกไปทาง header `Referer` ได้ ที่ของ credentials คือ header `Authorization` (หรือ secure cookie) และทุกอย่างต้องวิ่งผ่าน HTTPS
 </Callout>
 
 export const quiz = [
@@ -47,7 +47,7 @@ export const quiz = [
       'URL สั้นเกินไป',
       'URL ถูกบันทึก log และรั่วไหลผ่านประวัติและ header Referer',
       'query string เก็บข้อความไม่ได้',
-      'มันทำให้ caching พัง',
+      'ทำให้ caching พัง',
     ],
     answer: 1,
   },

@@ -22,7 +22,7 @@ export const flowDiagram = `flowchart LR
 
 <Mermaid code={flowDiagram} title="handler โยน error; ที่เดียวทำหน้าที่ map error เป็น response" />
 
-นิยาม error type ที่พก status และ field ของ problem ไว้ จากนั้นมี handler เดียวที่แปลงมัน อะไรที่ไม่คาดคิดจะกลายเป็น `500` — และคุณจะไม่รั่ว stack trace ออกไปยัง client เลย
+นิยาม error type ที่พก status และ field ของ problem ไว้ในตัว แล้วให้ handler เดียวเป็นตัวแปลงออกไป อะไรที่ไม่คาดคิดจะตกไปเป็น `500` และ stack trace จะไม่รั่วออกไปถึง client
 
 export const honoCode = `class ApiError extends Error {
   constructor(status, title, detail) {
@@ -66,14 +66,14 @@ app.onError((err, c) => {
 - **ความปลอดภัย** — error ที่ไม่คาดคิดกลายเป็น `500` แบบทั่วไป; ส่วนภายในไม่รั่วไหล
 - **code น้อยลง** — handler แค่ throw หนึ่งบรรทัด; ไม่ต้องสร้าง response เองทุกตัว
 
-| Benefits (Centralized Error Handling) | Trade-offs |
+| ข้อดี (Centralized Error Handling) | ข้อแลกเปลี่ยน |
 |---|---|
 | error format สม่ำเสมอทั้ง API — ไม่มี special case | setup middleware เพิ่มงาน upfront |
 | ป้องกัน internal error leak ไปถึง client | error middleware ที่ผิดทำให้ error ทั้งหมดพัง |
 | logging ครบถ้วนในที่เดียว — ง่ายต่อ monitoring | ต้องออกแบบ error class hierarchy ให้ดี |
 | retry logic ใน client ทำงานได้ถูกต้อง | custom error class ใน TypeScript ต้องระวัง transpilation |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **try/catch ใน Controller ทุกตัว**
 อาการ:
@@ -87,7 +87,7 @@ app.onError((err, c) => {
 - production มี 500 error แต่ไม่มี log ให้ debug
 - log error พร้อม request context (userId, path, method) ก่อนส่ง response
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **Hono (framework ที่ course ใช้):**
 > - `app.onError((err, c) => { ... })` — global error handler
@@ -107,8 +107,8 @@ export const quiz = [
     options: [
       'response เร็วขึ้น',
       'ทุก error ออกไปด้วยรูปทรงที่สม่ำเสมอหนึ่งเดียว พร้อม fallback ที่ปลอดภัย',
-      'มันลบความจำเป็นในการใช้ status code',
-      'มันเปิดใช้งาน caching',
+      'ทำให้ไม่ต้องใช้ status code อีกต่อไป',
+      'เปิดใช้ caching ให้อัตโนมัติ',
     ],
     answer: 1,
   },

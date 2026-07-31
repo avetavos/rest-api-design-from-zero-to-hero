@@ -10,7 +10,7 @@ import Callout from '../../../../components/Callout.astro';
 import Quiz from '../../../../components/Quiz.tsx';
 import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
-REST API ส่วนใหญ่คือการ create, read, update และ delete กระทำต่อ resource ต่าง ๆ ศิลปะของมันคือการจับคู่การกระทำเหล่านั้นเข้ากับ HTTP methods เพื่อให้ทั้ง client, proxy และ logic การ retry ของคุณเองทำงานได้อย่างถูกต้อง
+REST API ส่วนใหญ่คือการ create, read, update และ delete บน resource ต่าง ๆ ความยากอยู่ที่การจับคู่การกระทำเหล่านั้นเข้ากับ HTTP method ให้ถูก เพื่อให้ทั้ง client, proxy และ logic การ retry ของคุณเองทำงานได้อย่างถูกต้อง
 
 ## CRUD สู่ HTTP
 
@@ -22,7 +22,7 @@ export const crudDiagram = `flowchart LR
 
 <Mermaid code={crudDiagram} title="การจับคู่แบบมาตรฐานจาก CRUD สู่ HTTP methods" />
 
-การจับคู่นี้ไม่ได้เกิดขึ้นแบบสุ่ม แต่ละ method มาพร้อมกับการรับประกันเรื่อง **safety** (มันเปลี่ยนแปลงข้อมูลหรือไม่?) และ **idempotency** (การทำซ้ำให้ผลเหมือนกับการทำครั้งเดียวหรือไม่?) การรับประกันเหล่านี้คือสิ่งที่ทำให้ client สามารถ retry คำขอที่หายไปได้อย่างปลอดภัย หรือทำให้ proxy แคช response ได้
+การจับคู่นี้ไม่ได้เกิดขึ้นแบบสุ่ม แต่ละ method มาพร้อมการรับประกันเรื่อง **safety** (เปลี่ยนแปลงข้อมูลหรือไม่?) และ **idempotency** (ทำซ้ำแล้วผลเหมือนทำครั้งเดียวหรือไม่?) การรับประกันเหล่านี้แหละที่ทำให้ client retry request ที่หายไปได้อย่างปลอดภัย และทำให้ proxy cache response ได้
 
 ## โมดูลนี้ครอบคลุมอะไรบ้าง
 

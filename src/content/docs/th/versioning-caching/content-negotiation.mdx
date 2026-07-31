@@ -12,9 +12,9 @@ import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
 resource เดียวสามารถมีได้หลาย representation — JSON, CSV, ภาษาต่าง ๆ Content negotiation ให้ client ระบุความต้องการและให้ server เลือกตัวที่ตรงที่สุด ทั้งหมดนี้โดยไม่ต้องเปลี่ยน URI
 
-## มันทำงานอย่างไร
+## หลักการทำงาน
 
-client ส่ง `Accept` (media type ใดบ้างที่มันต้องการ) และอาจส่ง `Accept-Language` ด้วย; server ตอบกลับด้วย representation ที่เลือกพร้อม `Content-Type` ที่สอดคล้องกัน:
+client ส่ง `Accept` เพื่อบอกว่ารับ media type ไหนได้บ้าง และอาจส่ง `Accept-Language` มาด้วย จากนั้น server ตอบกลับด้วย representation ที่เลือกแล้ว พร้อม `Content-Type` ที่ตรงกัน:
 
 ```http
 GET /reports/42 HTTP/1.1
@@ -22,9 +22,9 @@ Accept: text/csv, application/json;q=0.8
 Accept-Language: th, en;q=0.5
 ```
 
-ค่า `q` คือน้ำหนักด้านคุณภาพ (quality weight) — ในที่นี้ client ชอบ CSV มากกว่า แล้วจึงเป็น JSON server ควรให้เกียรติ type ที่ดีที่สุดที่มันรองรับและสะท้อนมันกลับมาใน `Content-Type`
+ค่า `q` คือน้ำหนักด้านคุณภาพ (quality weight) — ในที่นี้ client อยากได้ CSV มากกว่า ถัดมาจึงเป็น JSON ฝั่ง server ควรเลือก type ที่ดีที่สุดเท่าที่รองรับได้ แล้วประกาศกลับมาใน `Content-Type`
 
-## เมื่อมันไม่สามารถทำตามได้
+## เมื่อ server ตอบตามที่ขอไม่ได้
 
 - หาก server ไม่สามารถสร้าง type ใดที่ยอมรับได้เลย ให้ตอบ `406 Not Acceptable`
 - หาก **body** ของ request มาในรูปแบบ type ที่ server แยกวิเคราะห์ (parse) ไม่ได้ ให้ตอบ `415 Unsupported Media Type`
@@ -48,14 +48,14 @@ app.get('/reports/:id', (c) => {
 
 <NodeRunner stackblitz client:visible code={honoCode} />
 
-| Benefits (Content Negotiation) | Trade-offs |
+| ข้อดี (Content Negotiation) | ข้อแลกเปลี่ยน |
 |---|---|
 | API เดียว รองรับหลาย format (JSON, XML, CSV) | server ต้อง implement serializer หลายตัว |
 | client บอก server ว่าต้องการ format อะไร | complexity เพิ่ม — content type routing logic |
 | versioning ผ่าน media type ที่ RESTful ที่สุด | tooling support สำหรับ custom media type น้อย |
 | compression ผ่าน `Accept-Encoding` ลด bandwidth | ต้องระวัง cache key ที่ต้องรวม Accept header |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **ไม่ Return `Content-Type` ใน Response**
 อาการ:
@@ -69,7 +69,7 @@ app.get('/reports/:id', (c) => {
 - request ถัดไปขอ CSV — CDN return JSON เดิม
 - ตั้ง `Vary: Accept` header เพื่อให้ CDN รวม Accept ใน cache key
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **GitHub API:**
 > - `Accept: application/vnd.github+json` สำหรับ standard JSON
@@ -81,7 +81,7 @@ app.get('/reports/:id', (c) => {
 > - ลด bandwidth สำหรับ large JSON response เช่น list operation
 
 <Callout title="resource เดียว, หลาย representation">
-Content negotiation ทำให้ URI เสถียรในขณะที่ให้ client เลือกรูปแบบและภาษาได้ — การ export เป็น CSV และมุมมองแบบ JSON ของ report เดียวกันใช้ที่อยู่เดียวกัน จงสะท้อน type ที่เลือกกลับไปใน `Content-Type` เสมอ, และคืน `406` แทนที่จะส่งรูปแบบที่ client บอกว่ายอมรับไม่ได้ไปแบบเงียบ ๆ
+Content negotiation ทำให้ URI นิ่งอยู่กับที่ แต่ยังเปิดให้ client เลือกรูปแบบและภาษาได้ ทั้ง CSV export และมุมมอง JSON ของ report ตัวเดียวกันจึงใช้ที่อยู่เดียวกัน ให้ประกาศ type ที่เลือกกลับไปใน `Content-Type` เสมอ และถ้าตอบตามที่ขอไม่ได้ก็คืน `406` ไป ดีกว่าแอบส่งรูปแบบที่ client บอกว่ารับไม่ได้ไปแบบเงียบ ๆ
 </Callout>
 
 export const quiz = [

@@ -38,7 +38,7 @@ Accept: application/vnd.example.article+json;version=2
 
 ## การเลือก
 
-สำหรับทีมส่วนใหญ่ **URI versioning** ชนะในแง่ของความเป็นปฏิบัตินิยม: มันชัดเจน, เป็นมิตรกับ cache, และทดสอบได้ง่ายมาก ไม่ว่าคุณจะเลือกแบบไหน ให้ทำเวอร์ชัน **ทั้ง API** ในระดับหยาบ (`v1`, `v2`) ไม่ใช่ทำเวอร์ชันแต่ละ endpoint แยกกัน — เวอร์ชันรายต่อ endpoint จะทำให้ support matrix บานปลาย
+สำหรับทีมส่วนใหญ่ **URI versioning** ชนะด้วยความเป็นปฏิบัตินิยม คือชัดเจน เป็นมิตรกับ cache และทดสอบง่ายมาก ไม่ว่าคุณจะเลือกแบบไหน ให้ทำเวอร์ชัน **ทั้ง API** ในระดับหยาบ (`v1`, `v2`) ไม่ใช่ทำเวอร์ชันแต่ละ endpoint แยกกัน — เวอร์ชันรายต่อ endpoint จะทำให้ support matrix บานปลาย
 
 | Strategy | ข้อดี | ข้อเสีย | เหมาะกับ |
 |---|---|---|---|
@@ -46,7 +46,7 @@ Accept: application/vnd.example.article+json;version=2
 | Header versioning (`API-Version: 2`) | URI สะอาด | มองไม่เห็นใน log, debug ยาก | Internal API ที่ control client |
 | Media-type (`Accept: ...;version=2`) | RESTful ที่สุด | ซับซ้อน, tooling support น้อย | Rarely used in practice |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **Version เฉพาะ Endpoint แทน API ทั้งหมด**
 อาการ:
@@ -60,7 +60,7 @@ Accept: application/vnd.example.article+json;version=2
 - ไม่มี migration guide หรือ timeline ชัดเจน
 - ใช้ `Deprecation` และ `Sunset` header: `Sunset: Sat, 31 Dec 2024 23:59:59 GMT`
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **Stripe API:**
 > - versioning ผ่าน `Stripe-Version` header — ไม่เปลี่ยน URI
@@ -71,7 +71,7 @@ Accept: application/vnd.example.article+json;version=2
 > - deprecation notice ล่วงหน้า 12 เดือน พร้อม `Deprecation` header
 
 <Callout title="ทำเวอร์ชันให้น้อย, deprecate อย่างใจดี">
-ถือว่า major version ใหม่เป็นทางเลือกสุดท้าย, และเมื่อคุณจำเป็นต้องปล่อยมัน ให้เวอร์ชันเก่ายังทำงานต่อไปพร้อมกับ timeline การ deprecation ที่ชัดเจน และ header `Deprecation`/`Sunset` การทำให้ client พังโดยไม่เตือนล่วงหน้าคือวิธีที่ API จะสูญเสียความน่าเชื่อถือ
+ให้ถือว่า major version ใหม่คือทางเลือกสุดท้าย และเมื่อจำเป็นต้องปล่อยจริง ๆ ก็ต้องปล่อยให้เวอร์ชันเก่ายังทำงานต่อได้ พร้อม timeline การ deprecation ที่ชัดเจนและ header `Deprecation`/`Sunset` การทำให้ client พังโดยไม่เตือนล่วงหน้าคือทางลัดที่ทำให้ API เสียความน่าเชื่อถือ
 </Callout>
 
 export const quiz = [

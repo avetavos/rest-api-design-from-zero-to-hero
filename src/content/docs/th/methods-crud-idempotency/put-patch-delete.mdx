@@ -14,7 +14,7 @@ import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
 ## PUT — การแทนที่ทั้งหมด
 
-`PUT` แทนที่ resource ที่ URI หนึ่งด้วย representation ที่อยู่ใน body ให้ส่ง resource **ทั้งหมด** ไป ฟิลด์ใดก็ตามที่คุณละเว้น ในเชิงความหมายคือกำลังถูกตั้งให้เป็นค่าว่าง เพราะผลลัพธ์ของการ `PUT` body เดิมสองครั้งเหมือนกับการทำครั้งเดียว `PUT` จึงเป็น **idempotent**
+`PUT` แทนที่ resource ที่ URI หนึ่งด้วย representation ที่อยู่ใน body ให้ส่ง resource **ทั้งหมด** ไป field ไหนที่คุณละไว้ ในเชิงความหมายคือสั่งล้างค่าทิ้ง และเพราะ `PUT` body เดิมสองครั้งได้ผลเท่ากับทำครั้งเดียว `PUT` จึงเป็น **idempotent**
 
 ```http
 PUT /articles/42 HTTP/1.1
@@ -27,14 +27,14 @@ Content-Type: application/json
 
 `PATCH` ใช้การแก้ไขแบบ **บางส่วน** มีสองรูปแบบที่พบบ่อย:
 
-- **JSON Merge Patch** (`application/merge-patch+json`): ส่งเฉพาะฟิลด์ที่จะเปลี่ยน โดย `null` หมายถึง "ลบฟิลด์นี้ออก"
+- **JSON Merge Patch** (`application/merge-patch+json`): ส่งเฉพาะ field ที่จะเปลี่ยน โดย `null` หมายถึง "ลบ field นี้ออก"
 - **JSON Patch** (`application/json-patch+json`): ส่ง array ของ operation ที่ระบุชัดเจน (`add`, `remove`, `replace`, ...)
 
 โดยทั่วไป `PATCH` ไม่รับประกันว่าจะ idempotent (operation อย่าง "ต่อท้ายลงใน list" ไม่ idempotent) แม้ว่า merge-patch หลายกรณีจะบังเอิญ idempotent ก็ตาม
 
 ## DELETE — การลบ
 
-`DELETE` ลบ resource ออก มันเป็น idempotent เพราะการลบ resource ที่ถูกลบไปแล้วก็ยังคงทำให้มันถูกลบอยู่ดี ให้คืน `204 No Content` (หรือ `200 OK` พร้อม body) เมื่อสำเร็จ ส่วน `DELETE` ครั้งที่สองอาจคืน `204` หรือ `404` ขึ้นอยู่กับนโยบายของคุณ — เลือกอย่างใดอย่างหนึ่งและทำให้สม่ำเสมอ
+`DELETE` ลบ resource ออก และเป็น idempotent เพราะสั่งลบของที่ลบไปแล้ว ผลลัพธ์ก็ยังคือถูกลบอยู่ดี ให้คืน `204 No Content` (หรือ `200 OK` พร้อม body) เมื่อสำเร็จ ส่วน `DELETE` ครั้งที่สองอาจคืน `204` หรือ `404` ขึ้นอยู่กับนโยบายของคุณ — เลือกอย่างใดอย่างหนึ่งและทำให้สม่ำเสมอ
 
 ## การอัปเดตใน API ที่กำลังทำงานจริง
 
@@ -73,7 +73,7 @@ app.delete('/articles/:id', (c) => {
 | PATCH | ✅ เฉพาะที่แก้ | อาจใช่ | แก้บาง field |
 | DELETE | บางครั้ง | ✅ | ลบ resource |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **ใช้ PUT เพื่อ Partial Update**
 อาการ:
@@ -87,7 +87,7 @@ app.delete('/articles/:id', (c) => {
 - ควร return 404 หรือ 204 ในครั้งที่สอง ไม่ใช่ 500
 - DELETE ที่ resource ไม่มีแล้วควร return 404 หรือ 204 สม่ำเสมอ
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **GitHub API:**
 > - `PATCH /repos/\{owner\}/\{repo\}` — แก้บาง setting ของ repo
@@ -98,32 +98,32 @@ app.delete('/articles/:id', (c) => {
 > - ไม่มี true DELETE สำหรับ charge — ใช้ refund แทน (audit trail)
 
 <Callout title="PUT แทนที่ ส่วน PATCH รวม (merge)">
-ถ้า client ส่ง resource ที่สมบูรณ์มาและคาดหวังให้ฟิลด์ที่ละเว้นถูกล้างค่า นั่นคือ `PUT` ถ้า client ส่งเฉพาะสิ่งที่เปลี่ยนและคาดหวังให้สิ่งอื่นทั้งหมดคงไว้ นั่นคือ `PATCH` การเลือก semantics แบบ `PUT` แต่กลับ merge (หรือในทางกลับกัน) คือสาเหตุที่พบบ่อยของบั๊กแบบ "ทำไมฟิลด์ของฉันหายไป?"
+ถ้า client ส่ง resource มาครบทั้งก้อนและคาดหวังให้ field ที่ละไว้ถูกล้างค่า นั่นคือ `PUT` ถ้า client ส่งมาเฉพาะส่วนที่เปลี่ยนและคาดหวังให้ที่เหลือคงเดิม นั่นคือ `PATCH` การประกาศ semantics แบบ `PUT` แต่ไปเขียน logic แบบ merge (หรือกลับกัน) คือต้นเหตุยอดฮิตของบั๊ก "ทำไม field ของฉันหายไป"
 </Callout>
 
 export const quiz = [
   {
-    q: 'PUT ทำอย่างไรกับฟิลด์ที่ถูกละเว้นจาก request body?',
+    q: 'PUT ทำอย่างไรกับ field ที่ไม่ได้ส่งมาใน request body?',
     options: [
       'ปล่อยให้ไม่เปลี่ยนแปลง',
-      'ถือว่า resource ถูกแทนที่ทั้งหมด ดังนั้นฟิลด์ที่ละเว้นจะไม่ถูกคงไว้',
+      'ถือว่าแทนที่ resource ทั้งก้อน field ที่ไม่ได้ส่งมาจึงไม่ถูกคงไว้',
       'คืน 422',
-      'ต่อท้ายฟิลด์เหล่านั้นเข้าไป',
+      'ต่อท้าย field เหล่านั้นเข้าไป',
     ],
     answer: 1,
   },
   {
-    q: 'ใน JSON Merge Patch การตั้งฟิลด์ให้เป็น null หมายความว่าอย่างไร?',
-    options: ['ปล่อยให้ไม่เปลี่ยนแปลง', 'ลบ/ล้างค่าฟิลด์นั้น', 'validation error', 'ตั้งค่าเป็น 0'],
+    q: 'ใน JSON Merge Patch การตั้ง field ให้เป็น null หมายความว่าอย่างไร?',
+    options: ['ปล่อยไว้ไม่เปลี่ยนแปลง', 'ลบ/ล้างค่า field นั้น', 'validation error', 'ตั้งค่าเป็น 0'],
     answer: 1,
   },
   {
     q: 'ทำไม DELETE จึงถูกถือว่าเป็น idempotent?',
     options: [
-      'มันไม่เคยเปลี่ยนแปลง state',
-      'การลบ resource ที่ถูกลบไปแล้วก็ยังคงทำให้มันถูกลบอยู่ดี',
-      'มันคืน body กลับมา',
-      'มันสามารถแคชได้',
+      'ไม่เคยเปลี่ยนแปลง state',
+      'สั่งลบของที่ลบไปแล้ว ผลลัพธ์ก็ยังคือถูกลบอยู่ดี',
+      'คืน body กลับมาด้วย',
+      'นำไป cache ได้',
     ],
     answer: 1,
   },

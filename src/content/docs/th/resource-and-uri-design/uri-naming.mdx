@@ -9,7 +9,7 @@ import Callout from '../../../../components/Callout.astro';
 import Quiz from '../../../../components/Quiz.tsx';
 import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
-URI คือชื่อของ resource การตั้งชื่อที่สอดคล้องกันทำให้ developer เดา endpoint ตัวถัดไปได้ถูกต้องโดยไม่ต้องอ่าน docs ซึ่งเป็นคำชมสูงสุดที่ API จะได้รับ
+URI คือชื่อของ resource การตั้งชื่อที่สอดคล้องกันทำให้ developer เดา endpoint ตัวถัดไปได้ถูกโดยไม่ต้องเปิด docs และนั่นคือคำชมสูงสุดที่ API หนึ่งตัวจะได้รับ
 
 ## แนวปฏิบัติ
 
@@ -42,7 +42,7 @@ GET /articles?articleId=42    # identity belongs in the path
 | Hierarchy แสดง ownership | `/users/\{id\}/orders` | `/getUserOrders?userId=\{id\}` |
 | ไม่มี verb ใน URI | `/orders/\{id\}/cancellation` | `/cancelOrder/\{id\}` |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **ผสม Naming Convention**
 อาการ:
@@ -56,7 +56,7 @@ GET /articles?articleId=42    # identity belongs in the path
 - `/v1/users/v2/profile` — version ซ้อนกัน
 - version อยู่ต้น URI เสมอ: `/v1/users/\{id\}/profile`
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **GitHub API:**
 > - `/repos` (plural), `/issues`, `/pulls`, `/commits` — consistent plural

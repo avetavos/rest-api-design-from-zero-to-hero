@@ -1,6 +1,6 @@
 ---
 title: Rate Limiting & Validation
-description: 'การจำกัดอัตราการเรียกของผู้ใช้งานในทางที่ผิด และการมองทุก input ว่าเชื่อถือไม่ได้'
+description: 'จำกัดอัตราการเรียกของผู้ใช้ที่ใช้งานในทางที่ผิด และมองทุก input ว่าเชื่อถือไม่ได้'
 sidebar:
   order: 5
 ---
@@ -14,7 +14,7 @@ import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
 ## Rate limiting
 
-Rate limiting จำกัดจำนวน request ต่อ client ต่อช่วงเวลา (window) เพื่อป้องกันการใช้งานในทางที่ผิด, client ที่ทำงานผิดเพี้ยน และลูปที่เกิดขึ้นโดยไม่ตั้งใจ เมื่อผู้เรียกใช้เกินขีดจำกัด ให้ตอบกลับ `429 Too Many Requests` พร้อมกับ header `Retry-After` ที่บอกพวกเขาว่าควรลองใหม่เมื่อไหร่ ถือเป็นแนวปฏิบัติที่ดีที่จะประกาศ budget ด้วย header `RateLimit-Limit`, `RateLimit-Remaining` และ `RateLimit-Reset`
+Rate limiting จำกัดจำนวน request ต่อ client ในแต่ละช่วงเวลา (window) เพื่อกันทั้งการใช้งานในทางที่ผิด client ที่ทำงานเพี้ยน และลูปที่หลุดมาโดยไม่ตั้งใจ เมื่อผู้เรียกเกินโควตา ให้ตอบ `429 Too Many Requests` พร้อม header `Retry-After` บอกว่าให้กลับมาลองใหม่เมื่อไหร่ และควรประกาศ budget ที่เหลือไว้ด้วย header `RateLimit-Limit`, `RateLimit-Remaining` และ `RateLimit-Reset`
 
 algorithm ที่พบบ่อยคือ **token bucket**: แต่ละ client มีถังหนึ่งใบที่เติม token กลับเข้าไปด้วยอัตราคงที่ แต่ละ request ใช้ token ไปหนึ่งตัว ถังที่ว่างเปล่าหมายถึง `429`
 
@@ -44,14 +44,14 @@ console.log(take(0));                    // 4th: 429 with retryAfter`;
 - **Oversized payloads** — จำกัดขนาด request body และความยาวของ array เพื่อหลีกเลี่ยงการทำให้ resource หมดเกลี้ยง
 - **Type and range** — validate ชนิดข้อมูล, ความยาว และช่วงค่าด้วย schema และปฏิเสธด้วย `422` (ดู [Validation Errors](/rest-api/th/status-and-errors/validation-errors/))
 
-| Benefits (Rate Limiting) | Trade-offs |
+| ข้อดี (Rate Limiting) | ข้อแลกเปลี่ยน |
 |---|---|
 | ป้องกัน abuse และ DDoS | legitimate spike traffic อาจ fail |
 | ป้องกัน credential stuffing และ brute force | ต้องออกแบบ limit ที่เหมาะสม — ไม่เข้มเกินหรือหย่อนเกิน |
 | ลด cost ของ downstream service เช่น LLM API | rate limit shared ใน distributed system ต้องใช้ Redis |
 | บอก client ผ่าน header ว่าเหลือ quota เท่าไร | user experience แย่ถ้า error ไม่อธิบาย |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **Rate Limit โดยไม่บอก Client**
 อาการ:
@@ -65,7 +65,7 @@ console.log(take(0));                    // 4th: 429 with retryAfter`;
 - XSS เมื่อ API response ไปแสดงใน web app
 - validate type/format และ sanitize string input ก่อน store
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **GitHub API:**
 > - rate limit: 5000 requests/hour สำหรับ authenticated request
@@ -76,7 +76,7 @@ console.log(take(0));                    // 4th: 429 with retryAfter`;
 > - 429 พร้อม `Retry-After` header — client รู้ว่าต้องรอกี่วินาที
 
 <Callout title="allowlist สำหรับ input, throttle สำหรับการใช้งานในทางที่ผิด">
-รับเฉพาะ field และรูปแบบที่คุณคาดหวังไว้เท่านั้น — allowlist เหนือกว่า blocklist ทุกครั้ง และมันหยุดการโจมตีแบบ mass-assignment ได้อย่างเด็ดขาด จับคู่สิ่งนั้นเข้ากับ rate limit ต่อ client และการจำกัดขนาด body เพื่อให้ผู้เรียกใช้คนเดียวไม่สามารถทั้งทำลายข้อมูลของคุณหรือทำให้ขีดความสามารถของคุณหมดลงได้
+รับเฉพาะ field และรูปแบบที่คุณคาดไว้เท่านั้น allowlist ชนะ blocklist ทุกครั้ง และปิดประตูการโจมตีแบบ mass-assignment ได้เด็ดขาด จากนั้นเสริมด้วย rate limit ต่อ client และการจำกัดขนาด body เพื่อไม่ให้ผู้เรียกรายเดียวทำข้อมูลคุณพังหรือกิน capacity จนหมด
 </Callout>
 
 export const quiz = [
@@ -91,7 +91,7 @@ export const quiz = [
     answer: 1,
   },
   {
-    q: 'mass assignment คืออะไร และจะป้องกันมันอย่างไร?',
+    q: 'mass assignment คืออะไร และป้องกันอย่างไร?',
     options: [
       'การส่ง request มากเกินไป แก้ด้วย rate limiting',
       'การ bind field ของ request เข้ากับ model แบบไม่ดูตาม้าตาเรือ แก้ด้วยการทำ allowlist ของ field ที่รับ',

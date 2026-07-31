@@ -1,6 +1,6 @@
 ---
 title: GET & POST
-description: 'การอ่าน resource อย่างปลอดภัยและการสร้างมันด้วย POST'
+description: 'อ่าน resource อย่างปลอดภัย และสร้าง resource ใหม่ด้วย POST'
 sidebar:
   order: 2
 ---
@@ -10,11 +10,11 @@ import Callout from '../../../../components/Callout.astro';
 import Quiz from '../../../../components/Quiz.tsx';
 import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
-`GET` และ `POST` คือสอง method ที่คุณจะใช้บ่อยที่สุด ทั้งคู่อยู่คนละขั้วของสเปกตรัมเรื่อง safety โดย `GET` ทำได้แค่อ่าน ในขณะที่ `POST` ใช้สร้างและเป็น method ที่มีข้อจำกัดน้อยที่สุดในบรรดาทั้งหมด
+`GET` และ `POST` คือสอง method ที่คุณจะใช้บ่อยที่สุด ทั้งคู่อยู่คนละขั้วของสเปกตรัมเรื่อง safety โดย `GET` ทำได้แค่อ่าน ส่วน `POST` ใช้สร้างของใหม่ และเป็น method ที่มีข้อจำกัดน้อยที่สุดในบรรดาทั้งหมด
 
-## GET — ปลอดภัยและแคชได้
+## GET — safe และ cache ได้
 
-`GET` ดึงตัวแทน (representation) ของ resource มา และต้องไม่เปลี่ยนแปลง state ของ server เด็ดขาด เพราะมันปลอดภัย response จึงสามารถถูกแคชได้และคำขอสามารถ retry ได้อย่างอิสระ `GET` บน collection จะคืนรายการกลับมา ส่วน `GET` บน item เดียวจะคืน item นั้นหรือ `404`
+`GET` ดึง representation ของ resource มา และต้องไม่เปลี่ยน state ของ server เด็ดขาด เพราะเป็น safe method จึงนำ response ไป cache ได้ และ retry ได้อย่างอิสระ `GET` บน collection จะคืนรายการกลับมา ส่วน `GET` บน item เดียวจะคืน item นั้นหรือ `404`
 
 ```http
 GET /articles/42 HTTP/1.1
@@ -25,11 +25,11 @@ Accept: application/json
 
 ## POST — การสร้างและการกระทำที่ไม่ idempotent
 
-`POST` ส่งข้อมูลไปยัง collection ซึ่งโดยทั่วไปคือการสร้าง resource ใหม่ มันไม่ทั้ง safe และไม่ idempotent การส่ง `POST` เดิมซ้ำสองครั้งมักจะสร้าง resource ขึ้นสองตัว เมื่อสำเร็จ ให้คืน `201 Created` พร้อม header `Location` ที่ชี้ไปยัง resource ใหม่
+`POST` ส่งข้อมูลไปยัง collection ซึ่งโดยทั่วไปคือการสร้าง resource ใหม่ ไม่ safe และไม่ idempotent การส่ง `POST` เดิมซ้ำสองครั้งมักจะได้ resource ขึ้นมาสองตัว เมื่อสำเร็จ ให้คืน `201 Created` พร้อม header `Location` ที่ชี้ไปยัง resource ใหม่
 
 ## ทั้งสองอย่าง ใน API ที่กำลังทำงานจริง
 
-แอป Hono นี้เปิด collection ที่คุณสามารถอ่านและเพิ่มข้อมูลเข้าไปได้ เปิดมันใน StackBlitz แล้วลอง `GET /articles`, `GET /articles/1` และ `POST /articles`:
+แอป Hono ตัวนี้เปิด collection ที่คุณอ่านและเพิ่มข้อมูลเข้าไปได้ ลองเปิดใน StackBlitz แล้วยิง `GET /articles`, `GET /articles/1` และ `POST /articles` ดู:
 
 export const honoCode = `const articles = [{ id: 1, title: 'First post' }];
 
@@ -56,7 +56,7 @@ app.post('/articles', async (c) => {
 | GET | ✅ | ✅ | อ่านข้อมูล, search, filter |
 | POST | ❌ | ❌ | สร้าง resource, trigger action |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **ใช้ GET เพื่อ Trigger Side Effect**
 อาการ:
@@ -70,7 +70,7 @@ app.post('/articles', async (c) => {
 - password ติด URL, server log, browser history
 - ใช้ POST พร้อม body สำหรับ sensitive data
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **GitHub API:**
 > - `GET /repos/\{owner\}/\{repo\}` — อ่านข้อมูล repo (safe, idempotent)
@@ -81,14 +81,14 @@ app.post('/articles', async (c) => {
 > - `POST /charges` — สร้าง charge ใหม่ (ต้องการ idempotency key)
 
 <Callout title="อย่าเปลี่ยนแปลงข้อมูลผ่าน GET">
-ความผิดพลาดเรื่อง REST ที่พบบ่อยที่สุดอย่างหนึ่งคือการทำการกระทำผ่าน `GET` (เพราะมันง่ายที่จะ trigger จาก browser) ทั้ง cache, link prefetcher และ crawler ต่างสมมติว่า `GET` ปลอดภัยและอาจเรียกมันซ้ำ ๆ การเปลี่ยนแปลง state ใด ๆ ควรอยู่บน `POST`, `PUT`, `PATCH` หรือ `DELETE`
+ความผิดพลาดเรื่อง REST ที่พบบ่อยที่สุดอย่างหนึ่งคือการยัดงานเปลี่ยนข้อมูลไว้ใน `GET` (เพราะ trigger จาก browser ได้ง่าย) ทั้ง cache, link prefetcher และ crawler ต่างสมมติว่า `GET` ปลอดภัย จึงยิงซ้ำได้เรื่อย ๆ อะไรที่เปลี่ยน state ต้องอยู่บน `POST`, `PUT`, `PATCH` หรือ `DELETE` เท่านั้น
 </Callout>
 
 export const quiz = [
   {
     q: 'ทำไม GET จึงต้องไม่เปลี่ยนแปลง state ของ server เด็ดขาด?',
     options: [
-      'คำขอ GET ช้ากว่า',
+      'GET request ช้ากว่า',
       'GET ถูกสมมติว่าปลอดภัย ดังนั้น cache/prefetcher อาจทำซ้ำได้อย่างอิสระ',
       'GET ส่ง header ไม่ได้',
       'response ของ GET เป็น JSON ไม่ได้',

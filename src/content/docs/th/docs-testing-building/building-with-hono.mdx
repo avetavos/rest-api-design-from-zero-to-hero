@@ -27,7 +27,7 @@ handler ยังคงบาง คือ validate input เรียก servic
 
 ## resource ขนาดเล็ก ครบตั้งแต่ต้นจนจบ
 
-แอป Hono นี้รวม validation, รูปแบบ error ที่สม่ำเสมอ และ status code ที่ถูกต้องสำหรับ resource ชื่อ `articles` เข้าด้วยกัน เปิดมันใน StackBlitz เพื่อรันดู
+แอป Hono ตัวนี้รวม validation รูปแบบ error ที่สม่ำเสมอ และ status code ที่ถูกต้องของ resource ชื่อ `articles` ไว้ด้วยกัน ลองเปิดใน StackBlitz แล้วรันดู
 
 export const honoCode = `const articles = [{ id: 1, title: 'First', body: 'Hello' }];
 
@@ -77,14 +77,14 @@ app.onError((err, c) => {
 
 สังเกตว่าทุกแนวคิดจากคอร์สนี้ปรากฏขึ้นอย่างไร ทั้ง envelope ของ collection ที่ทำ pagination, `201 Created` พร้อม `Location`, การ validate แบบ `422` พร้อม error ราย field, `404` ผ่าน error ที่มี type ที่ถูก throw ออกมา และ `onError` ตัวกลางเพียงหนึ่งเดียวที่ผลิต `problem+json`
 
-| Benefits (Hono) | Trade-offs |
+| ข้อดี (Hono) | ข้อแลกเปลี่ยน |
 |---|---|
 | รันบน Edge runtime (Cloudflare Workers, Bun, Deno) — latency ต่ำ | ecosystem เล็กกว่า Express |
 | type-safe middleware ด้วย TypeScript | learning curve ถ้าคุ้นกับ Express |
 | built-in validation ด้วย Zod integration | community resource น้อยกว่า NestJS/Express |
 | เร็วกว่า Express — benchmark ดีกว่าใน most scenario | ยังไม่มี decorator-based MVC เหมือน NestJS |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **ไม่มี Centralized Error Handler**
 อาการ:
@@ -98,7 +98,7 @@ app.onError((err, c) => {
 - request ที่ไม่ authenticate เข้าถึง protected route ได้
 - ลงทะเบียน middleware ก่อน route เสมอ: `app.use(auth)` ก่อน `app.get('/protected', handler)`
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **Cloudflare Workers:**
 > - Hono เป็น framework ที่แนะนำสำหรับ Workers — รันบน V8 Isolate
@@ -116,7 +116,7 @@ export const quiz = [
   {
     q: 'ทำไมจึงควรให้ service ปลอดจากเรื่องของ HTTP?',
     options: [
-      'เพื่อให้มันช้าลง',
+      'เพื่อให้ทำงานช้าลง',
       'เพื่อให้ business logic ทำ unit-test ได้ง่ายและไม่ผูกติดกับเฟรมเวิร์กฝั่งเว็บ',
       'เพราะ Hono บังคับให้ทำ',
       'เพื่อเลี่ยงการเขียน route',
@@ -126,7 +126,7 @@ export const quiz = [
   {
     q: 'อะไรควรอยู่ใน handler ที่บาง?',
     options: [
-      'กฎทางธุรกิจทั้งหมดและ query ฐานข้อมูลแบบ inline',
+      'กฎทางธุรกิจทั้งหมดและ query database แบบ inline',
       'validate input, เรียก service, จัดรูป response',
       'เฉพาะการ logging',
       'spec ของ OpenAPI',
@@ -135,7 +135,7 @@ export const quiz = [
   },
   {
     q: 'รูปแบบ error ที่สม่ำเสมอเพียงหนึ่งเดียวถูกผลิตขึ้นที่ใดในแอปนี้?',
-    options: ['ในทุก handler แยกกัน', 'ใน hook onError ตัวกลาง', 'ใน client', 'ในฐานข้อมูล'],
+    options: ['ในทุก handler แยกกัน', 'ใน hook onError ตัวกลาง', 'ใน client', 'ใน database'],
     answer: 1,
   },
 ];

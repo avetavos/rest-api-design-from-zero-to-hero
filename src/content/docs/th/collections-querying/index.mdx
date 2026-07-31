@@ -22,7 +22,7 @@ export const queryDiagram = `flowchart LR
 
 <Mermaid code={queryDiagram} title="ทั้งสี่อย่างถูกระบุผ่าน query parameter บน collection" />
 
-ทั้งสี่อย่างนี้อยู่ใน **query string** เพราะมันอธิบายว่า *คุณต้องการมุมมองแบบไหนของ collection* ไม่ใช่ *ต้องการ resource ตัวไหน* ตัวตน (identity) อยู่ที่ path ส่วน query เป็นตัวกำหนดรูปร่างของผลลัพธ์
+ทั้งสี่อย่างนี้อยู่ใน **query string** เพราะบอกว่า *คุณอยากได้มุมมองแบบไหนของ collection* ไม่ใช่ *อยากได้ resource ตัวไหน* ตัวตน (identity) อยู่ที่ path ส่วน query เป็นตัวกำหนดรูปร่างของผลลัพธ์
 
 ## โมดูลนี้ครอบคลุมอะไรบ้าง
 
@@ -37,7 +37,7 @@ export const queryDiagram = `flowchart LR
 
 export const quiz = [
   {
-    q: 'พารามิเตอร์ pagination, filtering และ sorting ควรอยู่ที่ไหน?',
+    q: 'parameter ของ pagination, filtering และ sorting ควรอยู่ที่ไหน?',
     options: ['ใน path', 'ใน query string', 'ใน request body', 'ใน custom header เท่านั้น'],
     answer: 1,
   },

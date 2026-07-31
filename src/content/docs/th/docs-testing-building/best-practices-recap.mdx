@@ -27,7 +27,7 @@ export const recapDiagram = `flowchart TD
 
 ## เช็กลิสต์
 
-**Resources & URIs** — สร้างโมเดลเป็นคำนาม ไม่ใช่การกระทำ; collection เป็นพหูพจน์ (`/articles`); path เป็นตัวพิมพ์เล็กคั่นด้วยขีดกลาง; ID อยู่ใน path; ซ้อน (nest) เฉพาะเมื่อเป็นความเป็นเจ้าของ มิฉะนั้นให้ลิงก์แทน ดู [Resource & URI Design](/rest-api/th/resource-and-uri-design/)
+**Resources & URIs** — สร้างโมเดลเป็นคำนาม ไม่ใช่การกระทำ; collection เป็นพหูพจน์ (`/articles`); path เป็นตัวพิมพ์เล็กคั่นด้วยขีดกลาง; ID อยู่ใน path; ซ้อน (nest) เฉพาะกรณีที่เป็นเจ้าของกันจริง ๆ นอกนั้นให้ใช้ link แทน ดู [Resource & URI Design](/rest-api/th/resource-and-uri-design/)
 
 **Methods & idempotency** — map CRUD ไปยัง GET/POST/PUT/PATCH/DELETE; ห้ามเปลี่ยนแปลงข้อมูลบน GET; ทำให้การเขียนเป็น idempotent ในที่ที่ทำได้; ปกป้องการสร้างที่ไม่ใช่ idempotent ด้วย idempotency key ดู [Methods, CRUD & Idempotency](/rest-api/th/methods-crud-idempotency/)
 
@@ -52,7 +52,7 @@ export const recapDiagram = `flowchart TD
 | Versioning | URI versioning `/v1/` | ไม่มี version เลย |
 | Caching | Cache-Control, ETag | ไม่มี caching header |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **ไม่มี API Design Review ก่อน Implement**
 อาการ:
@@ -66,7 +66,7 @@ export const recapDiagram = `flowchart TD
 - consumer ที่ใช้ `userId` พังทันที
 - additive change เท่านั้นใน version เดิม; breaking change ต้อง bump version
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **Stripe API:**
 > - ยึดถือ backward compatibility อย่างเคร่งครัด — API v1 ออก 2011, ยัง support ในปัจจุบัน
@@ -77,7 +77,7 @@ export const recapDiagram = `flowchart TD
 > - `Deprecation` header บน response ที่ใกล้หมดอายุ — consumer รู้ก่อน endpoint ปิด
 
 <Callout title="ความสม่ำเสมอเหนือกว่าความฉลาด">
-API ที่ดีที่สุดไม่ใช่ API ที่ฉลาดที่สุด แต่เป็น API ที่คาดเดาได้มากที่สุด ใช้แนวปฏิบัติเหล่านี้อย่างสม่ำเสมอ แล้วนักพัฒนาที่เคยใช้ endpoint หนึ่งของคุณก็จะเดาที่เหลือได้ ความสามารถในการคาดเดาได้นั้น มากกว่าฟีเจอร์ใด ๆ เพียงอย่างเดียว คือสิ่งที่ทำให้ API เป็นเรื่องน่ายินดีที่จะพัฒนาเทียบเคียงด้วย
+API ที่ดีที่สุดไม่ใช่ API ที่ฉลาดที่สุด แต่คือ API ที่คาดเดาได้มากที่สุด ถ้าใช้แนวปฏิบัติเหล่านี้อย่างสม่ำเสมอ developer ที่เคยใช้ endpoint เดียวของคุณจะเดาที่เหลือได้เอง และความคาดเดาได้นี่แหละ มากกว่าฟีเจอร์ใด ๆ ที่ทำให้การเขียน code คุยกับ API ของคุณเป็นเรื่องน่าสนุก
 </Callout>
 
 export const quiz = [

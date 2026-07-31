@@ -10,14 +10,14 @@ import Callout from '../../../../components/Callout.astro';
 import Quiz from '../../../../components/Quiz.tsx';
 import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
-สองคำที่ฟังคล้ายกันแต่ทำงานคนละหน้าที่ การแยกแยะมันให้ชัดเจนช่วยให้ทั้ง code และ status code ของคุณกระจ่างขึ้น
+สองคำนี้ฟังคล้ายกันแต่ทำงานคนละหน้าที่ แยกให้ชัดตั้งแต่ต้นแล้วทั้ง code และ status code ของคุณจะกระจ่างขึ้นเอง
 
 ## ความแตกต่าง
 
 - **Authentication (authn)** — *คุณคือใคร?* client พิสูจน์ตัวตนด้วย credential ได้แก่ API key, session cookie หรือ bearer token
 - **Authorization (authz)** — *คุณได้รับอนุญาตให้ทำอะไรได้บ้าง?* เมื่อรู้ตัวตนแล้ว server จะตัดสินว่าผู้เรียกใช้คนนี้ทำ action นี้กับ resource นี้ได้หรือไม่
 
-Authentication มาก่อน ส่วน authorization สร้างต่อยอดจากผลของมัน request หนึ่งอาจผ่าน authenticated (เรารู้ว่าคุณคือใคร) แต่ยัง unauthorized ได้ (คุณยังทำสิ่งนั้นไม่ได้อยู่ดี)
+Authentication มาก่อน แล้ว authorization จึงต่อยอดจากผลลัพธ์นั้น request หนึ่งอาจผ่าน authenticated แล้ว (เรารู้ว่าคุณคือใคร) แต่ยัง unauthorized อยู่ได้ (คุณยังทำสิ่งนั้นไม่ได้)
 
 ## status code ของแต่ละตัว
 
@@ -68,7 +68,7 @@ app.delete('/articles/:id', (c) => {
 | 401 Unauthorized | ยังไม่ได้ authenticate | ไม่มี token, token หมดอายุ |
 | 403 Forbidden | authenticate แล้วแต่ไม่มีสิทธิ์ | role ไม่พอ, ไม่ใช่เจ้าของ resource |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **Return 403 แทน 401 เมื่อไม่มี Token**
 อาการ:
@@ -82,7 +82,7 @@ app.delete('/articles/:id', (c) => {
 - `GET /orders` block คนที่ไม่มีสิทธิ์ แต่ `GET /orders/\{id\}` ไม่ check ว่า order นั้นเป็นของ user หรือไม่
 - ต้อง check ทั้ง action permission และ resource ownership
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **GitHub API:**
 > - 401 เมื่อ token ไม่ valid หรือหมดอายุ

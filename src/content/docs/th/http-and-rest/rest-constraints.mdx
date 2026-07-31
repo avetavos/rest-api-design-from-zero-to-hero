@@ -10,7 +10,7 @@ import Callout from '../../../../components/Callout.astro';
 import Quiz from '../../../../components/Quiz.tsx';
 import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
-REST ถูกนิยามด้วยชุดของ **ข้อจำกัด** เชิงสถาปัตยกรรม API ที่ทำตามข้อจำกัดเหล่านี้จะได้ scalability, evolvability และ cacheability มาแทบจะฟรี ๆ คุณไม่จำเป็นต้องทำตามทุกข้อจำกัดอย่างสมบูรณ์แบบ แต่การรู้จักมันจะบอกคุณได้ว่าคุณกำลังตัดมุมตรงไหนอยู่
+REST ถูกนิยามด้วยชุดของ **ข้อจำกัด** เชิงสถาปัตยกรรม API ที่ทำตามข้อจำกัดเหล่านี้จะได้ scalability, evolvability และ cacheability มาแทบจะฟรี ๆ คุณไม่จำเป็นต้องทำตามทุกข้อจำกัดอย่างสมบูรณ์แบบ แต่การรู้จักข้อจำกัดเหล่านี้จะบอกได้ว่าคุณกำลังตัดมุมตรงไหนอยู่
 
 ## หกข้อจำกัด
 
@@ -26,9 +26,9 @@ export const constraintsDiagram = `flowchart TD
 
 - **Client–Server** — แยก UI/ผู้ใช้บริการออกจากที่จัดเก็บข้อมูล ทั้งสองพัฒนาได้อย่างอิสระต่อกัน
 - **Stateless** — แต่ละ request พกพาทุกอย่างที่ server ต้องการไปด้วย ไม่มีการเก็บ session ต่อ client ไว้ระหว่างการเรียก นี่คือสิ่งที่ทำให้คุณเพิ่ม server เข้าหลัง load balancer ได้อย่างอิสระ
-- **Cacheable** — response ต้องบอกว่ามันสามารถถูก cache ได้หรือไม่ (และนานเท่าไร) เพื่อให้ client และตัวกลางต่าง ๆ นำมันกลับมาใช้ซ้ำได้
+- **Cacheable** — response ต้องบอกว่านำไป cache ได้หรือไม่ (และนานแค่ไหน) เพื่อให้ client และตัวกลางต่าง ๆ หยิบไปใช้ซ้ำได้
 - **Uniform Interface** — resource ถูกระบุด้วย URI และจัดการผ่านชุด method และ representation มาตรฐาน นี่คือข้อจำกัดที่ทำให้ API รู้สึก "RESTful"
-- **Layered System** — client ไม่สามารถบอกได้ว่ามันกำลังคุยกับ origin server หรือกับตัวกลาง (proxy, gateway, cache)
+- **Layered System** — client แยกไม่ออกว่ากำลังคุยกับ origin server หรือกับตัวกลาง (proxy, gateway, cache)
 - **Code on Demand** *(ทางเลือก)* — server อาจส่ง code ที่รันได้ไปเพื่อขยายความสามารถของ client แต่แทบไม่ค่อยใช้กับ API
 
 ## ทำไม statelessness ถึงคุ้มค่า
@@ -43,7 +43,7 @@ export const constraintsDiagram = `flowchart TD
 | Layered System | CDN, gateway, load balancer ได้โดยไม่เปลี่ยน client | เพิ่ม latency ต่อ hop |
 | Client-Server | frontend/backend พัฒนาอิสระ | ต้องตกลง contract ก่อน |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **Session State ฝั่ง Server**
 อาการ:
@@ -57,7 +57,7 @@ export const constraintsDiagram = `flowchart TD
 - POST ที่ side effect ไม่ชัด — cache ไม่ได้, ไม่ idempotent
 - ใช้ GET + query parameter สำหรับ search/filter
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **AWS API:**
 > - stateless authentication — ทุก request มี signature ของตัวเอง (SigV4)
@@ -68,7 +68,7 @@ export const constraintsDiagram = `flowchart TD
 > - ทำงานกับ CDN และ reverse proxy ได้โดยไม่เปลี่ยน client
 
 <Callout title="Uniform interface + stateless = หัวใจของ REST">
-ถ้าคุณจะจำข้อจำกัดเพียงสองข้อ จงจำสองข้อนี้ uniform interface (URI + method มาตรฐาน + ข้อความที่อธิบายตัวเองได้) คือสิ่งที่ทำให้ API ของคุณคาดเดาได้ ส่วน statelessness คือสิ่งที่ทำให้มัน scale ได้ ข้อถกเถียงส่วนใหญ่ที่ว่า "นี่เป็น RESTful ไหม?" ล้วนวนกลับมาที่สองข้อนี้
+ถ้าคุณจะจำข้อจำกัดเพียงสองข้อ จงจำสองข้อนี้ uniform interface (URI + method มาตรฐาน + ข้อความที่อธิบายตัวเองได้) คือสิ่งที่ทำให้ API ของคุณคาดเดาได้ ส่วน statelessness คือสิ่งที่ทำให้ scale ได้ ข้อถกเถียงส่วนใหญ่ที่ว่า "นี่เป็น RESTful ไหม?" ล้วนวนกลับมาที่สองข้อนี้
 </Callout>
 
 export const quiz = [

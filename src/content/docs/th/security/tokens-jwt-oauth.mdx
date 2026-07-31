@@ -19,7 +19,7 @@ API ส่วนใหญ่ทำ authenticate ด้วย **bearer token**: c
 Authorization: Bearer <token>
 ```
 
-"Bearer" หมายความว่าใครก็ตามที่ถือ token ไว้สามารถใช้มันได้ — ดังนั้น token จึงต้องเดินทางผ่าน HTTPS, มีอายุสั้น และเพิกถอนได้
+"Bearer" แปลว่าใครถือ token ไว้ก็ใช้ได้ ดังนั้น token ต้องวิ่งผ่าน HTTPS เท่านั้น มีอายุสั้น และเพิกถอนได้
 
 ## JWT คืออะไร
 
@@ -36,7 +36,7 @@ console.log('expires:', new Date(claims.exp * 1000).toISOString());`;
 
 <NodeRunner client:visible code={jwtCode} />
 
-ใครก็ตามสามารถ *อ่าน* payload ของ JWT ได้ — มันไม่ได้ถูกเข้ารหัส ความเชื่อถือมาจากการ **verify signature** ด้วยกุญแจของ issuer เท่านั้น และการตรวจ `exp` (ยังไม่หมดอายุ), `aud` (ออกมาเพื่อ API ของคุณ) และ `iss` (มาจาก issuer ที่เชื่อถือได้) อย่าเชื่อ claims ที่คุณยังไม่ได้ verify เด็ดขาด
+ใครก็ *อ่าน* payload ของ JWT ได้ เพราะไม่ได้เข้ารหัสไว้ ความเชื่อถือมาจากการ **verify signature** ด้วยกุญแจของ issuer เท่านั้น และการตรวจ `exp` (ยังไม่หมดอายุ), `aud` (ออกมาเพื่อ API ของคุณ) และ `iss` (มาจาก issuer ที่เชื่อถือได้) อย่าเชื่อ claims ที่คุณยังไม่ได้ verify เด็ดขาด
 
 ## OAuth2 authorization-code flow
 
@@ -67,7 +67,7 @@ export const oauthDiagram = `sequenceDiagram
 | API Key | ง่าย, long-lived | ไม่มี expiry, revoke ยาก | Server-to-server, developer API |
 | OAuth Access Token | delegated auth, scope จำกัด | setup ซับซ้อน | Third-party integration |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **เก็บ JWT ใน localStorage**
 อาการ:
@@ -81,7 +81,7 @@ export const oauthDiagram = `sequenceDiagram
 - token ที่ถูกขโมย valid ตลอดไป
 - ตั้ง `expiresIn: '1h'` และมี refresh token mechanism
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **GitHub API:**
 > - Personal Access Token (opaque) — revoke ได้ทันทีจาก settings
@@ -92,7 +92,7 @@ export const oauthDiagram = `sequenceDiagram
 > - Restricted Key ที่จำกัด permission เฉพาะที่ต้องการ
 
 <Callout title="ต้อง verify อย่าแค่ decode">
-payload ของ JWT ใครก็อ่านได้ — การ decode มันไม่ได้พิสูจน์อะไรเลย จง verify signature เทียบกับกุญแจของ issuer เสมอ และ validate `exp`, `aud` และ `iss` ก่อนจะเชื่อ claim แม้แต่ตัวเดียว ให้ access token มีอายุสั้น และใช้ refresh token (หรือ re-auth) เพื่อต่ออายุมัน
+payload ของ JWT ใครก็อ่านได้ การ decode ออกมาดูจึงไม่ได้พิสูจน์อะไรเลย ต้อง verify signature เทียบกับกุญแจของ issuer เสมอ และ validate `exp`, `aud` และ `iss` ก่อนจะเชื่อ claim แม้แต่ตัวเดียว ให้ access token มีอายุสั้น แล้วใช้ refresh token (หรือให้ผู้ใช้ re-auth) เพื่อต่ออายุ
 </Callout>
 
 export const quiz = [
@@ -107,7 +107,7 @@ export const quiz = [
     answer: 1,
   },
   {
-    q: 'ทำไมการอ่าน payload ของ JWT จึงยังไม่พอที่จะเชื่อถือมัน?',
+    q: 'ทำไมแค่อ่าน payload ของ JWT จึงยังไม่พอที่จะเชื่อถือ token นั้น?',
     options: [
       'payload ถูกเข้ารหัสไว้',
       'payload เป็นแค่ base64 — ความเชื่อถือต้องอาศัยการ verify signature และ claims',

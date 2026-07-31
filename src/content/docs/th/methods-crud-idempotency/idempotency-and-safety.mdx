@@ -1,6 +1,6 @@
 ---
 title: Idempotency & Safety
-description: 'สองคุณสมบัติที่ทำให้คำขอ HTTP retry ได้อย่างปลอดภัย — และทำไมมันถึงสำคัญ'
+description: 'สองคุณสมบัติที่ทำให้ HTTP request retry ได้อย่างปลอดภัย — และทำไมจึงสำคัญ'
 sidebar:
   order: 4
 ---
@@ -11,12 +11,12 @@ import Callout from '../../../../components/Callout.astro';
 import Quiz from '../../../../components/Quiz.tsx';
 import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
-มีสองคุณสมบัติที่ตัดสินว่าคำขอหนึ่งสามารถทำซ้ำได้อย่างปลอดภัยหรือไม่ ทั้งสองสับสนกันได้ง่าย เรามาตรึงมันให้ชัดเจนกันเถอะ
+มีสองคุณสมบัติที่ตัดสินว่า request หนึ่งจะทำซ้ำได้อย่างปลอดภัยหรือไม่ สองตัวนี้สับสนกันง่ายมาก เรามาแยกให้ชัดกันก่อน
 
 ## Safe กับ idempotent
 
-- **Safe** — คำขอไม่มีผลที่สังเกตได้ต่อ state ของ server มันทำได้แค่อ่าน `GET`, `HEAD` และ `OPTIONS` เป็น safe
-- **Idempotent** — การส่งคำขอ *N* ครั้งทำให้ server อยู่ใน state เดียวกับการส่งครั้งเดียว `GET`, `HEAD`, `OPTIONS`, `PUT` และ `DELETE` เป็น idempotent ส่วน `POST` และ (โดยทั่วไป) `PATCH` ไม่เป็น
+- **Safe** — request ไม่มีผลที่สังเกตได้ต่อ state ของ server ทำได้แค่อ่านอย่างเดียว ตัวอย่างเช่น `GET`, `HEAD` และ `OPTIONS`
+- **Idempotent** — ส่ง request เดิม *N* ครั้งแล้ว server ลงเอยที่ state เดียวกับส่งครั้งเดียว `GET`, `HEAD`, `OPTIONS`, `PUT` และ `DELETE` เป็น idempotent ส่วน `POST` และ (โดยทั่วไป) `PATCH` ไม่เป็น
 
 ทุก method ที่ safe ล้วน idempotent แต่ไม่ใช่ทุก method ที่ idempotent จะ safe — `DELETE` เปลี่ยนแปลง state แต่ก็ยัง idempotent
 
@@ -28,9 +28,9 @@ export const matrixDiagram = `flowchart TD
 
 <Mermaid code={matrixDiagram} title="ตำแหน่งของแต่ละ method บนตาราง safe/idempotent" />
 
-## ทำไมมันถึงสำคัญ: การ retry
+## ทำไมสองเรื่องนี้ถึงสำคัญ: การ retry
 
-เครือข่ายทำ response หายได้ เมื่อ client (หรือ proxy หรือ load balancer) ไม่ได้รับการตอบกลับ มันอาจ retry ถ้า method เป็น idempotent การ retry ก็ไม่มีอันตราย แต่ถ้าไม่ใช่ — อย่าง `POST` ที่ตัดเงินจากบัตร — การ retry แบบมืดบอดอาจตัดเงินซ้ำสองครั้ง
+เครือข่ายทำ response หายได้ เมื่อ client (หรือ proxy หรือ load balancer) ไม่ได้รับการตอบกลับ ก็มีสิทธิ์ยิงซ้ำ ถ้า method เป็น idempotent การ retry ก็ไม่มีอันตราย แต่ถ้าไม่ใช่ — อย่าง `POST` ที่ตัดเงินจากบัตร — การ retry แบบมืดบอดอาจตัดเงินซ้ำสองครั้ง
 
 export const retryCode = `// A PUT is idempotent: applying it twice == applying it once.
 const store = { 42: { id: 42, status: 'draft' } };
@@ -48,7 +48,7 @@ console.log('final state:', store[42]);   // same as one call`;
 
 ## ทำให้ POST retry ได้อย่างปลอดภัย
 
-เมื่อคุณจำเป็นจริง ๆ ที่จะให้การสร้างที่ไม่ idempotent ทนต่อการ retry ได้ ให้ใช้ **idempotency key**: client ส่ง header `Idempotency-Key` ที่ไม่ซ้ำกันมา และ server จดจำผลลัพธ์ของ key นั้นไว้ เพื่อให้การส่งซ้ำคืนผลลัพธ์เดิมกลับไปแทนที่จะทำงานสองครั้ง เราจะลงรายละเอียดกลไกของมันใน [Versioning & Caching](/rest-api/th/versioning-caching/conditional-and-idempotency-keys/)
+เมื่อคุณจำเป็นจริง ๆ ที่จะให้การสร้างที่ไม่ idempotent ทนต่อการ retry ได้ ให้ใช้ **idempotency key**: client ส่ง header `Idempotency-Key` ที่ไม่ซ้ำกันมา และ server จดจำผลลัพธ์ของ key นั้นไว้ เพื่อให้การส่งซ้ำคืนผลลัพธ์เดิมกลับไปแทนที่จะทำงานสองครั้ง รายละเอียดของกลไกนี้อยู่ใน [Versioning & Caching](/rest-api/th/versioning-caching/conditional-and-idempotency-keys/)
 
 | Property | ความหมาย | Methods |
 |---|---|---|
@@ -56,7 +56,7 @@ console.log('final state:', store[42]);   // same as one call`;
 | Idempotent | ทำซ้ำกี่ครั้งผลเดิม | GET, PUT, DELETE (+ safe methods) |
 | Neither | อาจเปลี่ยน state และผลต่างกัน | POST, PATCH |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **POST ที่ไม่ Idempotent โดยไม่มี Guard**
 อาการ:
@@ -70,7 +70,7 @@ console.log('final state:', store[42]);   // same as one call`;
 - client retry ทำให้ balance เพิ่มผิด
 - ใช้ absolute value: `{ "balance": 1100 }` แทน increment
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **Stripe API:**
 > - `Idempotency-Key` header สำหรับ POST /charges
@@ -82,7 +82,7 @@ console.log('final state:', store[42]);   // same as one call`;
 > - ทำให้ retry ปลอดภัยสำหรับ large file upload
 
 <Callout title="ออกแบบเผื่อการ retry ที่คุณมองไม่เห็น">
-จงสมมติว่าทุกคำขอที่ไม่ safe อาจมาถึงมากกว่าหนึ่งครั้ง ทำให้การเขียน (write) เป็น idempotent ในจุดที่คุณทำได้ (เลือก `PUT` ด้วย ID ที่ client เป็นผู้กำหนด) และปกป้องจุดที่คุณทำไม่ได้ด้วย idempotency key ความถูกต้องภายใต้การ retry คือการเลือกออกแบบ ไม่ใช่โชค
+ให้ตั้งสมมติฐานไว้เลยว่าทุก request ที่ไม่ safe อาจวิ่งมาถึงมากกว่าหนึ่งครั้ง จุดไหนทำ write ให้เป็น idempotent ได้ก็ทำ (เลือก `PUT` ด้วย ID ที่ client เป็นคนกำหนด) ส่วนจุดที่ทำไม่ได้ก็ป้องกันด้วย idempotency key ความถูกต้องภายใต้การ retry มาจากการออกแบบ ไม่ใช่โชค
 </Callout>
 
 export const quiz = [
@@ -99,10 +99,10 @@ export const quiz = [
   {
     q: 'ทำไมการ retry POST ที่ไม่ idempotent จึงมีความเสี่ยง?',
     options: [
-      'มันช้ากว่า',
-      'มันอาจทำการกระทำสองครั้ง (เช่น ตัดเงินซ้ำ)',
-      'มันแคชไม่ได้',
-      'มันคืน status code ที่ผิด',
+      'ทำงานช้ากว่า',
+      'อาจทำงานซ้ำสองรอบ (เช่น ตัดเงินซ้ำ)',
+      'cache ไม่ได้',
+      'คืน status code ผิด',
     ],
     answer: 1,
   },

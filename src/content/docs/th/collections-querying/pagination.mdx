@@ -21,7 +21,7 @@ client ขอหน้าตามตำแหน่ง: `?page=3&limit=20` (ห
 GET /articles?page=2&limit=20
 ```
 
-จุดอ่อนของมันคือ **offset ที่ลึกจะช้า** (ฐานข้อมูลต้องข้ามทุกแถวที่อยู่ก่อนหน้า) และ **การ insert จะทำให้ window เลื่อน** — ถ้ามีแถวถูกเพิ่มเข้ามาระหว่างที่คุณกำลังเปิดหน้า คุณอาจเห็นข้อมูลซ้ำหรือข้ามรายการไป
+จุดอ่อนมีสองข้อ: **offset ที่ลึกจะช้า** (database ต้องข้ามทุกแถวที่อยู่ก่อนหน้า) และ **การ insert จะทำให้ window เลื่อน** — ถ้ามีแถวเพิ่มเข้ามาระหว่างที่คุณกำลังเปิดหน้าอยู่ คุณอาจเห็นข้อมูลซ้ำหรือข้ามรายการไป
 
 ## Cursor pagination
 
@@ -34,7 +34,7 @@ export const cursorDiagram = `flowchart LR
 
 <Mermaid code={cursorDiagram} title="แต่ละหน้าจะส่ง cursor สำหรับหน้าถัดไปกลับมาด้วย" />
 
-cursor มีความเสถียรเมื่อมีการ insert และเร็วไม่ว่าจะอยู่ลึกแค่ไหน แต่คุณจะกระโดดไปหน้าใด ๆ ตามใจชอบไม่ได้ และการนับจำนวนรวมที่แม่นยำก็ทำได้ยากกว่า มันเป็นค่าเริ่มต้นที่ดีกว่าสำหรับ collection ขนาดใหญ่หรือที่เปลี่ยนแปลงบ่อย (feed, log, search)
+cursor มีความเสถียรเมื่อมีการ insert และเร็วไม่ว่าจะอยู่ลึกแค่ไหน แต่คุณจะกระโดดไปหน้าไหนก็ได้ตามใจไม่ได้ และการนับจำนวนรวมให้แม่นยำก็ทำได้ยากกว่า ถึงอย่างนั้นก็ยังเป็นค่าเริ่มต้นที่ดีกว่าสำหรับ collection ขนาดใหญ่หรือเปลี่ยนแปลงบ่อย (feed, log, search)
 
 ## การ slice และ envelope
 
@@ -64,7 +64,7 @@ console.log(JSON.stringify(paginate(all, 2, 20), null, 2));`;
 | Cursor (`?after=cursor123`) | stable, performance ดีกับ large dataset | ไม่รู้ total, ข้ามหน้าไม่ได้ | Feed, infinite scroll |
 | Keyset (`?after_id=42`) | เร็ว, stable | ต้อง unique sortable key | Large sorted collection |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **Offset Pagination สำหรับ Real-time Feed**
 อาการ:
@@ -78,7 +78,7 @@ console.log(JSON.stringify(paginate(all, 2, 20), null, 2));`;
 - database และ memory ระเบิดเมื่อ user มีล้านคน
 - ตั้ง default limit (`limit=20`) และ max limit (`limit=100`) เสมอ
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **GitHub API:**
 > - cursor pagination ผ่าน `Link` header: `<https://api.github.com/repos?page=2>; rel="next"`
@@ -90,17 +90,17 @@ console.log(JSON.stringify(paginate(all, 2, 20), null, 2));`;
 > - cursor-based เพราะ charge เพิ่มตลอดเวลา
 
 <Callout title="ใช้ cursor เป็นค่าเริ่มต้นสำหรับข้อมูลใหญ่และเปลี่ยนแปลงบ่อย">
-Offset pagination ใช้ได้ดีกับ list ขนาดเล็กที่เสถียร และตาราง admin ที่การกระโดดไปหน้า 50 มีความสำคัญ ส่วน feed, log และอะไรก็ตามที่โตขึ้นในขณะที่ผู้ใช้กำลังเลื่อนดู ควรเลือก cursor pagination: มันยังคงถูกต้องเมื่อมีการ insert และเร็วไม่ว่าจะลึกแค่ไหน
+Offset pagination ใช้ได้ดีกับ list ขนาดเล็กที่เสถียร และตาราง admin ที่การกระโดดไปหน้า 50 มีความสำคัญ ส่วน feed, log และอะไรก็ตามที่โตขึ้นระหว่างที่ user กำลังเลื่อนดู ให้เลือก cursor pagination เพราะยังคงถูกต้องแม้มีการ insert และเร็วไม่ว่าจะลึกแค่ไหน
 </Callout>
 
 export const quiz = [
   {
     q: 'จุดอ่อนหลักของ offset pagination บนข้อมูลขนาดใหญ่ที่เปลี่ยนแปลงบ่อยคืออะไร?',
     options: [
-      'มันคืน JSON ไม่ได้',
+      'คืน JSON ไม่ได้',
       'offset ที่ลึกจะช้า และการ insert อาจทำให้เกิดการข้าม/ซ้ำ',
-      'มันต้องมีการ authentication',
-      'มันแสดงหน้าแรกไม่ได้',
+      'ต้องผ่าน authentication ก่อน',
+      'แสดงหน้าแรกไม่ได้',
     ],
     answer: 1,
   },
@@ -110,7 +110,7 @@ export const quiz = [
       'หมายเลขหน้า',
       'marker แบบ opaque ที่บอกตำแหน่งที่หน้าก่อนหน้าจบลง',
       'จำนวนแถวรวมทั้งหมด',
-      'ฟิลด์สำหรับ sort',
+      'field ที่ใช้ sort',
     ],
     answer: 1,
   },

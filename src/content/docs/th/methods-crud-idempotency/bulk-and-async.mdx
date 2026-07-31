@@ -11,7 +11,7 @@ import Callout from '../../../../components/Callout.astro';
 import Quiz from '../../../../components/Quiz.tsx';
 import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
-API จริงบางครั้งจำเป็นต้องเปลี่ยนแปลง resource จำนวนมากในคราวเดียว หรือเริ่มงานที่ใช้เวลานานกว่าที่คำขอหนึ่งควรรอ ทั้งสองกรณีนี้ยืดโมเดลแบบหนึ่งคำขอต่อหนึ่ง resource ออกไป จึงต้องการการออกแบบอย่างตั้งใจ
+API ของจริงบางครั้งต้องแก้ resource ทีละมาก ๆ ในคราวเดียว หรือเริ่มงานที่กินเวลานานเกินกว่า request หนึ่งตัวจะรอไหว ทั้งสองกรณียืดโมเดลหนึ่ง request ต่อหนึ่ง resource ออกไป จึงต้องออกแบบอย่างตั้งใจ
 
 ## การทำงานแบบ Bulk
 
@@ -44,7 +44,7 @@ console.log(ok + '/' + results.length + ' succeeded');`;
 
 ## งานที่ใช้เวลานาน (async)
 
-เมื่อ operation ไม่สามารถทำเสร็จภายในคำขอหนึ่งได้ (การ export ขนาดใหญ่ การ transcode วิดีโอ) อย่าค้างการเชื่อมต่อเอาไว้ ให้รับงานนั้นไว้แล้วคืน `202 Accepted` พร้อมลิงก์ไปยัง **status resource** ที่ client สามารถ poll ได้:
+เมื่อ operation ทำไม่จบภายใน request เดียว (export ก้อนใหญ่ transcode วิดีโอ) อย่าค้าง connection ไว้ ให้รับงานเข้าคิวแล้วคืน `202 Accepted` พร้อม link ไปยัง **status resource** ที่ client poll ได้:
 
 export const asyncDiagram = `sequenceDiagram
   participant C as Client
@@ -58,7 +58,7 @@ export const asyncDiagram = `sequenceDiagram
 
 <Mermaid code={asyncDiagram} title="202 Accepted พร้อม status resource ที่ poll ได้" />
 
-ตัวงานเองกลายเป็น resource: `POST /exports` สร้างมันขึ้นมา, `GET /exports/\{id\}` รายงานความคืบหน้า และ response สุดท้ายลิงก์ไปยังผลลัพธ์ที่ผลิตออกมา
+ตัวงานเองกลายเป็น resource: `POST /exports` สร้างงานขึ้นมา `GET /exports/\{id\}` รายงานความคืบหน้า และ response สุดท้ายจะ link ไปยังผลลัพธ์ที่ได้
 
 | Pattern | ดี | ข้อควรระวัง |
 |---|---|---|
@@ -66,7 +66,7 @@ export const asyncDiagram = `sequenceDiagram
 | Async job | ไม่ block client สำหรับงานนาน | client ต้องมี polling หรือ webhook logic |
 | 202 Accepted | บอก client ว่า processing | ต้อง track job status ด้วย |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **Bulk API ที่ Fail-all หรือ Succeed-all**
 อาการ:
@@ -80,7 +80,7 @@ export const asyncDiagram = `sequenceDiagram
 - client ไม่รู้ว่า job เสร็จหรือยัง, fail หรือไม่
 - return `{ "jobId": "...", "statusUrl": "/jobs/\{id\}" }` เสมอ
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **GitHub API:**
 > - bulk operation ใน GraphQL API — รวม mutation หลายอย่างในครั้งเดียว
@@ -91,7 +91,7 @@ export const asyncDiagram = `sequenceDiagram
 > - async payout — 202 Accepted, status ตาม GET /payouts/\{id\}
 
 <Callout title="ทำให้งานกลายเป็น resource">
-ทั้งสองแพตเทิร์นพึ่งพาแนวคิดเดียวกัน: เมื่อคำขอเดียวไม่สามารถสื่อ operation ได้ ให้จำลอง operation นั้นเป็น resource batch คืนผลลัพธ์รายตัว ส่วน async job กลายเป็นสิ่งที่คุณสร้างขึ้นแล้ว poll ตามทีหลัง คุณยังคงความเป็น RESTful ได้ด้วยการเปลี่ยนคำกริยา (verb) ให้เป็นคำนาม (noun)
+สอง pattern นี้ตั้งอยู่บนแนวคิดเดียวกัน คือเมื่อ request เดียวสื่อ operation ไม่ได้ ก็จำลอง operation นั้นให้เป็น resource ฝั่ง batch คืนผลลัพธ์รายตัว ส่วน async job กลายเป็นของที่คุณสร้างขึ้นแล้ว poll ทีหลัง แค่เปลี่ยนคำกริยา (verb) ให้เป็นคำนาม (noun) คุณก็ยังคงความเป็น RESTful ไว้ได้
 </Callout>
 
 export const quiz = [
@@ -113,10 +113,10 @@ export const quiz = [
   {
     q: 'client ติดตามงาน async อย่างไรหลังจากได้รับ 202?',
     options: [
-      'มันค้างการเชื่อมต่อไว้จนกว่าจะเสร็จ',
-      'มัน poll status resource ที่ลิงก์ผ่าน Location',
-      'มันส่งคำขอเดิมซ้ำใหม่',
-      'มันรออีเมล',
+      'ค้าง connection ไว้จนกว่างานจะเสร็จ',
+      'poll status resource ที่ link มาผ่าน Location',
+      'ส่ง request เดิมซ้ำอีกรอบ',
+      'นั่งรออีเมลแจ้งเตือน',
     ],
     answer: 1,
   },

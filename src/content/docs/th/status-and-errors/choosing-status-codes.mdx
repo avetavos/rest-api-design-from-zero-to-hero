@@ -31,7 +31,7 @@ status code เพียงไม่กี่ตัวครอบคลุม�
 - **200 vs 201 vs 204** — ส่ง body กลับ → `200`; สร้าง resource → `201`; ไม่มีอะไรจะบอก → `204`
 - **400 vs 422** — server แม้แต่ parse request ได้หรือไม่? parse ไม่ได้ → `400`; parse ได้ดีแต่ค่าไม่ถูกต้อง → `422`
 - **401 vs 403** — เรารู้หรือไม่ว่าคุณเป็นใคร? ยังไม่ได้ authenticate → `401`; authenticate แล้วแต่ไม่ได้รับอนุญาต → `403`
-- **404 vs 409** — resource ไม่มีอยู่ → `404`; มันมีอยู่แต่ request ของคุณขัดแย้งกับสถานะของมัน → `409`
+- **404 vs 409** — ไม่มี resource นั้นอยู่ → `404`; มีอยู่แต่ request ขัดแย้งกับสถานะปัจจุบันของ resource → `409`
 
 ## Code ใน API ที่กำลังทำงาน
 
@@ -57,7 +57,7 @@ app.post('/items', async (c) => {
 | 4xx | Client error | 400 Bad Request, 401, 403, 404, 409, 422, 429 |
 | 5xx | Server error | 500 Internal, 503 Service Unavailable |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **Return 200 พร้อม Error ใน Body**
 อาการ:
@@ -72,7 +72,7 @@ app.post('/items', async (c) => {
 - client ไม่รู้ว่า request ของตัวเองผิด หรือ server มีปัญหา
 - ต้อง catch validation error ก่อน → return 400 หรือ 422
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **GitHub API:**
 > - 422 Unprocessable Entity สำหรับ validation error — field ผิด rule

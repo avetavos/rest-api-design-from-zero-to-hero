@@ -14,7 +14,7 @@ Validation error เป็น error ที่ API ส่งกลับบ่อ
 
 ## Status: 422 (หรือ 400)
 
-เมื่อ request parse ได้ถูกต้องแต่ค่าไม่ผ่านกฎของคุณ ให้ตอบ `422 Unprocessable Entity` บางทีมใช้ `400` สำหรับ client error ทั้งหมด; ทั้งสองอย่างมีเหตุผลรองรับได้ แต่ต้องสม่ำเสมอ เก็บ `400` ไว้สำหรับ request ที่คุณแม้แต่ parse ไม่ได้
+เมื่อ request parse ได้ถูกต้องแต่ค่าไม่ผ่านกฎของคุณ ให้ตอบ `422 Unprocessable Entity` บางทีมใช้ `400` กับ client error ทั้งหมด ทั้งสองแนวมีเหตุผลรองรับ ขอแค่ใช้ให้สม่ำเสมอ และเก็บ `400` ไว้กับ request ที่ parse ไม่ออกตั้งแต่แรก
 
 ## error body ระดับ field
 
@@ -64,14 +64,14 @@ if (errors.length > 0) {
 
 ในโปรเจกต์ TypeScript schema library (เช่น zod) ให้สิ่งนี้แก่คุณฟรี: parse input เทียบกับ schema และเมื่อล้มเหลวก็ map issue เหล่านั้นไปยัง array `errors` ของคุณ
 
-| Benefits (Validation Errors) | Trade-offs |
+| ข้อดี (Validation Errors) | ข้อแลกเปลี่ยน |
 |---|---|
 | client รู้ว่า field ไหนผิดและทำไม — UX ดีขึ้น | validation logic ซ้ำกันระหว่าง client และ server |
 | ป้องกัน invalid data เข้า database | verbose error response สำหรับ form ที่มีหลาย field |
 | 400/422 ที่ชัดเจนทำให้ retry logic ถูกต้อง | validation rule บาง rule ต้อง query database (email unique) |
 | machine-readable error ทำให้ client แสดง inline error ได้ | |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **Return Error เดียวสำหรับหลาย Field ที่ผิด**
 อาการ:
@@ -85,7 +85,7 @@ if (errors.length > 0) {
 - client ไม่รู้ว่าควรแสดง field error หรือ general error
 - แยก: 422 สำหรับ validation, 409 หรือ custom code สำหรับ business rule
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **Stripe API:**
 > - `{ "error": { "type": "invalid_request_error", "param": "amount", "message": "Amount must be greater than 0" } }`
@@ -108,10 +108,10 @@ export const quiz = [
   {
     q: 'ทำไมจึงส่ง validation error ทั้งหมดกลับในคราวเดียวแทนที่จะส่งแค่ตัวแรก?',
     options: [
-      'มันเร็วกว่าสำหรับ server',
-      'มันหลีกเลี่ยงลูป submit-fix-submit ที่น่าหงุดหงิดสำหรับผู้ใช้',
+      'เร็วกว่าสำหรับฝั่ง server',
+      'ช่วยให้ user ไม่ต้องวนลูป submit-fix-submit ที่น่าหงุดหงิด',
       'HTTP บังคับให้ทำ',
-      'มันลด status code',
+      'ช่วยลดจำนวน status code',
     ],
     answer: 1,
   },

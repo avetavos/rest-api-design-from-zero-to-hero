@@ -1,6 +1,6 @@
 ---
 title: CORS
-description: 'เบราว์เซอร์ควบคุมการเรียก API ข้าม origin อย่างไร และจะตั้งค่ามันให้ถูกต้องได้อย่างไร'
+description: 'browser ควบคุมการเรียก API ข้าม origin อย่างไร และจะตั้งค่าให้ถูกต้องได้อย่างไร'
 sidebar:
   order: 4
 ---
@@ -11,15 +11,15 @@ import Callout from '../../../../components/Callout.astro';
 import Quiz from '../../../../components/Quiz.tsx';
 import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
-ถ้า API ของคุณถูกเรียกจาก JavaScript บนเบราว์เซอร์ที่อยู่คนละ origin คุณจะได้เจอกับ CORS มันเป็นหนึ่งในส่วนที่ถูกเข้าใจผิดมากที่สุดของ web API ดังนั้นเรามาทำความเข้าใจให้ชัดเจนกันว่ามันคืออะไรและไม่ใช่อะไร
+ถ้ามี JavaScript บน browser ที่อยู่คนละ origin เรียก API ของคุณ คุณจะได้เจอกับ CORS แน่นอน นี่คือเรื่องที่คนเข้าใจผิดกันมากที่สุดเรื่องหนึ่งของ web API เรามาทำความเข้าใจให้ชัดกันว่า CORS คืออะไร และไม่ใช่อะไร
 
 ## CORS ทำหน้าที่อะไรกันแน่
 
-same-origin policy ของเบราว์เซอร์จะบล็อกหน้าเว็บบน `https://app.example.com` ไม่ให้อ่าน response จาก `https://api.example.com` เว้นแต่ API จะอนุญาตอย่างชัดเจนด้วย header **Cross-Origin Resource Sharing** CORS ถูกบังคับใช้ **โดยเบราว์เซอร์** ในนามของ user — มันไม่ใช่การควบคุมการเข้าถึงที่ฝั่ง server
+same-origin policy ของ browser จะบล็อกหน้าเว็บบน `https://app.example.com` ไม่ให้อ่าน response จาก `https://api.example.com` เว้นแต่ API จะอนุญาตอย่างชัดเจนผ่าน header ของ **Cross-Origin Resource Sharing** ตัวที่บังคับใช้ CORS คือ **browser** ซึ่งทำแทน user ไม่ใช่การควบคุมการเข้าถึงฝั่ง server
 
 ## simple request และ preflight
 
-สำหรับ request แบบ "non-simple" (ส่วนใหญ่คือ JSON `POST`/`PUT`/`DELETE` และ header ที่กำหนดเอง) เบราว์เซอร์จะส่ง request **preflight** แบบ `OPTIONS` ไปก่อนเพื่อขออนุญาต:
+สำหรับ request แบบ "non-simple" (ส่วนใหญ่คือ JSON `POST`/`PUT`/`DELETE` และ header ที่กำหนดเอง) browser จะส่ง request **preflight** แบบ `OPTIONS` ไปก่อนเพื่อขออนุญาต:
 
 export const preflightDiagram = `sequenceDiagram
   participant B as Browser
@@ -29,11 +29,11 @@ export const preflightDiagram = `sequenceDiagram
   B->>S: POST /articles (actual request)
   S-->>B: 201 Created + Access-Control-Allow-Origin`;
 
-<Mermaid code={preflightDiagram} title="เบราว์เซอร์ตรวจสอบสิทธิ์ด้วย OPTIONS ก่อนจะส่ง request จริง" />
+<Mermaid code={preflightDiagram} title="browser ตรวจสอบสิทธิ์ด้วย OPTIONS ก่อนจะส่ง request จริง" />
 
 header ใน response ที่สำคัญ: `Access-Control-Allow-Origin` (origin ใดบ้างที่อ่าน response ได้), `-Allow-Methods`, `-Allow-Headers` และ `-Allow-Credentials` (อนุญาตให้ส่ง cookie/credentials หรือไม่)
 
-## การตั้งค่ามัน
+## การตั้งค่า CORS
 
 export const honoCode = `const ALLOWED = new Set(['https://app.example.com']);
 
@@ -52,7 +52,7 @@ app.get('/articles', (c) => c.json([{ id: 1 }]));`;
 
 <NodeRunner stackblitz client:visible code={honoCode} />
 
-จงหลีกเลี่ยงความผิดพลาดคลาสสิกของการสะท้อน origin ใดก็ได้ (`Access-Control-Allow-Origin: *`) **ควบคู่กับ** `Allow-Credentials: true` — การใช้ร่วมกันแบบนี้เป็นสิ่งต้องห้าม และที่สำคัญกว่านั้นคือมันจะเปิดเผย response ที่ผ่าน authenticated ให้กับเว็บไซต์ใดก็ได้
+จงหลีกเลี่ยงความผิดพลาดคลาสสิกของการสะท้อน origin ใดก็ได้ (`Access-Control-Allow-Origin: *`) **ควบคู่กับ** `Allow-Credentials: true` — spec ห้ามใช้คู่กันอยู่แล้ว และที่สำคัญกว่านั้นคือเท่ากับเปิดเผย response ที่ผ่าน authentication ให้เว็บไซต์ใดก็ได้
 
 | CORS Header | ความหมาย | ตัวอย่าง |
 |---|---|---|
@@ -61,7 +61,7 @@ app.get('/articles', (c) => c.json([{ id: 1 }]));`;
 | `Access-Control-Allow-Headers` | header ที่ client ส่งได้ | `Content-Type, Authorization` |
 | `Access-Control-Max-Age` | cache preflight นานแค่ไหน | `86400` (1 วัน) |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **`Access-Control-Allow-Origin: *` กับ Credentials**
 อาการ:
@@ -75,7 +75,7 @@ app.get('/articles', (c) => c.json([{ id: 1 }]));`;
 - เพิ่ม latency ทุก request
 - ตั้ง `Access-Control-Max-Age: 86400` เพื่อ cache preflight 1 วัน
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **GitHub API:**
 > - CORS ที่อนุญาตเฉพาะ origin ที่ register ผ่าน OAuth App
@@ -86,20 +86,20 @@ app.get('/articles', (c) => c.json([{ id: 1 }]));`;
 > - API Key ที่ใช้ใน browser เป็น publishable key เท่านั้น (ไม่มีสิทธิ์ charge)
 
 <Callout title="CORS ไม่ใช่ authentication">
-การผ่อนคลาย CORS ไม่ได้ทำให้ API ของคุณปลอดภัยน้อยลงต่อ client ที่ไม่ใช่เบราว์เซอร์ — curl, mobile app และ server ต่างเพิกเฉยต่อมันโดยสิ้นเชิง CORS เพียงตัดสินว่า web origin ใดบ้างที่เบราว์เซอร์จะยอมให้อ่าน response ของคุณ จงรักษา allowlist ของ origin ให้แคบไว้ และอย่าพึ่งพา CORS เป็นการควบคุมการเข้าถึงเด็ดขาด นั่นเป็นหน้าที่ของ authn/authz
+การผ่อนคลาย CORS ไม่ได้ทำให้ API ของคุณปลอดภัยน้อยลงต่อ client ที่ไม่ใช่ browser — ทั้ง curl, mobile app และ server ไม่สนใจ CORS อยู่แล้ว หน้าที่ของ CORS มีแค่ตัดสินว่า web origin ไหนบ้างที่ browser จะยอมให้อ่าน response ของคุณ ให้รักษา allowlist ของ origin ไว้ให้แคบ และอย่าพึ่งพา CORS เป็นการควบคุมการเข้าถึงเด็ดขาด นั่นเป็นหน้าที่ของ authn/authz
 </Callout>
 
 export const quiz = [
   {
     q: 'ใครเป็นผู้บังคับใช้ CORS?',
-    options: ['server', 'เบราว์เซอร์ ในนามของ user', 'DNS resolver', 'ชั้น TLS'],
+    options: ['server', 'browser ในนามของ user', 'DNS resolver', 'ชั้น TLS'],
     answer: 1,
   },
   {
     q: 'preflight request คืออะไร?',
     options: [
       'GET เพื่อ warm cache',
-      'request แบบ OPTIONS ที่เบราว์เซอร์ส่งเพื่อตรวจสอบสิทธิ์ก่อนส่ง request จริง',
+      'request แบบ OPTIONS ที่ browser ส่งเพื่อตรวจสอบสิทธิ์ก่อนส่ง request จริง',
       'การ retry ของ POST ที่ล้มเหลว',
       'การ health check',
     ],
@@ -108,10 +108,10 @@ export const quiz = [
   {
     q: 'ทำไม `Allow-Origin: *` ร่วมกับ `Allow-Credentials: true` จึงเป็นปัญหา?',
     options: [
-      'มันช้า',
-      'มันเป็นสิ่งต้องห้าม และจะเปิดเผย response ที่ผ่าน authenticated ให้กับเว็บไซต์ใดก็ได้',
-      'มันทำให้ JSON พัง',
-      'มันปิดการใช้ caching',
+      'ทำงานช้า',
+      'spec ห้ามใช้คู่กัน และเท่ากับเปิดเผย response ที่ผ่าน authentication ให้เว็บไซต์ใดก็ได้',
+      'ทำให้ JSON พัง',
+      'ทำให้ caching ใช้ไม่ได้',
     ],
     answer: 1,
   },

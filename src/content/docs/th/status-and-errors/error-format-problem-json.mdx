@@ -14,7 +14,7 @@ status code บอก *ประเภทไหน* ของ error; ส่ว�
 
 ## RFC 9457 Problem Details
 
-มีมาตรฐานสำหรับเรื่องนี้โดยเฉพาะ: **Problem Details for HTTP APIs** (RFC 9457) ซึ่งให้บริการเป็น `application/problem+json` สมาชิกของมันได้แก่:
+เรื่องนี้มีมาตรฐานรองรับอยู่แล้ว คือ **Problem Details for HTTP APIs** (RFC 9457) ที่ส่งออกมาเป็น `application/problem+json` โดยมีสมาชิกดังนี้:
 
 - `type` — URI ที่ระบุประเภทของปัญหา (key ที่เสถียรและจัดทำเอกสารได้)
 - `title` — สรุปสั้นๆ ที่คนอ่านเข้าใจ (เสถียรตาม `type` แต่ละตัว)
@@ -34,7 +34,7 @@ status code บอก *ประเภทไหน* ของ error; ส่ว�
 }
 ```
 
-## การสร้างมันขึ้นมาใน code
+## การสร้าง problem object ใน code
 
 export const problemCode = `function problem(opts) {
   return {
@@ -64,14 +64,14 @@ console.log(JSON.stringify(res.body, null, 2));`;
 
 <NodeRunner client:visible code={problemCode} />
 
-| Benefits (Standard Error Format) | Trade-offs |
+| ข้อดี (Standard Error Format) | ข้อแลกเปลี่ยน |
 |---|---|
 | client จัดการ error แบบ programmatic ได้ | ต้องออกแบบ error schema และยึดตลอด API |
 | machine-readable error code ช่วย retry logic | error detail มากเกิน → อาจ expose internal info |
 | `type` URI ใน Problem JSON ชี้ไป documentation | verbose กว่า `{ "error": "..." }` แบบง่าย |
 | stack trace ใน error ช่วย debug ใน development | stack trace ใน production เป็น security risk |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **Error Message ที่ไม่ Machine-readable**
 อาการ:
@@ -85,7 +85,7 @@ console.log(JSON.stringify(res.body, null, 2));`;
 - เปิดเผย database schema ให้ผู้โจมตี
 - filter internal detail ออกใน production: `{ "code": "VALIDATION_ERROR", "message": "Email is required" }`
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **Stripe API:**
 > - error format: `{ "error": { "type": "card_error", "code": "card_declined", "message": "...", "param": "number" } }`

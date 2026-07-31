@@ -15,7 +15,7 @@ validator ตัวเดียวกับที่เร่งความเ�
 
 ## Optimistic concurrency ด้วย If-Match
 
-เมื่อ client สองตัวแก้ไข resource เดียวกัน, ตัวที่สองสามารถเขียนทับตัวแรกได้โดยไม่รู้ตัว — นี่คือปัญหา "lost update" Conditional writes ป้องกันมันได้: client ส่ง `ETag` ที่มันเห็นล่าสุดมาใน `If-Match`, และ server จะใช้การเปลี่ยนแปลงนั้นก็ต่อเมื่อ resource ยังคงตรงกันอยู่ หากมันเปลี่ยนไปแล้ว server จะคืน `412 Precondition Failed`:
+เมื่อ client สองตัวแก้ไข resource เดียวกัน ตัวที่สองอาจเขียนทับตัวแรกโดยไม่รู้ตัว นี่คือปัญหา "lost update" ซึ่ง conditional write ป้องกันได้ วิธีคือ client ส่ง `ETag` ที่เห็นล่าสุดมาใน `If-Match` แล้ว server จะยอมเขียนก็ต่อเมื่อ resource ยังตรงกันอยู่ ถ้าเปลี่ยนไปแล้ว server จะคืน `412 Precondition Failed`:
 
 export const flowDiagram = `sequenceDiagram
   participant A as Client A
@@ -29,7 +29,7 @@ export const flowDiagram = `sequenceDiagram
 
 <Mermaid code={flowDiagram} title="If-Match ปฏิเสธการเขียนที่สร้างบนเวอร์ชันที่ stale" />
 
-จากนั้น client จะ re-fetch, นำการเปลี่ยนแปลงของมันมาใช้ใหม่บนเวอร์ชันปัจจุบัน, แล้ว retry — โดยไม่มีการเขียนทับแบบเงียบ ๆ
+จากนั้น client ก็ re-fetch เอาการแก้ไขของตัวเองมาวางทับบนเวอร์ชันปัจจุบัน แล้ว retry ใหม่ — ไม่มีการเขียนทับแบบเงียบ ๆ อีก
 
 ## Idempotency keys สำหรับ POST
 
@@ -60,7 +60,7 @@ console.log('orders created:', seen.size);     // 1`;
 | Conditional PUT (`If-Match`) | lost update — สอง client แก้ resource เดียวกัน | ส่ง ETag, server reject ถ้า resource เปลี่ยนแล้ว |
 | Idempotency Key | duplicate operation — retry สร้าง resource ซ้ำ | client ส่ง unique key, server deduplicate |
 
-## Common Mistakes
+## ข้อผิดพลาดที่พบบ่อย
 
 **ไม่มี Optimistic Locking บน Write Operation**
 อาการ:
@@ -74,7 +74,7 @@ console.log('orders created:', seen.size);     // 1`;
 - server ถือว่าเป็น request ใหม่ทุกครั้ง — ยังสร้างซ้ำ
 - generate idempotency key ครั้งเดียวต่อ operation แล้ว reuse เมื่อ retry
 
-> 💡 Real World Example
+> 💡 ตัวอย่างจากของจริง
 >
 > **Stripe API:**
 > - `Idempotency-Key` header สำหรับ POST /charges, POST /payment_intents
@@ -107,10 +107,10 @@ export const quiz = [
   {
     q: 'idempotency key ทำให้การ retry POST ปลอดภัยได้อย่างไร?',
     options: [
-      'มันเร่งความเร็วของ request',
+      'ช่วยให้ request เร็วขึ้น',
       'server คืนผลลัพธ์เดิมสำหรับ key ที่ซ้ำแทนที่จะทำงานอีกครั้ง',
-      'มันแปลง POST ให้เป็น GET',
-      'มัน cache response ไว้ใน browser',
+      'แปลง POST ให้กลายเป็น GET',
+      'เก็บ response ไว้ใน cache ของ browser',
     ],
     answer: 1,
   },
