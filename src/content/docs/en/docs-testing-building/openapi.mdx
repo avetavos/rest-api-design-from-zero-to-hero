@@ -59,6 +59,39 @@ Each operation lists its parameters and every response it can return, each tied 
 
 Either way, tooling turns the spec into value: **Swagger UI** / Redoc render interactive docs, generators produce typed clients, and validators check requests against it.
 
+| Advantages (OpenAPI) | Trade-offs |
+|---|---|
+| Docs generated from the schema — never drift from the code | Setting up an OpenAPI spec takes upfront discipline |
+| Automatic SDK generation for many languages | The spec file itself gets verbose — large YAML/JSON |
+| Validation middleware from the schema — requests/responses always match it | Choosing code-first vs. spec-first is a real decision |
+| Contract testing between producer and consumer | The spec goes stale if developers don't update it with the code |
+
+## Common mistakes
+
+**OpenAPI spec that drifts from the implementation**
+Symptom:
+- The spec is written first and implementation follows — then the implementation changes without updating the spec
+- Developers generate a client from a stale spec — bugs show up at integration time
+- Generate the spec from the code (code-first), or enforce spec validation in CI
+
+**No examples in the spec**
+Symptom:
+- The spec has type definitions but no example request/response
+- Developers don't know what value a field expects — they have to guess
+- Add an `example` or `examples` field to every request/response body in the spec
+
+> 💡 Real-world examples
+>
+> **Stripe API:**
+> - A comprehensive OpenAPI spec — every endpoint has a schema, an example, and error responses
+> - Used to generate SDKs for 7+ languages: Python, Ruby, Node.js, Go, Java, PHP, .NET
+>
+> **GitHub API:**
+> - Publishes its OpenAPI description publicly — the community builds SDKs and tools on top of it
+> - Every language's Octokit client is generated from that same spec
+>
+> Sources: [Stripe API libraries](https://docs.stripe.com/libraries), [GitHub REST API description](https://github.com/github/rest-api-description)
+
 <Callout title="Let the spec do the repetitive work">
 A maintained OpenAPI document pays for itself: interactive docs, generated typed clients, mock servers for front-end teams, and request validation all come from the same file. Pick spec-first or code-first by team workflow, but do not hand-write and hand-maintain three separate descriptions of the same API.
 </Callout>

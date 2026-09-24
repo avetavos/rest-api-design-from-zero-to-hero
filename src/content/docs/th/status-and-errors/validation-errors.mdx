@@ -94,6 +94,8 @@ if (errors.length > 0) {
 > **GitHub API:**
 > - `{ "errors": [{ "resource": "Issue", "field": "title", "code": "missing_field" }, { "resource": "Issue", "field": "body", "code": "missing_field" }] }`
 > - ส่ง validation error ทุก field พร้อมกัน ไม่ใช่ทีละ field
+>
+> แหล่งอ้างอิง: [Stripe API — errors](https://docs.stripe.com/api/errors), [GitHub REST API errors](https://docs.github.com/en/rest/overview/troubleshooting)
 
 <Callout title="ส่ง error ทุกตัวกลับในคราวเดียว">
 การ validate ทีละ field บังคับให้ผู้ใช้วนลูป submit-fix-submit ที่น่าหงุดหงิด รันการตรวจสอบทั้งหมดของคุณ รวบรวมความล้มเหลวทุกอย่างไว้ใน array `errors` แล้วส่งกลับพร้อมกัน key `field` ที่เสถียรและอ่านได้ด้วยเครื่องช่วยให้ client ไฮไลต์ input ที่ผิดได้ตรงจุด

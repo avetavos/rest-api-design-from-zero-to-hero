@@ -35,6 +35,32 @@ export const constraintsDiagram = `flowchart TD
 
 Because the server keeps no session, any server can handle any request. That makes horizontal scaling and retries simple — but it means the client must send its identity (a token) and any needed context on **every** request.
 
+## Common mistakes
+
+**Server-side session state**
+Symptom:
+- The server keeps a shopping cart in in-memory session state
+- Scale to two servers and the cart disappears when a request lands on the other one
+- Keep state on the client or in a database, not in server memory
+
+**Breaking uniform interface with a special-purpose endpoint**
+Symptom:
+- `POST /users/search` instead of `GET /users?q=john`
+- A POST with unclear side effects — can't be cached, isn't idempotent
+- Use `GET` plus query parameters for search/filtering
+
+> 💡 Real-world examples
+>
+> **AWS API:**
+> - Stateless authentication — every request carries its own signature (SigV4)
+> - No session — every request authenticates independently
+>
+> **Stripe API:**
+> - A textbook uniform interface — resource-based URIs, methods that express intent
+> - Works behind CDNs and reverse proxies without any client changes
+>
+> Sources: [AWS Signature Version 4](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_sigv4.html), [Stripe API reference](https://docs.stripe.com/api)
+
 <Callout title="Uniform interface + stateless = the heart of REST">
 If you remember only two constraints, remember these. A uniform interface (URIs + standard methods + self-describing messages) is what makes your API predictable; statelessness is what makes it scale. Most "is this RESTful?" debates come down to these two.
 </Callout>

@@ -88,12 +88,14 @@ console.log('with current tag:', handle(tag));      // 304`;
 > 💡 ตัวอย่างจากของจริง
 >
 > **GitHub API:**
-> - ETag บน resource ทุกตัว — conditional GET ลด bandwidth 90%+
-> - rate limit ไม่นับ request ที่ return 304
+> - ETag บน resource ทุกตัว — conditional GET หลีกเลี่ยงการโอนข้อมูลที่ไม่เปลี่ยนซ้ำ
+> - `304` บน authenticated request ไม่นับเข้า rate limit
 >
 > **AWS S3:**
-> - ETag คือ MD5 hash ของ object content
+> - ETag คือ MD5 hash ของ object content (สำหรับ upload ที่ไม่ใช่ multipart หรือเข้ารหัสด้วย SSE-KMS)
 > - conditional GET ผ่าน `If-None-Match` ทำให้ sync ไฟล์จำนวนมากได้อย่างมีประสิทธิภาพ
+>
+> แหล่งอ้างอิง: [GitHub REST API — best practices](https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api), [AWS S3 Object metadata (ETag)](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Object.html)
 
 <Callout title="ตั้ง Cache-Control บนทุก response">
 แม้แต่ `Cache-Control: no-store` ก็เป็นการตัดสินใจที่ควรเขียนออกมาให้ชัด เพราะบอก cache ตรง ๆ ว่าต้องทำอะไร ดีกว่าปล่อยให้คลุมเครือ ให้ใส่ `ETag` กับ representation ที่คำนวณแพงหรือส่งข้อมูลหนัก จากนั้น conditional request จะเปลี่ยนการเช็ก "ข้อมูลยังเป็นปัจจุบันไหม" ส่วนใหญ่ให้กลายเป็น `304` ที่ราคาถูก

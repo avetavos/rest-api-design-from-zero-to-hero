@@ -66,6 +66,8 @@ export const constraintsDiagram = `flowchart TD
 > **Stripe API:**
 > - Uniform Interface ครบ — resource-based URI, method แสดง intent
 > - ทำงานกับ CDN และ reverse proxy ได้โดยไม่เปลี่ยน client
+>
+> แหล่งอ้างอิง: [AWS Signature Version 4](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_sigv4.html), [Stripe API reference](https://docs.stripe.com/api)
 
 <Callout title="Uniform interface + stateless = หัวใจของ REST">
 ถ้าคุณจะจำข้อจำกัดเพียงสองข้อ จงจำสองข้อนี้ uniform interface (URI + method มาตรฐาน + ข้อความที่อธิบายตัวเองได้) คือสิ่งที่ทำให้ API ของคุณคาดเดาได้ ส่วน statelessness คือสิ่งที่ทำให้ scale ได้ ข้อถกเถียงส่วนใหญ่ที่ว่า "นี่เป็น RESTful ไหม?" ล้วนวนกลับมาที่สองข้อนี้

@@ -57,7 +57,7 @@ console.log(take(0));                    // 4th: 429 with retryAfter`;
 อาการ:
 - 429 Too Many Requests โดยไม่มี header บอกว่าเหลือ quota เท่าไรและ reset เมื่อไร
 - client ไม่รู้ว่าต้องรอนานแค่ไหน — retry loop ทำให้แย่ลง
-- ส่ง `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` เสมอ
+- ส่ง `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` เสมอ (หรือเทียบเท่าแบบ IETF draft `RateLimit-*`)
 
 **Input Validation ที่ไม่ Sanitize**
 อาการ:
@@ -74,6 +74,8 @@ console.log(take(0));                    // 4th: 429 with retryAfter`;
 > **Stripe API:**
 > - rate limit ตาม endpoint: `/charges` มี limit ต่างจาก `/events`
 > - 429 พร้อม `Retry-After` header — client รู้ว่าต้องรอกี่วินาที
+>
+> แหล่งอ้างอิง: [GitHub REST API rate limits](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api), [Stripe rate limits](https://docs.stripe.com/rate-limits)
 
 <Callout title="allowlist สำหรับ input, throttle สำหรับการใช้งานในทางที่ผิด">
 รับเฉพาะ field และรูปแบบที่คุณคาดไว้เท่านั้น allowlist ชนะ blocklist ทุกครั้ง และปิดประตูการโจมตีแบบ mass-assignment ได้เด็ดขาด จากนั้นเสริมด้วย rate limit ต่อ client และการจำกัดขนาด body เพื่อไม่ให้ผู้เรียกรายเดียวทำข้อมูลคุณพังหรือกิน capacity จนหมด

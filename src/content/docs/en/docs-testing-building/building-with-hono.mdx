@@ -77,6 +77,39 @@ app.onError((err, c) => {
 
 Notice how every idea from the course shows up: a paginated collection envelope, `201 Created` with `Location`, `422` validation with field errors, `404` via a thrown typed error, and one central `onError` producing `problem+json`.
 
+| Advantages (Hono) | Trade-offs |
+|---|---|
+| Runs on edge runtimes (Cloudflare Workers, Bun, Deno) — low latency | Smaller ecosystem than Express |
+| Type-safe middleware with TypeScript | A learning curve if you're used to Express |
+| Built-in validation via Zod integration | Fewer community resources than NestJS/Express |
+| Faster than Express — benchmarks lead in most scenarios | No decorator-based MVC yet, unlike NestJS |
+
+## Common mistakes
+
+**No centralized error handler**
+Symptom:
+- Each route handler catches its own errors
+- The error format ends up inconsistent
+- Use `app.onError((err, c) => { ... })` — handle every uncaught error in one place
+
+**Wrong middleware order**
+Symptom:
+- Auth middleware registered after the route — the route runs before the auth check
+- Unauthenticated requests can reach a protected route
+- Always register middleware before the route: `app.use(auth)` before `app.get('/protected', handler)`
+
+> 💡 Real-world examples
+>
+> **Cloudflare Workers:**
+> - Hono is the framework Cloudflare's own docs recommend for Workers — runs on the V8 isolate runtime
+> - Very low latency because it runs at the edge, close to the user
+>
+> **Vercel Edge Functions:**
+> - Hono supports the Vercel Edge runtime
+> - A good fit for APIs that need global low latency
+>
+> Sources: [Hono — getting started](https://hono.dev/docs/getting-started/basic), [Hono on Cloudflare Workers](https://hono.dev/docs/getting-started/cloudflare-workers), [Hono on Vercel](https://hono.dev/docs/getting-started/vercel)
+
 <Callout title="Thin handlers, real layers">
 Keep HTTP concerns (parsing, status, headers) in handlers and middleware; keep business rules in services that never import the web framework. That separation is what makes an API testable, lets you swap frameworks, and keeps each file small enough to reason about.
 </Callout>

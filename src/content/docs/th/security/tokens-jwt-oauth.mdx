@@ -90,6 +90,8 @@ export const oauthDiagram = `sequenceDiagram
 > **Stripe API:**
 > - API Key สำหรับ server-to-server — อย่าใช้ใน client-side code
 > - Restricted Key ที่จำกัด permission เฉพาะที่ต้องการ
+>
+> แหล่งอ้างอิง: [GitHub Apps — authenticating](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/authenticating-as-a-github-app), [Stripe API keys](https://docs.stripe.com/keys)
 
 <Callout title="ต้อง verify อย่าแค่ decode">
 payload ของ JWT ใครก็อ่านได้ การ decode ออกมาดูจึงไม่ได้พิสูจน์อะไรเลย ต้อง verify signature เทียบกับกุญแจของ issuer เสมอ และ validate `exp`, `aud` และ `iss` ก่อนจะเชื่อ claim แม้แต่ตัวเดียว ให้ access token มีอายุสั้น แล้วใช้ refresh token (หรือให้ผู้ใช้ re-auth) เพื่อต่ออายุ

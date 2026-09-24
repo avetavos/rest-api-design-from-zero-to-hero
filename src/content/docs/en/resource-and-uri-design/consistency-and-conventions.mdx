@@ -41,6 +41,39 @@ Singletons skip the collection level on purpose; do not invent a fake ID for the
 - Errors share one shape (covered in Status Codes & Errors).
 - The same field means the same thing everywhere.
 
+| Advantages (Consistency) | Trade-offs |
+|---|---|
+| Faster developer onboarding — endpoints become guessable | Requires agreeing on conventions upfront — costs time |
+| Easier SDK generation and documentation | Some conventions don't fit every resource |
+| Consistent client code — no special cases | Changing a convention later is a breaking change |
+| Fewer bugs from typos or inconsistent casing | The team has to enforce it — needs linting or review |
+
+## Common mistakes
+
+**Inconsistent response format**
+Symptom:
+- One endpoint returns `{ data: [...] }`, another returns `[...]` directly
+- Error responses vary too: some endpoints send `{ error: "..." }`, others `{ message: "..." }`
+- Define a standard response envelope and use it everywhere
+
+**Inconsistent date format**
+Symptom:
+- `createdAt: "2024-01-15"` on one endpoint, `created: "15/01/2024"` on another
+- Clients have to parse a different format per call
+- Use ISO 8601 (`2024-01-15T10:30:00Z`) consistently across the whole API
+
+> 💡 Real-world examples
+>
+> **Stripe API:**
+> - Every resource carries `id`, `object`, `created`, `livemode` — consistent metadata
+> - The same error shape on every endpoint: `{ error: { type, code, message, param } }`
+>
+> **GitHub API:**
+> - `X-RateLimit-*` headers on every response, consistently
+> - Pagination via the `Link` header on every collection endpoint
+>
+> Sources: [Stripe API — errors](https://docs.stripe.com/api/errors), [GitHub REST API rate limits](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api)
+
 <Callout title="Write the conventions down">
 The cheapest way to stay consistent is a short style guide your team and your future self can check against. Conventions that live only in someone's head drift the moment a second developer adds an endpoint. A page of rules prevents a hundred inconsistencies.
 </Callout>

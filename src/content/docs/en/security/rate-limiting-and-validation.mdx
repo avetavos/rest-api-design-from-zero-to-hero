@@ -44,6 +44,39 @@ Every value from a client is untrusted until validated. The main risks:
 - **Oversized payloads** — cap request body size and array lengths to avoid resource exhaustion.
 - **Type and range** — validate types, lengths, and ranges with a schema, and reject with `422` (see [Validation Errors](/rest-api/en/status-and-errors/validation-errors/)).
 
+| Advantages (Rate Limiting) | Trade-offs |
+|---|---|
+| Protects against abuse and DDoS | Legitimate traffic spikes can get rejected too |
+| Protects against credential stuffing and brute force | Setting the right limit is hard — too strict or too loose |
+| Cuts the cost of downstream services like an LLM API | Sharing a limit across a distributed system needs something like Redis |
+| Tells the client via headers how much quota is left | A poor error message hurts the user experience |
+
+## Common mistakes
+
+**Rate limiting without telling the client**
+Symptom:
+- `429 Too Many Requests` with no header saying how much quota is left or when it resets
+- The client doesn't know how long to wait — a retry loop makes it worse
+- Always send `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` (or the IETF `RateLimit-*` equivalents)
+
+**Input validation without sanitizing**
+Symptom:
+- Accepting `name: "<script>alert(1)</script>"` and storing/rendering it unsanitized
+- XSS when the API response is rendered in a web app
+- Validate type/format and sanitize string input before storing it
+
+> 💡 Real-world examples
+>
+> **GitHub API:**
+> - Rate limit: 5,000 requests/hour for authenticated requests
+> - Headers: `X-RateLimit-Limit: 5000`, `X-RateLimit-Remaining: 4999`, `X-RateLimit-Reset: 1609459200`
+>
+> **Stripe API:**
+> - Rate limits vary by endpoint — `/charges` has a different limit than `/events`
+> - `429` comes with a `Retry-After` header telling the client how many seconds to wait
+>
+> Sources: [GitHub REST API rate limits](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api), [Stripe rate limits](https://docs.stripe.com/rate-limits)
+
 <Callout title="Allowlist input, throttle abuse">
 Accept only the fields and shapes you expect — an allowlist beats a blocklist every time, and it stops mass-assignment attacks cold. Pair that with per-client rate limits and body-size caps so a single caller can neither corrupt your data nor exhaust your capacity.
 </Callout>

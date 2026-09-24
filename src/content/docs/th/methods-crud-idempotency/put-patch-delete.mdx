@@ -96,6 +96,8 @@ app.delete('/articles/:id', (c) => {
 > **Stripe API:**
 > - PATCH สำหรับ update customer info
 > - ไม่มี true DELETE สำหรับ charge — ใช้ refund แทน (audit trail)
+>
+> แหล่งอ้างอิง: [GitHub REST API — repos](https://docs.github.com/en/rest/repos/repos), [Stripe API — refunds](https://docs.stripe.com/api/refunds)
 
 <Callout title="PUT แทนที่ ส่วน PATCH รวม (merge)">
 ถ้า client ส่ง resource มาครบทั้งก้อนและคาดหวังให้ field ที่ละไว้ถูกล้างค่า นั่นคือ `PUT` ถ้า client ส่งมาเฉพาะส่วนที่เปลี่ยนและคาดหวังให้ที่เหลือคงเดิม นั่นคือ `PATCH` การประกาศ semantics แบบ `PUT` แต่ไปเขียน logic แบบ merge (หรือกลับกัน) คือต้นเหตุยอดฮิตของบั๊ก "ทำไม field ของฉันหายไป"

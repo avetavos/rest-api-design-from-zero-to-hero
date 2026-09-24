@@ -55,6 +55,32 @@ console.log(JSON.stringify(articleResponse({ id: 42, title: 'Hi', authorId: 7 })
 
 <NodeRunner client:visible code={linkCode} />
 
+## Common mistakes
+
+**Nesting too deep**
+Symptom:
+- `/companies/\{id\}/departments/\{id\}/teams/\{id\}/members/\{id\}/tasks/\{id\}`
+- URIs get very long and are hard to maintain and document
+- Cap nesting at two levels, or flatten to `/tasks/\{id\}` and filter with query parameters
+
+**A many-to-many relationship modeled as nested**
+Symptom:
+- `/users/\{id\}/tags/\{id\}` — a user has many tags, a tag has many users
+- Nesting makes ownership unclear — does deleting remove the tag from the user or delete it entirely?
+- Use a junction resource instead: `POST /user-tags` with `{ userId, tagId }`
+
+> 💡 Real-world examples
+>
+> **GitHub API:**
+> - `/repos/\{owner\}/\{repo\}/issues` — a clear 2 levels
+> - `/repos/\{owner\}/\{repo\}/issues/\{number\}/comments` — 3 levels max
+>
+> **Stripe API:**
+> - `/customers/\{id\}/payment_methods` — nested for an owned resource
+> - `/payment_methods/\{id\}` — accessible directly once you know the ID
+>
+> Sources: [GitHub REST API — issues](https://docs.github.com/en/rest/issues/issues), [Stripe API — payment methods](https://docs.stripe.com/api/payment_methods)
+
 <Callout title="Nest for ownership, link for everything else">
 Nest a sub-resource only when it truly lives inside its parent and you would not address it without that parent. The moment a resource has a stable identity of its own, give it a top-level URI and reference it by link. Shallow paths plus links age far better than deep nesting.
 </Callout>

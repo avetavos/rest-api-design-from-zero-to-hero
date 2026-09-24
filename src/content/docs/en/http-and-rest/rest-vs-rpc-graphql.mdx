@@ -32,6 +32,38 @@ export const stylesDiagram = `flowchart TD
 
 Reach for **REST** when your domain is naturally resource-shaped, you want HTTP caching and a broadly understood public contract, and CRUD-plus-a-few-actions covers the use cases — which is most web and mobile back ends. Reach for **RPC/gRPC** for high-throughput internal service calls. Reach for **GraphQL** when many different clients need different slices of a rich, interconnected data graph.
 
+| Style | Advantages | Disadvantages | Fits |
+|---|---|---|---|
+| REST | Standard, cacheable, easy to debug | Over/under-fetching | Public APIs, CRUD resources |
+| GraphQL | Fetches exactly what's needed, flexible | Hard to cache, more complex | Many clients needing different data shapes |
+| gRPC | Fast, type-safe, streaming | Not human-readable, more tooling | Internal microservices, high performance |
+| JSON-RPC | Simple | Tight coupling, no standard URL conventions | Internal tools, simple integrations |
+
+## Common mistakes
+
+**Choosing GraphQL because it's trendy**
+Symptom:
+- The API has one client that needs one fixed shape of data
+- GraphQL gets adopted anyway, adding complexity with no real benefit
+- REST is the better fit when the use case is that straightforward
+
+**Using REST for internal microservices that need performance**
+Symptom:
+- Services call each other 100 times per request — HTTP overhead adds up
+- gRPC or a message queue fits high-frequency internal calls better
+
+> 💡 Real-world examples
+>
+> **GitHub:**
+> - Runs both a REST API (v3) and a GraphQL API (v4)
+> - REST for simple operations, GraphQL for complex queries spanning several resources
+>
+> **Netflix:**
+> - Uses gRPC for internal service-to-service calls
+> - Uses GraphQL/REST at the edge, where client and partner traffic terminates
+>
+> Sources: [Netflix TechBlog — Practical API Design at Netflix](https://netflixtechblog.com/practical-api-design-at-netflix-part-1-using-protobuf-fieldmask-35cfdc606518), [Netflix CNCF case study](https://www.cncf.io/case-studies/netflix/)
+
 <Callout title="They are not mutually exclusive">
 Plenty of systems use REST at the edge for a stable public contract and gRPC between internal services. Pick per boundary, not per company. The rest of this course is about doing the REST part well.
 </Callout>

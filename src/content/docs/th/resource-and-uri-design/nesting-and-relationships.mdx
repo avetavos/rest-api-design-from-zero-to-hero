@@ -84,6 +84,8 @@ console.log(JSON.stringify(articleResponse({ id: 42, title: 'Hi', authorId: 7 })
 > **Stripe API:**
 > - `/customers/\{id\}/payment_methods` — nested สำหรับ owned resource
 > - `/payment_methods/\{id\}` — access โดยตรงได้เมื่อรู้ ID
+>
+> แหล่งอ้างอิง: [GitHub REST API — issues](https://docs.github.com/en/rest/issues/issues), [Stripe API — payment methods](https://docs.stripe.com/api/payment_methods)
 
 <Callout title="nest เพื่อความเป็นเจ้าของ link สำหรับทุกอย่างที่เหลือ">
 ให้ nest sub-resource ก็ต่อเมื่ออยู่ภายใต้ parent อย่างแท้จริง และไม่มีทางถูกอ้างถึงโดยไม่มี parent นั้น ทันทีที่ resource มีตัวตนที่มั่นคงเป็นของตัวเอง ให้จัด URI ระดับ top-level ให้แล้วอ้างอิงด้วย link เมื่อเวลาผ่านไป path ตื้น ๆ บวก link จะแก่ตัวได้ดีกว่าการ nest ลึกมาก

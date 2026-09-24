@@ -83,6 +83,8 @@ console.log('orders created:', seen.size);     // 1`;
 > **GitHub API:**
 > - `If-Match` header สำหรับ update operation ที่ต้องการ optimistic locking
 > - 412 Precondition Failed เมื่อ resource เปลี่ยนระหว่างที่ client อ่านและ update
+>
+> แหล่งอ้างอิง: [Stripe idempotent requests](https://docs.stripe.com/api/idempotent_requests), [GitHub REST API — best practices](https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api)
 
 <Callout title="validator ปกป้องการเขียน, ไม่ใช่แค่การอ่าน">
 `If-Match` เปลี่ยนการเขียนทับแบบมืดบอดให้กลายเป็นการอัปเดตที่มีการตรวจสอบ — จับคู่ `ETag` ของทุก resource ที่แก้ไขได้เข้ากับ conditional writes เพื่อหลีกเลี่ยง lost update และให้ endpoint สำหรับสร้างมี `Idempotency-Key` เพื่อให้ response ที่หล่นหายไปไม่กลายเป็นการเรียกเก็บเงินหรือคำสั่งซื้อที่ซ้ำกัน ทั้งสองอย่างทำให้ API ของคุณถูกต้องภายใต้ความเป็นจริงอันยุ่งเหยิงของการ retry และ concurrency

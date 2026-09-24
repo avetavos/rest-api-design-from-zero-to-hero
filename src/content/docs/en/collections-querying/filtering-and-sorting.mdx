@@ -61,6 +61,39 @@ console.log(query(articles, { status: 'published', sort: '-views' }));`;
 
 <NodeRunner client:visible code={queryCode} />
 
+| Advantages (Filtering & Sorting) | Trade-offs |
+|---|---|
+| Client fetches only what it needs — smaller payload | Many query parameters make URLs long and hard to read |
+| Server-side filtering beats filtering all the data client-side | Complex filters need a query language (OData, custom) |
+| Server-side sort uses a database index — faster than sorting in memory | Filter/sort parameters must be validated to prevent SQL injection |
+| Filter and sort combine in a single request | Multi-field sort makes the URL more complex |
+
+## Common mistakes
+
+**Not validating filter parameters**
+Symptom:
+- `GET /users?sort=; DROP TABLE users--`
+- SQL injected through the sort parameter
+- Allowlist the fields that can be filtered/sorted: `if (!['name','email','createdAt'].includes(sort)) throw`
+
+**Expensive filters with no index**
+Symptom:
+- `GET /orders?status=pending` — runs `WHERE status = 'pending'` on a table with millions of rows
+- No index on the `status` column — a full table scan on every request
+- Add an index on frequently filtered fields, or restrict which filters are supported
+
+> 💡 Real-world examples
+>
+> **GitHub API:**
+> - `GET /repos/\{owner\}/\{repo\}/issues?state=open&labels=bug&sort=created&direction=desc`
+> - Multi-dimensional filter and sort in a single request
+>
+> **Stripe API:**
+> - `GET /charges?created[gte]=1609459200&created[lte]=1640995199&limit=100`
+> - Range filter via bracket notation — filters between two dates
+>
+> Sources: [GitHub REST API — issues](https://docs.github.com/en/rest/issues/issues), [Stripe API — pagination and filtering](https://docs.stripe.com/api/pagination)
+
 <Callout title="Allowlist what you filter and sort on">
 Never feed raw query params straight into a database query — that invites injection and lets clients sort on slow, unindexed columns. Validate each filter/sort field against an explicit allowlist, and return `400` for anything unrecognized. Flexibility for clients, control for you.
 </Callout>

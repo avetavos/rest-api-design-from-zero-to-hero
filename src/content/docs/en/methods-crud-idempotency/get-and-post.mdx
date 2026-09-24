@@ -51,6 +51,32 @@ app.post('/articles', async (c) => {
 
 <NodeRunner stackblitz client:visible code={honoCode} />
 
+## Common mistakes
+
+**Using GET to trigger a side effect**
+Symptom:
+- `GET /users/\{id\}/activate` — activates a user via GET
+- Bots, crawlers, and prefetching trigger the action by accident
+- Any action with a side effect must use `POST`, `PUT`, `PATCH`, or `DELETE`
+
+**Sending sensitive data in a GET query string**
+Symptom:
+- `GET /login?password=secret123`
+- The password ends up in the URL, server logs, and browser history
+- Use `POST` with a body for sensitive data
+
+> 💡 Real-world examples
+>
+> **GitHub API:**
+> - `GET /repos/\{owner\}/\{repo\}` — read a repo (safe, idempotent)
+> - `POST /repos/\{owner\}/\{repo\}/issues` — create a new issue (not idempotent)
+>
+> **Stripe API:**
+> - `GET /charges/\{id\}` — view a charge (cacheable)
+> - `POST /charges` — create a new charge (needs an idempotency key)
+>
+> Sources: [GitHub REST API — repos](https://docs.github.com/en/rest/repos/repos), [Stripe API — charges](https://docs.stripe.com/api/charges)
+
 <Callout title="Never mutate on GET">
 The single most common REST mistake is performing an action through `GET` (because it is easy to trigger from a browser). Caches, link prefetchers, and crawlers all assume `GET` is safe and may call it repeatedly. Any state change belongs on `POST`, `PUT`, `PATCH`, or `DELETE`.
 </Callout>

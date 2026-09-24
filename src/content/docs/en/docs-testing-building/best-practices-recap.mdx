@@ -41,6 +41,32 @@ export const recapDiagram = `flowchart TD
 
 **Ship it** — describe the API with OpenAPI; test unit/integration/contract layers; keep handlers thin and services HTTP-free. See [OpenAPI](/rest-api/en/docs-testing-building/openapi/).
 
+## Common mistakes
+
+**No API design review before implementing**
+Symptom:
+- Developers implement the endpoint first and write docs afterward
+- Consumers use the API and find the design inconsistent
+- Do an API design review (an OpenAPI spec or design doc) before implementing, every time
+
+**Breaking change without a version bump**
+Symptom:
+- Renaming a response field: `userId` → `user_id` in `/v1/`
+- Consumers using `userId` break immediately
+- Only additive changes go into an existing version; breaking changes require a version bump
+
+> 💡 Real-world examples
+>
+> **Stripe API:**
+> - Versions each request via the dated `Stripe-Version` header, not the URL path — `/v1/` has stayed the same since launch
+> - Monthly releases stay backward compatible; only major releases can break existing code, and each account defaults to a version it can pin
+>
+> **GitHub API:**
+> - Supports a REST API version for at least 24 months after a newer version ships
+> - `Deprecation` and `Sunset` response headers warn consumers before a version stops being supported
+>
+> Sources: [Stripe API versioning](https://docs.stripe.com/api/versioning), [GitHub REST API versions](https://docs.github.com/en/rest/about-the-rest-api/api-versions)
+
 <Callout title="Consistency beats cleverness">
 The best APIs are not the cleverest — they are the most predictable. Apply these conventions uniformly and a developer who has used one of your endpoints can guess the rest. That predictability, more than any single feature, is what makes an API a pleasure to build against.
 </Callout>

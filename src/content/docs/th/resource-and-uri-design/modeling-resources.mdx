@@ -66,6 +66,8 @@ type Comment = { id: string; body: string; articleId: string; authorId: string }
 > **Stripe API:**
 > - `/customers/\{id\}` — customer resource
 > - `/customers/\{id\}/payment_methods` — payment method เป็น sub-resource ของ customer
+>
+> แหล่งอ้างอิง: [GitHub REST API — repos](https://docs.github.com/en/rest/repos/repos), [Stripe API — customers](https://docs.stripe.com/api/customers)
 
 <Callout title="จำลองเพื่อผู้บริโภค ไม่ใช่เพื่อ schema">
 resource คือคำศัพท์สาธารณะของ API ดังนั้นให้ปั้นตามวิธีที่ client คิด ไม่ใช่ตามวิธีที่คุณวางตารางไว้ resource หนึ่งตัวจะ join หลายตาราง หรือตารางเดียวจะโผล่ออกมาเป็นสอง resource ก็ไม่ผิดอะไร ขอแค่แยก contract ออกจาก storage ให้ได้

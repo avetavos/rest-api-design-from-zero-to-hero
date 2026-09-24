@@ -77,6 +77,8 @@ console.log(JSON.stringify(envelope(rows, { page: 1, limit: 2, total: 7, basePat
 > **Stripe API:**
 > - envelope สม่ำเสมอ: `{ "object": "list", "data": [...], "has_more": true, "url": "/charges" }`
 > - ทุก list endpoint ใช้ format เดียวกัน
+>
+> แหล่งอ้างอิง: [GitHub REST API — search](https://docs.github.com/en/rest/search/search), [Stripe API — pagination](https://docs.stripe.com/api/pagination)
 
 <Callout title="envelope เดียว ใช้ได้ทุกที่">
 เลือก envelope ของ collection สักแบบ — `data` + `meta` + `links` เป็นค่าเริ่มต้นที่แน่นหนา — แล้วใช้รูปแบบเดียวกันนี้กับทุก endpoint ที่เป็น list รวมถึงผลลัพธ์ของ search ด้วย client จะได้เรียนรู้ pagination ของคุณเพียงครั้งเดียวแล้วใช้ซ้ำได้ทั่วทั้ง API และอย่าลืมว่าการนับ `total` ให้แม่นยำนั้นไม่ฟรี ถ้าเริ่มสร้างปัญหาก็ตัดทิ้งได้

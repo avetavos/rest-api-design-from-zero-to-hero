@@ -64,6 +64,39 @@ console.log(JSON.stringify(res.body, null, 2));`;
 
 <NodeRunner client:visible code={problemCode} />
 
+| Advantages (Standard Error Format) | Trade-offs |
+|---|---|
+| Clients can handle errors programmatically | Requires designing an error schema and sticking to it |
+| A machine-readable error code drives retry logic | Too much detail can leak internal information |
+| The `type` URI in Problem Details points to documentation | More verbose than a plain `{ "error": "..." }` |
+| A stack trace in the error helps debugging in development | A stack trace in production is a security risk |
+
+## Common mistakes
+
+**An error message that isn't machine-readable**
+Symptom:
+- `{ "error": "The email address you entered is already in use" }`
+- The client has to parse a string to know the error type
+- Add a `code` field: `{ "code": "EMAIL_ALREADY_EXISTS", "message": "..." }`
+
+**Exposing internal detail in a production error**
+Symptom:
+- `{ "error": "Column 'users.email' cannot be null (SQL Error 1048)" }`
+- This leaks the database schema to an attacker
+- Filter internal detail out in production: `{ "code": "VALIDATION_ERROR", "message": "Email is required" }`
+
+> 💡 Real-world examples
+>
+> **Stripe API:**
+> - Error shape: `{ "error": { "type": "card_error", "code": "card_declined", "message": "...", "param": "number" } }`
+> - `type` gives the category, `code` the specific error, `param` the field at fault
+>
+> **GitHub API:**
+> - Validation error: `{ "message": "Validation Failed", "errors": [{ "resource": "Issue", "field": "title", "code": "missing_field" }] }`
+> - A machine-readable `code` lets the client render the error message in its own language
+>
+> Sources: [Stripe API — errors](https://docs.stripe.com/api/errors), [GitHub REST API errors](https://docs.github.com/en/rest/overview/troubleshooting)
+
 <Callout title="Use about:blank when there is nothing to add">
 If a problem needs no special type, RFC 9457 says set `type` to `"about:blank"` and let `title` mirror the status reason. Reserve custom `type` URIs for problems clients should detect and handle programmatically — those URIs become a documented, stable part of your contract.
 </Callout>

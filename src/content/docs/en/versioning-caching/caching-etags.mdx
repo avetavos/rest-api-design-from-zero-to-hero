@@ -64,6 +64,32 @@ console.log('with current tag:', handle(tag));      // 304`;
 
 <NodeRunner client:visible code={etagCode} />
 
+## Common mistakes
+
+**Caching sensitive data by accident**
+Symptom:
+- `Cache-Control: max-age=3600` on `/users/\{id\}/profile`
+- A browser or CDN caches user A's profile and serves it to user B
+- Set `Cache-Control: no-store, private` for authenticated resources
+
+**An ETag that isn't stable**
+Symptom:
+- The ETag is generated from a timestamp — different servers generate different ETags for identical content
+- The client sends `If-None-Match` but the server returns 200 every time instead of 304
+- Generate the ETag from a hash of the content, not a timestamp
+
+> 💡 Real-world examples
+>
+> **GitHub API:**
+> - Every resource carries an ETag — conditional GET avoids re-transferring unchanged data
+> - A `304` on an authenticated request doesn't count against the rate limit
+>
+> **AWS S3:**
+> - The ETag is the MD5 hash of the object content (for non-multipart, non-SSE-KMS uploads)
+> - Conditional GET via `If-None-Match` makes syncing large numbers of files efficient
+>
+> Sources: [GitHub REST API — best practices](https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api), [AWS S3 Object metadata (ETag)](https://docs.aws.amazon.com/AmazonS3/latest/API/API_Object.html)
+
 <Callout title="Set Cache-Control on every response">
 Even `Cache-Control: no-store` is a decision worth stating explicitly — it tells caches what to do instead of leaving it ambiguous. Add `ETag`s to representations that are expensive to compute or transfer, and conditional requests turn most "is it still current?" checks into a cheap `304`.
 </Callout>

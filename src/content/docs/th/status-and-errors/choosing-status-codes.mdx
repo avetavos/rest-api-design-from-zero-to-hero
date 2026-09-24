@@ -82,6 +82,8 @@ app.post('/items', async (c) => {
 > **Stripe API:**
 > - status code ครบ: 400 invalid request, 401 auth failed, 402 payment failed, 429 rate limit
 > - HTTP status code map ตรงกับ error type เสมอ
+>
+> แหล่งอ้างอิง: [GitHub REST API errors](https://docs.github.com/en/rest/overview/troubleshooting), [Stripe API — errors](https://docs.stripe.com/api/errors)
 
 <Callout title="เมื่อไม่แน่ใจ ให้เลือก code ที่เจาะจงกว่า">
 `400` แบบกว้างๆ มักไม่ผิด แต่ code ที่แม่นยำสอน client ว่าต้องทำอะไร: `401` บอกว่า "ล็อกอินสิ", `403` บอกว่า "เลิกถามได้แล้ว", `422` บอกว่า "แก้ field พวกนี้", `409` บอกว่า "มุมมองของคุณล้าสมัยแล้ว" ความเจาะจงใน status line คือฟีเจอร์อย่างหนึ่ง

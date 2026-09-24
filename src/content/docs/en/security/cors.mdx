@@ -54,6 +54,32 @@ app.get('/articles', (c) => c.json([{ id: 1 }]));`;
 
 Avoid the classic mistake of reflecting any origin (`Access-Control-Allow-Origin: *`) **together with** `Allow-Credentials: true` — the combination is forbidden and, more importantly, would expose authenticated responses to any site.
 
+## Common mistakes
+
+**`Access-Control-Allow-Origin: *` with credentials**
+Symptom:
+- Setting `Access-Control-Allow-Origin: *` while also sending cookies or an `Authorization` header
+- The browser blocks the request — `*` doesn't work with credentials
+- Specify the real origin, e.g. `https://app.example.com`, whenever credentials are used
+
+**A preflight on every request because nothing gets cached**
+Symptom:
+- No `Access-Control-Max-Age` set — the browser sends an `OPTIONS` preflight every time
+- Extra latency on every request
+- Set `Access-Control-Max-Age: 86400` to cache the preflight result for a day
+
+> 💡 Real-world examples
+>
+> **GitHub API:**
+> - CORS allows only origins registered through an OAuth App
+> - No `*` for authenticated endpoints
+>
+> **Stripe.js:**
+> - The browser SDK calls the Stripe API directly — CORS is scoped to Stripe's own domains
+> - The API key used in the browser is a publishable key only (no charge permission)
+>
+> Sources: [GitHub OAuth Apps](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps), [Stripe.js and Elements](https://docs.stripe.com/js)
+
 <Callout title="CORS is not authentication">
 Loosening CORS does not make your API less secure to non-browser clients — curl, mobile apps, and servers ignore it entirely. CORS only decides which web origins a browser will let read your responses. Keep a tight allowlist of origins, and never rely on CORS as your access control; that is what authn/authz are for.
 </Callout>

@@ -91,6 +91,8 @@ app.delete('/articles/:id', (c) => {
 > **AWS API:**
 > - authentication ผ่าน SigV4 — sign ทุก request
 > - authorization ผ่าน IAM policy — ระบุ action ที่ทำได้ต่อ resource ใด
+>
+> แหล่งอ้างอิง: [GitHub REST API — troubleshooting](https://docs.github.com/en/rest/overview/troubleshooting), [AWS IAM policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html)
 
 <Callout title="401 หมายถึง 'ล็อกอินสิ'; 403 หมายถึง 'เลิกถามได้แล้ว'">
 ถ้าผู้เรียกใช้ยังไม่ผ่าน authenticated ให้ส่งกลับ `401` เพื่อให้ client รู้ว่าต้องไปขอหรือ refresh credential แต่ถ้าผู้เรียกใช้ผ่าน authenticated แล้วแต่ไม่ได้รับอนุญาต ให้ส่งกลับ `403` — การ re-authenticate จะไม่เปลี่ยนคำตอบ การปนสองอย่างนี้เข้าด้วยกันจะทำให้ client วนลูป retry ที่ไร้ประโยชน์

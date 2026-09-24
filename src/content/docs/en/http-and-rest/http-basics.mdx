@@ -73,6 +73,39 @@ console.log('body:', res.body);`;
 
 <NodeRunner client:visible code={buildCode} />
 
+| Advantages (HTTP Structure) | Trade-offs |
+|---|---|
+| A universal standard — every client knows how to read a request/response | More verbose than a binary protocol like gRPC |
+| Text-based — human-readable, easy to debug with curl | Header overhead on every request — HTTP/2 mitigates this with header compression |
+| Stateless — every request carries all the information it needs | Auth has to be sent on every request, unlike session-based auth |
+| Cacheable — browsers and CDNs can cache based on headers | Misconfigured caching can leave clients seeing stale data |
+
+## Common mistakes
+
+**Putting sensitive data in the URL instead of a header**
+Symptom:
+- Sending a token in the query string: `GET /users?token=abc123`
+- The token ends up in logs and browser history
+- Always use `Authorization: Bearer <token>` in a header
+
+**Not setting Content-Type**
+Symptom:
+- Sending a JSON body without `Content-Type: application/json`
+- The server parses the body wrong, or rejects the request
+- Set `Content-Type` on every request that has a body
+
+> 💡 Real-world examples
+>
+> **GitHub API:**
+> - Recommends `Accept: application/vnd.github+json` on every request
+> - Tells the server the client wants the latest JSON response shape
+>
+> **Stripe API:**
+> - Uses an `Idempotency-Key` header on sensitive `POST` requests
+> - Prevents a duplicate charge when the client retries after a network error
+>
+> Sources: [GitHub REST API media types](https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api), [Stripe idempotent requests](https://docs.stripe.com/api/idempotent_requests)
+
 <Callout title="Headers are part of the design">
 The body gets all the attention, but headers carry the contract: `Content-Type` tells the client how to parse the body, `Location` points to a newly created resource, and `Authorization`/`Accept` shape the exchange. Treat them as a first-class part of your API design, not an afterthought.
 </Callout>

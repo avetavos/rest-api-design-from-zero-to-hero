@@ -59,8 +59,10 @@ export const stylesDiagram = `flowchart TD
 > - REST สำหรับ simple operation, GraphQL สำหรับ complex query ที่ต้องการ data หลาย resource
 >
 > **Netflix:**
-> - ใช้ gRPC สำหรับ microservice internal call
-> - REST สำหรับ public-facing API ที่ partner และ third-party ใช้
+> - ใช้ gRPC สำหรับ service-to-service call ภายใน
+> - ใช้ GraphQL/REST ที่ edge ซึ่งเป็นจุดที่ client และ partner traffic มาจบ
+>
+> แหล่งอ้างอิง: [Netflix TechBlog — Practical API Design at Netflix](https://netflixtechblog.com/practical-api-design-at-netflix-part-1-using-protobuf-fieldmask-35cfdc606518), [Netflix CNCF case study](https://www.cncf.io/case-studies/netflix/)
 
 <Callout title="ทั้งสามแบบใช้ร่วมกันได้">
 ระบบจำนวนมากใช้ REST ที่ขอบเพื่อ public contract ที่เสถียร และใช้ gRPC ระหว่าง service ภายใน จงเลือกตามขอบเขต ไม่ใช่ตามบริษัท ส่วนที่เหลือของคอร์สนี้ว่าด้วยการทำส่วนของ REST ให้ดี

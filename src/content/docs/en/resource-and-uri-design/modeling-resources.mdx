@@ -35,6 +35,40 @@ When a use case sounds like a verb — "publish an article", "cancel an order" �
 
 Aim for resources that are neither too coarse (one giant `/data` blob) nor too fine (a separate resource per field). A good test: a resource should be something a client wants to fetch, create, or change as a unit.
 
+| Advantages (Resource Modeling) | Trade-offs |
+|---|---|
+| A predictable API — developers can guess the URI | Requires domain analysis before implementing |
+| Resource-based APIs evolve more easily than verb-based ones | Some actions (search, publish) are awkward to map to a resource |
+| The HTTP method signals intent — no need to read the body | Complex business logic may need special sub-resources |
+| Cacheable per the HTTP standard | Over-normalizing forces multiple calls per operation |
+
+## Common mistakes
+
+**Verb-based endpoints**
+Symptom:
+- `POST /getUser`, `POST /createOrder`, `POST /cancelOrder`
+- Every operation uses POST — nothing is cacheable, idempotency is unclear
+- Fix: `GET /users/\{id\}`, `POST /orders`, `POST /orders/\{id\}/cancellation`
+
+**Wrong resource granularity**
+Symptom:
+- One resource holds everything: `GET /everything?type=user&id=1`
+- Or resources are split too finely: `GET /users/\{id\}/name`, `GET /users/\{id\}/email`
+- A resource should be something a client wants to fetch or change as a single unit
+
+> 💡 Real-world examples
+>
+> **GitHub API:**
+> - `/repos/\{owner\}/\{repo\}` — the repository is the resource
+> - `/repos/\{owner\}/\{repo\}/issues` — issues are a sub-collection
+> - `/repos/\{owner\}/\{repo\}/issues/\{number\}` — a single issue
+>
+> **Stripe API:**
+> - `/customers/\{id\}` — the customer resource
+> - `/customers/\{id\}/payment_methods` — payment methods as a sub-resource of the customer
+>
+> Sources: [GitHub REST API — repos](https://docs.github.com/en/rest/repos/repos), [Stripe API — customers](https://docs.stripe.com/api/customers)
+
 <Callout title="Model for the consumer, not the schema">
 Resources are an API's public vocabulary, so shape them around how clients think, not how your tables are laid out. It is fine for one resource to join several tables, or for one table to surface as two resources. Decouple the contract from the storage.
 </Callout>

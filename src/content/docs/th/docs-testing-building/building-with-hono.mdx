@@ -107,6 +107,8 @@ app.onError((err, c) => {
 > **Vercel Edge Functions:**
 > - Hono รองรับ Vercel Edge runtime
 > - API ที่ต้องการ global low latency เหมาะกับ edge deployment
+>
+> แหล่งอ้างอิง: [Hono — getting started](https://hono.dev/docs/getting-started/basic), [Hono on Cloudflare Workers](https://hono.dev/docs/getting-started/cloudflare-workers), [Hono on Vercel](https://hono.dev/docs/getting-started/vercel)
 
 <Callout title="handler ที่บาง ชั้นที่แท้จริง">
 เก็บเรื่องของ HTTP (การ parse, status, header) ไว้ใน handler และ middleware เก็บกฎทางธุรกิจไว้ใน service ที่ไม่เคย import เฟรมเวิร์กฝั่งเว็บเลย การแยกเช่นนี้คือสิ่งที่ทำให้ API ทดสอบได้ ให้คุณสลับเฟรมเวิร์กได้ และทำให้แต่ละไฟล์เล็กพอที่จะทำความเข้าใจได้

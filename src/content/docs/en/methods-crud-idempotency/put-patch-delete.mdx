@@ -67,6 +67,32 @@ app.delete('/articles/:id', (c) => {
 
 <NodeRunner stackblitz client:visible code={honoCode} />
 
+## Common mistakes
+
+**Using PUT for a partial update**
+Symptom:
+- `PUT /users/\{id\}` sends only `{ "name": "New Name" }` — every other field resets to null
+- PUT requires the full resource — anything missing becomes null/default
+- Use `PATCH` for partial updates
+
+**A DELETE that isn't idempotent**
+Symptom:
+- `DELETE /users/\{id\}` returns 200 the first time, 500 (server error) the second time
+- It should return 404 or 204 the second time, not 500
+- Deleting an already-gone resource should consistently return 404 or 204
+
+> 💡 Real-world examples
+>
+> **GitHub API:**
+> - `PATCH /repos/\{owner\}/\{repo\}` — edit some repo settings
+> - `DELETE /repos/\{owner\}/\{repo\}` — delete a repo (idempotent — 404 on the second call)
+>
+> **Stripe API:**
+> - `PATCH` for updating customer info
+> - No true `DELETE` for a charge — use a refund instead (keeps an audit trail)
+>
+> Sources: [GitHub REST API — repos](https://docs.github.com/en/rest/repos/repos), [Stripe API — refunds](https://docs.stripe.com/api/refunds)
+
 <Callout title="PUT replaces, PATCH merges">
 If the client sends the complete resource and expects omitted fields to be cleared, that is `PUT`. If the client sends only what changed and expects everything else preserved, that is `PATCH`. Choosing `PUT` semantics but merging (or vice versa) is a frequent source of "why did my field disappear?" bugs.
 </Callout>

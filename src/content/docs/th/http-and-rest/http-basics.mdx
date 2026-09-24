@@ -103,6 +103,8 @@ console.log('body:', res.body);`;
 > **Stripe API:**
 > - ใช้ `Idempotency-Key` header สำหรับ POST request ที่ sensitive
 > - ป้องกัน duplicate charge เมื่อ network retry
+>
+> แหล่งอ้างอิง: [GitHub REST API media types](https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api), [Stripe idempotent requests](https://docs.stripe.com/api/idempotent_requests)
 
 <Callout title="Header เป็นส่วนหนึ่งของการออกแบบ">
 body มักได้รับความสนใจทั้งหมด แต่ header ต่างหากที่พกพา contract ไว้ `Content-Type` บอก client ว่าจะ parse body อย่างไร `Location` ชี้ไปยัง resource ที่เพิ่งถูกสร้างขึ้น และ `Authorization`/`Accept` กำหนดรูปแบบของการแลกเปลี่ยน ให้ถือว่า header เป็นส่วนสำคัญลำดับต้นของการออกแบบ API ไม่ใช่เรื่องที่ค่อยมาคิดทีหลัง

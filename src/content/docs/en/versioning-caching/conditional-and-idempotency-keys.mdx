@@ -55,6 +55,32 @@ console.log('orders created:', seen.size);     // 1`;
 
 A common convention is an `Idempotency-Key` request header; the server keeps the mapping for a window (say 24 hours) so retries within that window are safe.
 
+## Common mistakes
+
+**No optimistic locking on write operations**
+Symptom:
+- User A and user B both open the edit form for the same record
+- User A saves first; user B's save silently overwrites it
+- Use `If-Match: <etag>` — the server returns 412 if the ETag no longer matches
+
+**A client that generates a fresh idempotency key on every retry**
+Symptom:
+- The retry logic generates a new UUID on every attempt
+- The server treats each attempt as a new request — the duplicate still gets created
+- Generate the idempotency key once per operation and reuse it on retries
+
+> 💡 Real-world examples
+>
+> **Stripe API:**
+> - An `Idempotency-Key` header on `POST /charges`, `POST /payment_intents`
+> - Store the key on the client — retrying with the same key is safe
+>
+> **GitHub API:**
+> - An `If-Match` header for update operations that need optimistic locking
+> - `412 Precondition Failed` when the resource changed between the client's read and its update
+>
+> Sources: [Stripe idempotent requests](https://docs.stripe.com/api/idempotent_requests), [GitHub REST API — best practices](https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api)
+
 <Callout title="Validators protect writes, not just reads">
 `If-Match` turns a blind overwrite into a checked update — pair every editable resource's `ETag` with conditional writes to avoid lost updates. And give create endpoints an `Idempotency-Key` so a dropped response never becomes a duplicate charge or order. Both make your API correct under the messy reality of retries and concurrency.
 </Callout>

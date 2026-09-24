@@ -60,6 +60,32 @@ export const asyncDiagram = `sequenceDiagram
 
 The job itself becomes a resource: `POST /exports` creates it, `GET /exports/{id}` reports progress, and the final response links to the produced result.
 
+## Common mistakes
+
+**A bulk API that's all-fail or all-succeed**
+Symptom:
+- Send 100 records in a batch — one bad record fails the entire batch
+- The client can't tell which records succeeded and which didn't
+- Return partial results: `{ "succeeded": [...], "failed": [...] }`
+
+**An async job with no status endpoint**
+Symptom:
+- `POST /reports` returns 202 with no way to check status
+- The client can't tell whether the job finished, or failed
+- Always return `{ "jobId": "...", "statusUrl": "/jobs/\{id\}" }`
+
+> 💡 Real-world examples
+>
+> **GitHub API:**
+> - Bulk operations via the GraphQL API — bundle several mutations into one call
+> - Async workflows via the Actions API — `POST /repos/\{owner\}/\{repo\}/actions/workflows/\{id\}/dispatches` returns 204, with status tracked through the run endpoint
+>
+> **Stripe API:**
+> - Bulk events via webhooks — Stripe delivers batches of events to the consumer's endpoint
+> - Async payouts — 202 Accepted, status tracked via `GET /payouts/\{id\}`
+>
+> Sources: [GitHub Actions API — workflow dispatch](https://docs.github.com/en/rest/actions/workflows#create-a-workflow-dispatch-event), [Stripe API — payouts](https://docs.stripe.com/api/payouts)
+
 <Callout title="Make the work a resource">
 Both patterns lean on the same idea: when a single request cannot express the operation, model the operation as a resource. A batch returns a result per item; an async job becomes something you create and then poll. You stay RESTful by turning the verb into a noun.
 </Callout>

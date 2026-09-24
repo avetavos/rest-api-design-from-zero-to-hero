@@ -91,6 +91,8 @@ console.log(query(articles, { status: 'published', sort: '-views' }));`;
 > **Stripe API:**
 > - `GET /charges?created[gte]=1609459200&created[lte]=1640995199&limit=100`
 > - range filter ด้วย bracket notation — filter วันที่ระหว่าง 2 ช่วง
+>
+> แหล่งอ้างอิง: [GitHub REST API — issues](https://docs.github.com/en/rest/issues/issues), [Stripe API — pagination and filtering](https://docs.stripe.com/api/pagination)
 
 <Callout title="ทำ allowlist ว่าจะ filter และ sort บนอะไรได้บ้าง">
 อย่าโยน query param ดิบ ๆ เข้า query ของ database ตรง ๆ เพราะเปิดช่อง injection และปล่อยให้ client สั่ง sort บนคอลัมน์ที่ช้าและไม่มี index ได้ ให้ตรวจทุก field ของ filter/sort เทียบกับ allowlist ที่เขียนไว้ชัด แล้วคืน `400` กับอะไรก็ตามที่ไม่รู้จัก ความยืดหยุ่นเป็นของ client แต่การควบคุมยังอยู่ที่คุณ

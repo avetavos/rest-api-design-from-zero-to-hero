@@ -89,6 +89,8 @@ components:
 > **GitHub API:**
 > - OpenAPI spec เปิดสาธารณะ — community สร้าง SDK และ tool บน spec นั้น
 > - Octokit ทุกภาษา generate มาจาก spec เดียวกัน
+>
+> แหล่งอ้างอิง: [Stripe API libraries](https://docs.stripe.com/libraries), [GitHub REST API description](https://github.com/github/rest-api-description)
 
 <Callout title="ปล่อยให้ spec ทำงานซ้ำ ๆ แทน">
 เอกสาร OpenAPI ที่ดูแลไว้ดีคุ้มค่าตัวเองอยู่แล้ว ทั้งเอกสารแบบโต้ตอบ client ที่ generate มาพร้อม type mock server ให้ทีม front-end และการ validate request ล้วนมาจากไฟล์เดียวกัน จะเลือก spec-first หรือ code-first ก็แล้วแต่ workflow ของทีม แต่อย่าไปนั่งเขียนคำอธิบายของ API ตัวเดียวกันด้วยมือถึงสามชุดแยกกัน

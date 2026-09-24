@@ -40,6 +40,32 @@ Accept: application/vnd.example.article+json;version=2
 
 For most teams, **URI versioning** wins on pragmatism: it is obvious, cache-friendly, and trivial to test. Whatever you choose, version the **whole API** at a coarse grain (`v1`, `v2`), not each endpoint independently — per-endpoint versions explode the support matrix.
 
+## Common mistakes
+
+**Versioning one endpoint instead of the whole API**
+Symptom:
+- `/v1/users` but `/v2/orders` in the same API
+- Clients have to track a different version per endpoint
+- Version the whole API together: `/v1/users` and `/v1/orders` → `/v2/users` and `/v2/orders`
+
+**Deprecating without any grace period**
+Symptom:
+- `/v1/` is shut off with no advance notice — clients break immediately
+- No migration guide or clear timeline
+- Use `Deprecation` and `Sunset` headers: `Sunset: Sat, 31 Dec 2024 23:59:59 GMT`
+
+> 💡 Real-world examples
+>
+> **Stripe API:**
+> - Versions via the `Stripe-Version` header, not the URI
+> - Each account is locked to the version it was created on — a new Stripe release never breaks it
+>
+> **GitHub API:**
+> - Versions via the date-based `X-GitHub-Api-Version` header (e.g. `2022-11-28`), not a `/v3/`-style URI — the REST API dropped URI versioning
+> - Supports a version for at least 24 months after a newer one ships, with `Deprecation` and `Sunset` headers as it nears end of support
+>
+> Sources: [Stripe API versioning](https://docs.stripe.com/api/versioning), [GitHub REST API versions](https://docs.github.com/en/rest/about-the-rest-api/api-versions)
+
 <Callout title="Version rarely, deprecate kindly">
 Treat a new major version as a last resort, and when you must ship one, keep the old version running with a clear deprecation timeline and a `Deprecation`/`Sunset` header. Breaking clients without warning is how an API loses trust.
 </Callout>

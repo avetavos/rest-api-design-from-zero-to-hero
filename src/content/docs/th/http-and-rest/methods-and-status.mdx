@@ -101,6 +101,8 @@ app.post('/articles', async (c) => {
 > - POST /charges — สร้าง charge ใหม่
 > - GET /charges/\{id\} — ดู charge
 > - status code ครบ: 200, 201, 400, 401, 402, 404, 429, 500
+>
+> แหล่งอ้างอิง: [GitHub REST API — repos](https://docs.github.com/en/rest/repos/repos), [Stripe API — charges](https://docs.stripe.com/api/charges), [Stripe API — errors](https://docs.stripe.com/api/errors)
 
 <Callout title="เลือก status ก่อน แล้วค่อยเลือก body">
 ตัดสินใจเรื่อง status code ก่อน เพราะเป็นส่วนของ response ที่ client ใช้แตกทางการทำงาน `201 Created` ที่มี body ว่างเปล่าก็ใช้ได้ แต่ `200 OK` ที่ห่อ error ซ่อนไว้นั้นใช้ไม่ได้ อย่าส่งคืน `200` สำหรับความล้มเหลวเด็ดขาด

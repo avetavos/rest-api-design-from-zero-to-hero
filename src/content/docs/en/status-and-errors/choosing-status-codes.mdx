@@ -50,6 +50,34 @@ app.post('/items', async (c) => {
 
 <NodeRunner stackblitz client:visible code={honoCode} />
 
+## Common mistakes
+
+**Returning 200 with an error in the body**
+Symptom:
+- `HTTP 200 OK` with `{ "success": false, "error": "Not found" }`
+- Monitoring that watches HTTP status thinks the request succeeded
+- Alerts and SLA measurements go wrong
+- Use the right status code: `404`, not `200`
+
+**Using 500 for a client error**
+Symptom:
+- Validation fails → the server throws → returns `500`
+- The client can't tell whether its own request was wrong or the server broke
+- Catch validation errors first → return `400` or `422`
+
+> 💡 Real-world examples
+>
+> **GitHub API:**
+> - `422 Unprocessable Entity` for validation errors — a field breaks a rule
+> - `409 Conflict` for a duplicate resource
+> - `403 Forbidden` for an action you don't have permission for (as opposed to `401`, not authenticated at all)
+>
+> **Stripe API:**
+> - A full range of status codes: `400` invalid request, `401` auth failed, `402` payment failed, `429` rate limited
+> - The HTTP status always maps to the error type
+>
+> Sources: [GitHub REST API errors](https://docs.github.com/en/rest/overview/troubleshooting), [Stripe API — errors](https://docs.stripe.com/api/errors)
+
 <Callout title="When unsure, prefer the more specific code">
 A generic `400` is rarely wrong, but a precise code teaches the client what to do: `401` says "log in", `403` says "stop asking", `422` says "fix these fields", `409` says "your view is stale". Specificity in the status line is a feature.
 </Callout>

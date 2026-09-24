@@ -67,6 +67,35 @@ app.post('/articles', async (c) => {
 
 <NodeRunner stackblitz client:visible code={honoCode} />
 
+## Common mistakes
+
+**Using POST for every operation**
+Symptom:
+- `POST /getUser`, `POST /updateUser`, `POST /deleteUser`
+- No way to tell what a request does without reading the body
+- Use the method that matches the intent: `GET` to read, `DELETE` to remove, `PATCH` to change
+
+**Returning 200 even when there's an error**
+Symptom:
+- `{ "status": "error", "message": "Not found" }` with an HTTP 200
+- Monitoring tools think the request succeeded — alerts never fire
+- Use the right status code: `404` when not found, `400` when the request is invalid
+
+> 💡 Real-world examples
+>
+> **GitHub API:**
+> - `GET /repos/\{owner\}/\{repo\}` — read a repo
+> - `DELETE /repos/\{owner\}/\{repo\}` — delete a repo
+> - `PATCH /repos/\{owner\}/\{repo\}` — edit repo settings
+> - The method signals intent immediately, without reading the URL
+>
+> **Stripe API:**
+> - `POST /charges` — create a new charge
+> - `GET /charges/\{id\}` — view a charge
+> - A full range of status codes: 200, 201, 400, 401, 402, 404, 429, 500
+>
+> Sources: [GitHub REST API — repos](https://docs.github.com/en/rest/repos/repos), [Stripe API — charges](https://docs.stripe.com/api/charges), [Stripe API — errors](https://docs.stripe.com/api/errors)
+
 <Callout title="Pick the status, then the body">
 Decide the status code first — it is the part of the response clients branch on. A `201 Created` with an empty body is fine; a `200 OK` wrapping a hidden error is not. Never return `200` for a failure.
 </Callout>

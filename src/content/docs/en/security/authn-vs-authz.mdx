@@ -58,6 +58,32 @@ app.delete('/articles/:id', (c) => {
 
 <NodeRunner stackblitz client:visible code={honoCode} />
 
+## Common mistakes
+
+**Returning 403 instead of 401 when there's no token**
+Symptom:
+- A request with no `Authorization` header gets a 403
+- The client doesn't realize it needs to log in — it looks like a permissions problem
+- No token or an invalid token → `401`; authenticated but lacking permission → `403`
+
+**Incomplete authorization checks**
+Symptom:
+- Permission is checked at the route level but not at the resource level
+- `GET /orders` blocks unauthorized callers, but `GET /orders/\{id\}` never checks whether that order belongs to the caller
+- Check both the action permission and resource ownership
+
+> 💡 Real-world examples
+>
+> **GitHub API:**
+> - `401` when the token is invalid or expired
+> - `403` when the token is valid but lacks permission for that operation (e.g. pushing to a repo you don't own)
+>
+> **AWS API:**
+> - Authentication via SigV4 — every request is signed
+> - Authorization via IAM policy — which actions are allowed on which resources
+>
+> Sources: [GitHub REST API — troubleshooting](https://docs.github.com/en/rest/overview/troubleshooting), [AWS IAM policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html)
+
 <Callout title="401 means 'log in'; 403 means 'stop asking'">
 If the caller is not authenticated, return `401` so a client knows to obtain or refresh a credential. If the caller is authenticated but not permitted, return `403` — re-authenticating will not change the answer. Conflating the two sends clients into pointless retry loops.
 </Callout>

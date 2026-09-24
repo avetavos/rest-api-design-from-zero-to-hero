@@ -66,6 +66,39 @@ app.onError((err, c) => {
 - **Safety** — unexpected errors become a generic `500`; internals never leak.
 - **Less code** — handlers throw a line; they do not each build a response.
 
+| Advantages (Centralized Error Handling) | Trade-offs |
+|---|---|
+| One consistent error shape across the API — no special cases | Setting up the middleware is upfront work |
+| Prevents internal errors from leaking to the client | A bug in the error middleware can break every error response |
+| All logging happens in one place — easy to monitor | Requires a well-designed error class hierarchy |
+| Client-side retry logic behaves correctly | Custom error classes in TypeScript need care around transpilation |
+
+## Common mistakes
+
+**A try/catch in every controller**
+Symptom:
+- Every route handler has its own try/catch
+- Error formats diverge — some routes send `{ error: "..." }`, others `{ message: "..." }`
+- Use one central error middleware instead: `app.onError((err, c) => { ... })`
+
+**Not logging the error before responding**
+Symptom:
+- The error handler sends a response without logging
+- Production gets a `500` with nothing to debug it with
+- Log the error with request context (userId, path, method) before sending the response
+
+> 💡 Real-world examples
+>
+> **Hono (the framework this course uses):**
+> - `app.onError((err, c) => { ... })` — a global error handler
+> - Handles every error type in one place
+>
+> **Express.js:**
+> - A 4-parameter error middleware: `(err, req, res, next)`
+> - A centralized handler that logs to a monitoring system before responding is a common production pattern
+>
+> Sources: [Hono — error handling](https://hono.dev/docs/api/hono#error-handling), [Express.js error handling](https://expressjs.com/en/guide/error-handling.html)
+
 <Callout title="Throw typed errors, translate once">
 Let handlers express failure by throwing a typed error (`throw new ApiError(404, ...)`), and put all the formatting in one `onError` hook. You get uniform `problem+json` everywhere, a guaranteed safe fallback for the unexpected, and handlers that stay focused on the happy path.
 </Callout>

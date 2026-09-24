@@ -64,6 +64,39 @@ if (errors.length > 0) {
 
 In TypeScript projects a schema library (such as zod) gives you this for free: parse the input against a schema, and on failure map the issues to your `errors` array.
 
+| Advantages (Validation Errors) | Trade-offs |
+|---|---|
+| Clients know which field is wrong and why — better UX | Validation logic ends up duplicated between client and server |
+| Prevents invalid data from reaching the database | A verbose error response for forms with many fields |
+| A clear 400/422 keeps retry logic correct | Some rules need a database query (e.g. email uniqueness) |
+| Machine-readable errors let the client show inline messages | |
+
+## Common mistakes
+
+**Returning one error at a time for multiple bad fields**
+Symptom:
+- A form has 5 invalid fields, but the API returns errors one field at a time
+- The user fixes the first field, resubmits, sees the second error, fixes it, resubmits again...
+- Validate every field at once and return the full `errors` array in one response
+
+**Mixing validation errors with business rule errors**
+Symptom:
+- `400 Bad Request` used for both "invalid email format" and "this email is suspended"
+- The client can't tell whether to show a field error or a general error
+- Split them: `422` for validation, `409` or a custom code for business rules
+
+> 💡 Real-world examples
+>
+> **Stripe API:**
+> - `{ "error": { "type": "invalid_request_error", "param": "amount", "message": "Amount must be greater than 0" } }`
+> - `param` names the field at fault — the client shows an inline error there
+>
+> **GitHub API:**
+> - `{ "errors": [{ "resource": "Issue", "field": "title", "code": "missing_field" }, { "resource": "Issue", "field": "body", "code": "missing_field" }] }`
+> - Returns validation errors for every field at once, not one at a time
+>
+> Sources: [Stripe API — errors](https://docs.stripe.com/api/errors), [GitHub REST API errors](https://docs.github.com/en/rest/overview/troubleshooting)
+
 <Callout title="Return every error at once">
 Validating one field at a time forces the user through a frustrating submit-fix-submit loop. Run all your checks, collect every failure into the `errors` array, and return them together. Stable, machine-readable `field` keys let clients highlight the exact inputs.
 </Callout>

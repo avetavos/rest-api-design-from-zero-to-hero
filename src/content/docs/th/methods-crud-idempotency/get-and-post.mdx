@@ -79,6 +79,8 @@ app.post('/articles', async (c) => {
 > **Stripe API:**
 > - `GET /charges/\{id\}` — ดู charge (cacheable)
 > - `POST /charges` — สร้าง charge ใหม่ (ต้องการ idempotency key)
+>
+> แหล่งอ้างอิง: [GitHub REST API — repos](https://docs.github.com/en/rest/repos/repos), [Stripe API — charges](https://docs.stripe.com/api/charges)
 
 <Callout title="อย่าเปลี่ยนแปลงข้อมูลผ่าน GET">
 ความผิดพลาดเรื่อง REST ที่พบบ่อยที่สุดอย่างหนึ่งคือการยัดงานเปลี่ยนข้อมูลไว้ใน `GET` (เพราะ trigger จาก browser ได้ง่าย) ทั้ง cache, link prefetcher และ crawler ต่างสมมติว่า `GET` ปลอดภัย จึงยิงซ้ำได้เรื่อย ๆ อะไรที่เปลี่ยน state ต้องอยู่บน `POST`, `PUT`, `PATCH` หรือ `DELETE` เท่านั้น

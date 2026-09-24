@@ -80,6 +80,8 @@ console.log('final state:', store[42]);   // same as one call`;
 > **AWS S3:**
 > - PUT object เป็น idempotent — upload ไฟล์เดิมซ้ำ = overwrite ไม่ใช่ duplicate
 > - ทำให้ retry ปลอดภัยสำหรับ large file upload
+>
+> แหล่งอ้างอิง: [Stripe idempotent requests](https://docs.stripe.com/api/idempotent_requests), [AWS S3 PutObject](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html)
 
 <Callout title="ออกแบบเผื่อการ retry ที่คุณมองไม่เห็น">
 ให้ตั้งสมมติฐานไว้เลยว่าทุก request ที่ไม่ safe อาจวิ่งมาถึงมากกว่าหนึ่งครั้ง จุดไหนทำ write ให้เป็น idempotent ได้ก็ทำ (เลือก `PUT` ด้วย ID ที่ client เป็นคนกำหนด) ส่วนจุดที่ทำไม่ได้ก็ป้องกันด้วย idempotency key ความถูกต้องภายใต้การ retry มาจากการออกแบบ ไม่ใช่โชค

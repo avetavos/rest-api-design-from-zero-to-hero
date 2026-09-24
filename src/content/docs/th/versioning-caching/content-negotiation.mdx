@@ -73,12 +73,14 @@ app.get('/reports/:id', (c) => {
 >
 > **GitHub API:**
 > - `Accept: application/vnd.github+json` สำหรับ standard JSON
-> - `Accept: application/vnd.github.raw` สำหรับ raw file content
+> - `Accept: application/vnd.github.raw+json` สำหรับ raw file content
 > - format ต่างกันผ่าน Accept header โดยไม่ต้องเปลี่ยน URI
 >
 > **AWS API:**
 > - `Accept-Encoding: gzip` — response body compress อัตโนมัติ
 > - ลด bandwidth สำหรับ large JSON response เช่น list operation
+>
+> แหล่งอ้างอิง: [GitHub REST API media types](https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api#media-types), [MDN — Accept-Encoding](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Encoding)
 
 <Callout title="resource เดียว, หลาย representation">
 Content negotiation ทำให้ URI นิ่งอยู่กับที่ แต่ยังเปิดให้ client เลือกรูปแบบและภาษาได้ ทั้ง CSV export และมุมมอง JSON ของ report ตัวเดียวกันจึงใช้ที่อยู่เดียวกัน ให้ประกาศ type ที่เลือกกลับไปใน `Content-Type` เสมอ และถ้าตอบตามที่ขอไม่ได้ก็คืน `406` ไป ดีกว่าแอบส่งรูปแบบที่ client บอกว่ารับไม่ได้ไปแบบเงียบ ๆ

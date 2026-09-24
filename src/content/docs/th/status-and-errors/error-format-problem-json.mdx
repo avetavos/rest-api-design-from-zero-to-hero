@@ -94,6 +94,8 @@ console.log(JSON.stringify(res.body, null, 2));`;
 > **GitHub API:**
 > - validation error: `{ "message": "Validation Failed", "errors": [{ "resource": "Issue", "field": "title", "code": "missing_field" }] }`
 > - machine-readable `code` ทำให้ client แสดง error message เป็นภาษาของตัวเองได้
+>
+> แหล่งอ้างอิง: [Stripe API — errors](https://docs.stripe.com/api/errors), [GitHub REST API errors](https://docs.github.com/en/rest/overview/troubleshooting)
 
 <Callout title="ใช้ about:blank เมื่อไม่มีอะไรต้องเพิ่ม">
 ถ้าปัญหาไม่ต้องการ type พิเศษ RFC 9457 บอกให้ตั้ง `type` เป็น `"about:blank"` แล้วให้ `title` สะท้อนเหตุผลของ status เก็บ custom `type` URI ไว้สำหรับปัญหาที่ client ควรตรวจจับและจัดการแบบ programmatic — URI เหล่านั้นจะกลายเป็นส่วนหนึ่งของ contract ที่เสถียรและมีเอกสาร

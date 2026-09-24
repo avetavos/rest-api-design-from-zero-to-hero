@@ -45,6 +45,32 @@ assert('error body has a title', typeof response.body.title === 'string');`;
 
 For each endpoint, test the happy path *and* the failure paths: the right status code, the response shape, the error body for invalid input (does it match your `problem+json`?), auth required where expected, and pagination metadata on collections.
 
+## Common mistakes
+
+**Testing only the happy path**
+Symptom:
+- Tests only send valid requests — resource created, status 201
+- Never test validation errors, auth failures, not-found, or conflicts
+- Test every error path for every status code the API documents
+
+**Mocking the database in integration tests**
+Symptom:
+- Integration tests mock the database — the real query never runs
+- Bad SQL or a broken constraint passes in tests but fails in production
+- Use a real test database (in-memory SQLite or a test container)
+
+> 💡 Real-world examples
+>
+> **Stripe:**
+> - Test-mode API keys run tests against the real Stripe environment without moving real money
+> - Webhook testing via the Stripe CLI: `stripe listen --forward-to localhost:3000/webhook`
+>
+> **GitHub:**
+> - No separate sandbox API — teams test against disposable test repos/orgs instead
+> - Contract tests against the published OpenAPI spec catch drift in CI before it ships
+>
+> Sources: [Stripe testing](https://docs.stripe.com/testing), [Stripe CLI webhooks](https://docs.stripe.com/webhooks/test), [GitHub REST API description](https://github.com/github/rest-api-description)
+
 <Callout title="Test the failures, not just the happy path">
 Most production incidents live in the error and edge paths — the `404`, the `422`, the expired token, the empty page. Assert those explicitly. Contract tests against your OpenAPI spec are especially high-value: they fail the moment your implementation drifts from what you have promised consumers.
 </Callout>

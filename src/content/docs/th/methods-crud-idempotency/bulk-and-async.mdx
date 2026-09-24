@@ -89,6 +89,8 @@ export const asyncDiagram = `sequenceDiagram
 > **Stripe API:**
 > - bulk event ผ่าน webhook — Stripe ส่ง event batch มาที่ endpoint ของ consumer
 > - async payout — 202 Accepted, status ตาม GET /payouts/\{id\}
+>
+> แหล่งอ้างอิง: [GitHub Actions API — workflow dispatch](https://docs.github.com/en/rest/actions/workflows#create-a-workflow-dispatch-event), [Stripe API — payouts](https://docs.stripe.com/api/payouts)
 
 <Callout title="ทำให้งานกลายเป็น resource">
 สอง pattern นี้ตั้งอยู่บนแนวคิดเดียวกัน คือเมื่อ request เดียวสื่อ operation ไม่ได้ ก็จำลอง operation นั้นให้เป็น resource ฝั่ง batch คืนผลลัพธ์รายตัว ส่วน async job กลายเป็นของที่คุณสร้างขึ้นแล้ว poll ทีหลัง แค่เปลี่ยนคำกริยา (verb) ให้เป็นคำนาม (noun) คุณก็ยังคงความเป็น RESTful ไว้ได้

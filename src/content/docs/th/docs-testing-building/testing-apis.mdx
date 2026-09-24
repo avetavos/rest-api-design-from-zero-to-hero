@@ -73,8 +73,10 @@ assert('error body has a title', typeof response.body.title === 'string');`;
 > - webhook testing ผ่าน Stripe CLI: `stripe listen --forward-to localhost:3000/webhook`
 >
 > **GitHub:**
-> - API test ผ่าน sandbox environment
-> - contract test ด้วย OpenAPI spec — CI fail ถ้า response ไม่ match spec
+> - ไม่มี sandbox API แยกต่างหาก — ทีมส่วนใหญ่ test กับ test repo/org ที่สร้างทิ้งได้แทน
+> - contract test กับ OpenAPI spec ที่เผยแพร่ไว้ — จับ drift ได้ใน CI ก่อน ship
+>
+> แหล่งอ้างอิง: [Stripe testing](https://docs.stripe.com/testing), [Stripe CLI webhooks](https://docs.stripe.com/webhooks/test), [GitHub REST API description](https://github.com/github/rest-api-description)
 
 <Callout title="ทดสอบความล้มเหลว ไม่ใช่แค่ happy path">
 เหตุการณ์ขัดข้องใน production ส่วนใหญ่อยู่ใน error path และ edge path ทั้ง `404`, `422`, token ที่หมดอายุ, หน้าที่ว่างเปล่า ให้ assert เรื่องพวกนี้ออกมาตรง ๆ ส่วน contract test ที่ยิงเทียบกับ spec ของ OpenAPI ยิ่งคุ้มค่า เพราะจะพังทันทีที่ของจริงเริ่มคลาดเคลื่อนไปจากสิ่งที่คุณรับปากไว้กับคนที่มาใช้ API

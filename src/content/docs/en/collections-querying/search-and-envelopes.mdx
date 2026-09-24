@@ -47,6 +47,39 @@ console.log(JSON.stringify(envelope(rows, { page: 1, limit: 2, total: 7, basePat
 
 Returning `total` is convenient but, on large tables, counting every matching row can be as expensive as the query itself. Options: cache the count, return an approximate count, or omit it entirely (cursor pagination often does — it offers `next` without a grand total).
 
+| Advantages (Response Envelope) | Trade-offs |
+|---|---|
+| Metadata (pagination, total) travels in the same response | More verbose than a bare array |
+| Consistent structure across every collection endpoint | Client has to unwrap `data` every time |
+| Easy to add metadata later without a breaking change | A bare array is simpler for simple use cases |
+| Search results carry `meta.total`, `meta.took` in the envelope | |
+
+## Common mistakes
+
+**Search that's really just a filter**
+Symptom:
+- `GET /users?search=john` queries every field with `LIKE '%john%'`
+- Slow on large tables and doesn't rank by relevance
+- Real search should use a full-text search engine (Elasticsearch, PostgreSQL FTS)
+
+**Inconsistent envelopes**
+Symptom:
+- `GET /users` returns `{ "data": [...], "meta": {...} }`
+- `GET /products` returns `{ "items": [...], "pagination": {...} }`
+- Define one standard envelope and use it on every collection endpoint
+
+> 💡 Real-world examples
+>
+> **GitHub API:**
+> - Search: `GET /search/repositories?q=rest+api+language:javascript&sort=stars`
+> - Envelope: `{ "total_count": 12345, "incomplete_results": false, "items": [...] }`
+>
+> **Stripe API:**
+> - Consistent envelope: `{ "object": "list", "data": [...], "has_more": true, "url": "/charges" }`
+> - Every list endpoint uses the same shape
+>
+> Sources: [GitHub REST API — search](https://docs.github.com/en/rest/search/search), [Stripe API — pagination](https://docs.stripe.com/api/pagination)
+
 <Callout title="One envelope, everywhere">
 Pick a collection envelope — `data` + `meta` + `links` is a solid default — and use it for every list endpoint, including search results. Clients then learn your pagination once and reuse it across the whole API. And remember exact `total` counts are not free; drop them when they hurt.
 </Callout>

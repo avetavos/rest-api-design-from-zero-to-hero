@@ -58,6 +58,39 @@ console.log(JSON.stringify(paginate(all, 2, 20), null, 2));`;
 
 <NodeRunner client:visible code={pageCode} />
 
+| Pagination Style | Advantages | Disadvantages | Fits |
+|---|---|---|---|
+| Offset (`?page=2&limit=20`) | Simple, random access | Unstable when data changes | Admin tables, fixed datasets |
+| Cursor (`?after=cursor123`) | Stable, good performance on large datasets | No total count, can't jump to a page | Feeds, infinite scroll |
+| Keyset (`?after_id=42`) | Fast, stable | Needs a unique sortable key | Large sorted collections |
+
+## Common mistakes
+
+**Offset pagination for a real-time feed**
+Symptom:
+- A feed where data is added often — page 2 shifts to page 3 as new items arrive
+- Users see duplicate items or missing items while paginating
+- Use cursor pagination for real-time data
+
+**No pagination default**
+Symptom:
+- `GET /users` returns every record with no limit
+- Database and memory blow up once users number in the millions
+- Always set a default limit (`limit=20`) and a max limit (`limit=100`)
+
+> 💡 Real-world examples
+>
+> **GitHub API:**
+> - Cursor-style pagination via the `Link` header: `<https://api.github.com/repos?page=2>; rel="next"`
+> - Max 100 items per page (the default varies by endpoint — check that endpoint's reference)
+>
+> **Stripe API:**
+> - Cursor pagination: `GET /charges?starting_after=ch_xxx&limit=20`
+> - `has_more: true` tells the client there's more data
+> - Cursor-based because charges keep growing over time
+>
+> Sources: [GitHub REST API pagination](https://docs.github.com/en/rest/using-the-rest-api/using-pagination-in-the-rest-api), [Stripe API — pagination](https://docs.stripe.com/api/pagination)
+
 <Callout title="Default to cursor for large, changing data">
 Offset pagination is fine for small, stable lists and admin tables where jumping to page 50 matters. For feeds, logs, and anything that grows while users scroll, prefer cursor pagination: it stays correct under inserts and fast no matter how deep you go.
 </Callout>

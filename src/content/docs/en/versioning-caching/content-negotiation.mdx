@@ -48,6 +48,40 @@ app.get('/reports/:id', (c) => {
 
 <NodeRunner stackblitz client:visible code={honoCode} />
 
+| Advantages (Content Negotiation) | Trade-offs |
+|---|---|
+| One API supports multiple formats (JSON, XML, CSV) | The server has to implement multiple serializers |
+| The client says exactly which format it wants | More complexity — content-type routing logic |
+| Media-type versioning is the most RESTful option | Little tooling support for custom media types |
+| Compression via `Accept-Encoding` cuts bandwidth | Cache keys must account for the `Accept` header |
+
+## Common mistakes
+
+**Not returning `Content-Type` in the response**
+Symptom:
+- The server returns JSON but never sets `Content-Type: application/json`
+- The client doesn't know how to parse the body — some treat it as plain text
+- Always set `Content-Type` on every response that has a body
+
+**Caching without including `Accept` in the cache key**
+Symptom:
+- A CDN caches the response to `GET /reports` requested as JSON
+- The next request asks for CSV — the CDN returns the cached JSON instead
+- Set a `Vary: Accept` header so the CDN includes `Accept` in the cache key
+
+> 💡 Real-world examples
+>
+> **GitHub API:**
+> - `Accept: application/vnd.github+json` for standard JSON
+> - `Accept: application/vnd.github.raw+json` for raw file content
+> - Different formats via the `Accept` header, no URI change needed
+>
+> **AWS API:**
+> - `Accept-Encoding: gzip` — the response body is compressed automatically
+> - Cuts bandwidth for large JSON responses like list operations
+>
+> Sources: [GitHub REST API media types](https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api#media-types), [MDN — Accept-Encoding](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Encoding)
+
 <Callout title="One resource, many representations">
 Content negotiation keeps the URI stable while letting clients choose format and language — a CSV export and a JSON view of the same report share one address. Always reflect the chosen type back in `Content-Type`, and return `406` rather than silently sending a format the client said it could not accept.
 </Callout>

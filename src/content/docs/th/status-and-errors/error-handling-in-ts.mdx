@@ -95,7 +95,9 @@ app.onError((err, c) => {
 >
 > **Express.js:**
 > - error middleware 4 parameters: `(err, req, res, next)`
-> - Airbnb ใช้ centralized error handler ที่ log ไปยัง monitoring system ก่อน return response
+> - centralized handler ที่ log ไปยัง monitoring system ก่อน return response เป็น pattern ที่ทีม production ทั่วไปใช้
+>
+> แหล่งอ้างอิง: [Hono — error handling](https://hono.dev/docs/api/hono#error-handling), [Express.js error handling](https://expressjs.com/en/guide/error-handling.html)
 
 <Callout title="โยน typed error แล้วแปลงที่เดียว">
 ให้ handler แสดงความล้มเหลวด้วยการ throw typed error (`throw new ApiError(404, ...)`) และนำการจัดรูปแบบทั้งหมดไปไว้ใน hook `onError` เดียว คุณจะได้ `problem+json` ที่เหมือนกันทุกที่ มี fallback ที่ปลอดภัยรับประกันสำหรับสิ่งที่ไม่คาดคิด และ handler ที่จดจ่ออยู่กับ happy path

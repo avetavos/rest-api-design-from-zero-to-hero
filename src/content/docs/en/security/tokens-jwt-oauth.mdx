@@ -60,6 +60,39 @@ export const oauthDiagram = `sequenceDiagram
 
 **Scopes** limit what a token can do (`articles:read`, `articles:write`); your API checks the token's scopes during authorization. OpenID Connect (OIDC) layers identity (an `id_token`) on top of OAuth2.
 
+| Token Type | Advantages | Disadvantages | Fits |
+|---|---|---|---|
+| JWT (stateless) | No database lookup per request | Hard to revoke — must wait for expiry | High-scale APIs, microservices |
+| Opaque token (stateful) | Revokes instantly | Needs a database lookup per request | Sessions that need frequent revocation |
+| API key | Simple, long-lived | No expiry, hard to revoke | Server-to-server, developer APIs |
+| OAuth access token | Delegated auth, scoped | More setup complexity | Third-party integrations |
+
+## Common mistakes
+
+**Storing a JWT in localStorage**
+Symptom:
+- `localStorage.setItem('token', jwt)` in the browser
+- An XSS attack can steal the token
+- Store it in an `httpOnly` cookie instead — JavaScript can't read it
+
+**A JWT that never expires**
+Symptom:
+- `jwt.sign(payload, secret)` with no `expiresIn`
+- A stolen token stays valid forever
+- Set `expiresIn: '1h'` and add a refresh token mechanism
+
+> 💡 Real-world examples
+>
+> **GitHub API:**
+> - Personal access tokens (opaque) — revocable instantly from settings
+> - GitHub Apps use a JWT for installation tokens that expire after 1 hour
+>
+> **Stripe API:**
+> - An API key for server-to-server use — never use it in client-side code
+> - Restricted keys that limit permissions to only what's needed
+>
+> Sources: [GitHub Apps — authenticating](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/authenticating-as-a-github-app), [Stripe API keys](https://docs.stripe.com/keys)
+
 <Callout title="Verify, don't just decode">
 A JWT's payload is readable by anyone — decoding it proves nothing. Always verify the signature against the issuer's key and validate `exp`, `aud`, and `iss` before trusting a single claim. Keep access tokens short-lived and use refresh tokens (or re-auth) to renew them.
 </Callout>

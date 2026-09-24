@@ -84,6 +84,8 @@ app.get('/articles', (c) => c.json([{ id: 1 }]));`;
 > **Stripe.js:**
 > - browser SDK เรียก Stripe API โดยตรง — CORS config อนุญาตเฉพาะ Stripe domain
 > - API Key ที่ใช้ใน browser เป็น publishable key เท่านั้น (ไม่มีสิทธิ์ charge)
+>
+> แหล่งอ้างอิง: [GitHub OAuth Apps](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps), [Stripe.js and Elements](https://docs.stripe.com/js)
 
 <Callout title="CORS ไม่ใช่ authentication">
 การผ่อนคลาย CORS ไม่ได้ทำให้ API ของคุณปลอดภัยน้อยลงต่อ client ที่ไม่ใช่ browser — ทั้ง curl, mobile app และ server ไม่สนใจ CORS อยู่แล้ว หน้าที่ของ CORS มีแค่ตัดสินว่า web origin ไหนบ้างที่ browser จะยอมให้อ่าน response ของคุณ ให้รักษา allowlist ของ origin ไว้ให้แคบ และอย่าพึ่งพา CORS เป็นการควบคุมการเข้าถึงเด็ดขาด นั่นเป็นหน้าที่ของ authn/authz

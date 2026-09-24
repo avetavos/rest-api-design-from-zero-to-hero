@@ -82,12 +82,14 @@ console.log(JSON.stringify(paginate(all, 2, 20), null, 2));`;
 >
 > **GitHub API:**
 > - cursor pagination ผ่าน `Link` header: `<https://api.github.com/repos?page=2>; rel="next"`
-> - default 30, max 100 items per page
+> - max 100 items per page (ค่า default แตกต่างกันไปตาม endpoint — เช็ค reference ของ endpoint นั้น)
 >
 > **Stripe API:**
 > - cursor pagination: `GET /charges?starting_after=ch_xxx&limit=20`
 > - `has_more: true` บอก client ว่ามีข้อมูลเพิ่ม
 > - cursor-based เพราะ charge เพิ่มตลอดเวลา
+>
+> แหล่งอ้างอิง: [GitHub REST API pagination](https://docs.github.com/en/rest/using-the-rest-api/using-pagination-in-the-rest-api), [Stripe API — pagination](https://docs.stripe.com/api/pagination)
 
 <Callout title="ใช้ cursor เป็นค่าเริ่มต้นสำหรับข้อมูลใหญ่และเปลี่ยนแปลงบ่อย">
 Offset pagination ใช้ได้ดีกับ list ขนาดเล็กที่เสถียร และตาราง admin ที่การกระโดดไปหน้า 50 มีความสำคัญ ส่วน feed, log และอะไรก็ตามที่โตขึ้นระหว่างที่ user กำลังเลื่อนดู ให้เลือก cursor pagination เพราะยังคงถูกต้องแม้มีการ insert และเร็วไม่ว่าจะลึกแค่ไหน

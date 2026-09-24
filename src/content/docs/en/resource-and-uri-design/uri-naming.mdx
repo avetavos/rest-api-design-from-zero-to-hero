@@ -35,6 +35,32 @@ GET /articles/42.json
 GET /articles?articleId=42    # identity belongs in the path
 ```
 
+## Common mistakes
+
+**Mixing naming conventions**
+Symptom:
+- `GET /userProfiles` and `GET /order-items` in the same API
+- Developers have to remember which convention each endpoint uses
+- Pick one convention and stick to it — plural lowercase is most common
+
+**Putting the version in the wrong place**
+Symptom:
+- `/users/v2` — the version sits in the middle of the URI
+- `/v1/users/v2/profile` — versions nested inside each other
+- Always put the version at the start of the URI: `/v1/users/\{id\}/profile`
+
+> 💡 Real-world examples
+>
+> **GitHub API:**
+> - `/repos` (plural), `/issues`, `/pulls`, `/commits` — consistently plural
+> - `/repos/\{owner\}/\{repo\}/git/refs` — a clear hierarchy
+>
+> **Stripe API:**
+> - `/payment_intents`, `/payment_methods`, `/setup_intents`
+> - snake_case used consistently across the whole API
+>
+> Sources: [GitHub REST API — repos](https://docs.github.com/en/rest/repos/repos), [Stripe API reference](https://docs.stripe.com/api)
+
 <Callout title="Predictability is the goal">
 Every naming rule serves one aim: a client who has seen `/articles/42/comments` can confidently guess `/users/7/articles`. Consistency is worth more than any individual rule — pick conventions and apply them everywhere.
 </Callout>

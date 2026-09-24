@@ -67,8 +67,10 @@ Accept: application/vnd.example.article+json;version=2
 > - account ถูก lock ที่ version ที่สร้าง — ไม่ break เมื่อ Stripe release version ใหม่
 >
 > **GitHub API:**
-> - URI versioning: `/v3/` (REST), `/graphql` (GraphQL v4)
-> - deprecation notice ล่วงหน้า 12 เดือน พร้อม `Deprecation` header
+> - version ผ่าน header `X-GitHub-Api-Version` ที่เป็นวันที่ (เช่น `2022-11-28`) ไม่ใช่ URI แบบ `/v3/` — REST API เลิกใช้ URI versioning ไปแล้ว
+> - support version เดิมอย่างน้อย 24 เดือนหลัง version ใหม่ออก พร้อม `Deprecation` และ `Sunset` header ตอนใกล้หมด support
+>
+> แหล่งอ้างอิง: [Stripe API versioning](https://docs.stripe.com/api/versioning), [GitHub REST API versions](https://docs.github.com/en/rest/about-the-rest-api/api-versions)
 
 <Callout title="ทำเวอร์ชันให้น้อย, deprecate อย่างใจดี">
 ให้ถือว่า major version ใหม่คือทางเลือกสุดท้าย และเมื่อจำเป็นต้องปล่อยจริง ๆ ก็ต้องปล่อยให้เวอร์ชันเก่ายังทำงานต่อได้ พร้อม timeline การ deprecation ที่ชัดเจนและ header `Deprecation`/`Sunset` การทำให้ client พังโดยไม่เตือนล่วงหน้าคือทางลัดที่ทำให้ API เสียความน่าเชื่อถือ

@@ -69,12 +69,14 @@ export const recapDiagram = `flowchart TD
 > 💡 ตัวอย่างจากของจริง
 >
 > **Stripe API:**
-> - ยึดถือ backward compatibility อย่างเคร่งครัด — API v1 ออก 2011, ยัง support ในปัจจุบัน
-> - ทุก breaking change มีเวอร์ชัน date ใหม่ และ account lock ที่ version เก่าโดยอัตโนมัติ
+> - version แต่ละ request ผ่าน `Stripe-Version` header ที่เป็นวันที่ ไม่ใช่ผ่าน URL path — `/v1/` ใน URL ไม่เคยเปลี่ยนตั้งแต่เปิดตัว
+> - monthly release ยัง backward compatible เสมอ มีแค่ major release เท่านั้นที่ breaking ได้ และแต่ละ account ถูกตั้งค่า default เป็น version ที่ pin ไว้
 >
 > **GitHub API:**
-> - deprecation notice ล่วงหน้า 12 เดือน
-> - `Deprecation` header บน response ที่ใกล้หมดอายุ — consumer รู้ก่อน endpoint ปิด
+> - support REST API version เดิมอย่างน้อย 24 เดือนหลังจาก version ใหม่ออก
+> - `Deprecation` และ `Sunset` header บน response เตือน consumer ก่อน version นั้นหมด support
+>
+> แหล่งอ้างอิง: [Stripe API versioning](https://docs.stripe.com/api/versioning), [GitHub REST API versions](https://docs.github.com/en/rest/about-the-rest-api/api-versions)
 
 <Callout title="ความสม่ำเสมอเหนือกว่าความฉลาด">
 API ที่ดีที่สุดไม่ใช่ API ที่ฉลาดที่สุด แต่คือ API ที่คาดเดาได้มากที่สุด ถ้าใช้แนวปฏิบัติเหล่านี้อย่างสม่ำเสมอ developer ที่เคยใช้ endpoint เดียวของคุณจะเดาที่เหลือได้เอง และความคาดเดาได้นี่แหละ มากกว่าฟีเจอร์ใด ๆ ที่ทำให้การเขียน code คุยกับ API ของคุณเป็นเรื่องน่าสนุก
